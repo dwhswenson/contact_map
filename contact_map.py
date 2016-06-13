@@ -8,10 +8,9 @@ import itertools
 import scipy
 import pandas as pd
 import mdtraj as md
+import pickle
 
 # TODO: 
-# * switch input from residues to atoms -- use the mdtraj atom selection
-#   language in practice
 # * switch to something where you can define the haystack -- the trick is to
 #   replace the current mdtraj._compute_neighbors with something that
 #   build a voxel list for the haystack, and then checks the voxel for each
@@ -108,6 +107,25 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
+
+    def save_to_file(self, filename, mode="w"):
+        """Save this object to the given file.
+
+        Parameters
+        ----------
+        filename : string
+            the file to write to
+        mode : 'w' or 'a'
+            file writing mode. Use 'w' to overwrite, 'a' to append.
+        """
+        f = open(filename, mode)
+        pickle.dump(self, f)
+        f.close()
+
+    @classmethod
+    def from_file(cls, filename):
+        f = open(filename, "r")
+        return pickle.load(f)
 
     def __sub__(self, other):
         return ContactDifference(positive=self, negative=other)
