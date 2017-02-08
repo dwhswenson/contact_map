@@ -40,6 +40,28 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
+class NearestAtoms(object):
+    def __init__(self, trajectory, cutoff, frame_number=0):
+        # TODO: add support for a subset of all atoms with `atoms`
+        self.cutoff = cutoff
+        self.frame_number = frame_number
+        neighborlist = md.compute_neighborlist(trajectory, self.cutoff,
+                                               self.frame_number)
+        frame = trajectory[frame_number]
+        self.nearest = {}
+        self.nearest_distance = {}
+        for (atom, neighbors) in enumerate(neighborlist):
+            pairs = itertools.product([atom], neighbors)
+            distances = md.compute_distances(frame, pairs)[0]  # 0th frame
+            nearest = sorted(zip(distances, neighbors))[0]
+            self.nearest[atom] = nearest[1]
+            self.nearest_distance[atom] = nearest[0]
+
+    @property
+    def sorted_distances(self):
+        listed = [(atom, self.nearest[atom], dist)
+                  for (atom, dist) in list(self.nearest_distance.items())]
+        return sorted(listed, key=lambda tup: tup[2])
 
 class ContactCount(object):
     def __init__(self, counter, object_f, n_x, n_y):
@@ -80,10 +102,9 @@ class ContactCount(object):
             ]
         return result
 
-
-
     def most_common_idx(self):
         return self._counter.most_common()
+
 
 class ContactObject(object):
     """

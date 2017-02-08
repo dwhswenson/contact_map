@@ -1,3 +1,3 @@
 from contact_map import (
-    ContactMap, ContactFrequency, ContactDifference
+    ContactMap, ContactFrequency, ContactDifference, NearestAtoms
 )
