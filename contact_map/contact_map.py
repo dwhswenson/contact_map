@@ -10,7 +10,7 @@ import pandas as pd
 import mdtraj as md
 import pickle
 
-# TODO: 
+# TODO:
 # * switch to something where you can define the haystack -- the trick is to
 #   replace the current mdtraj._compute_neighbors with something that
 #   build a voxel list for the haystack, and then checks the voxel for each
@@ -28,7 +28,7 @@ def residue_neighborhood(residue, n=1):
         this residue
     n : positive int
         number of neighbors to find
-    
+
     Returns
     -------
     list of int
@@ -168,8 +168,10 @@ class ContactObject(object):
         for residue_idx in self.residue_query_atom_idxs.keys():
             residue = self.topology.residue(residue_idx)
             # Several steps to go residue indices -> atom indices
-            ignore_residue_idxs = residue_neighborhood(residue, 
-                                                       self._n_neighbors_ignored)
+            ignore_residue_idxs = residue_neighborhood(
+                residue,
+                self._n_neighbors_ignored
+            )
             ignore_residues = [self.topology.residue(idx)
                                for idx in ignore_residue_idxs]
             ignore_atoms = sum([list(res.atoms)
@@ -213,7 +215,7 @@ class ContactObject(object):
         atom_idxs_A = set(atom.index for atom in res_A.atoms)
         atom_idxs_B = set(atom.index for atom in res_B.atoms)
         all_atom_pairs = [
-            frozenset(pair) 
+            frozenset(pair)
             for pair in itertools.product(atom_idxs_A, atom_idxs_B)
         ]
         result = [([self.topology.atom(idx) for idx in contact[0]], contact[1])
@@ -305,7 +307,7 @@ class ContactMap(ContactObject):
                                         self.residue_ignore_atom_idxs)
         (self._atom_contacts, self._residue_contacts) = contact_maps
 
-    
+
 class ContactTrajectory(ContactObject):
     """
     Contact map (atomic and residue) for each individual trajectory frame.
@@ -336,7 +338,7 @@ class ContactFrequency(ContactObject):
         Cutoff distance for contacts, in nanometers. Default 0.45.
     n_neighbors_ignored : int
         Number of neighboring residues (in the same chain) to ignore.
-        Default 2. 
+        Default 2.
     """
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
