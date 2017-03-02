@@ -393,9 +393,12 @@ class ContactFrequency(ContactObject):
         Default 2.
     """
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2):
+                 n_neighbors_ignored=2, frames=None):
         self._trajectory = trajectory
-        self._n_frames = len(trajectory)
+        if frames is None:
+            frames = range(len(trajectory))
+        self.frames = frames
+        self._n_frames = len(frames)
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
@@ -418,7 +421,7 @@ class ContactFrequency(ContactObject):
         # (namely, which atom indices matter for each residue)
         residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
         residue_query_atom_idxs = self.residue_query_atom_idxs
-        for frame_num in range(len(trajectory)):
+        for frame_num in self.frames:
             frame_contacts = self.contact_map(trajectory, frame_num,
                                               residue_query_atom_idxs,
                                               residue_ignore_atom_idxs)
