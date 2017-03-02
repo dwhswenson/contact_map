@@ -3,4 +3,4 @@ from contact_map import (
     MinimumDistanceCounter
 )
 
-# import concurrence
+import concurrence
