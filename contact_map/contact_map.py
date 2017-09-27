@@ -360,16 +360,6 @@ class ContactMap(ContactObject):
         (self._atom_contacts, self._residue_contacts) = contact_maps
 
 
-class ContactTrajectory(ContactObject):
-    """
-    Contact map (atomic and residue) for each individual trajectory frame.
-
-    NOT YET IMPLEMENTED. I'm not sure whether this gives appreciable speed
-    improvements over running contact map over and over.
-    """
-    pass
-
-
 class ContactFrequency(ContactObject):
     """
     Contact frequency (atomic and residue) for a trajectory.
@@ -409,7 +399,7 @@ class ContactFrequency(ContactObject):
         # we save it on a per-atom basis. This allows us ignore
         # n_nearest_neighbor residues.
         # TODO: this whole thing should be cleaned up and should replace
-        # MDTraj's really slow old computer_contacts by using MDTraj's new
+        # MDTraj's really slow old compute_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
         topology = self.topology
         trajectory = self.trajectory
@@ -438,6 +428,44 @@ class ContactFrequency(ContactObject):
     @property
     def n_frames(self):
         return self._n_frames
+
+    def _check_compatibility(self, other):
+        assert self.cutoff == other.cutoff
+        assert self.topology == other.topology
+        assert self.query == other.query
+        assert self.haystack == other.haystack
+        assert self.n_neighbors_ignored == other.n_neighbors_ignored
+
+    def add_contact_frequency(self, other):
+        """Add results from `other` to the internal counter.
+
+        Parameters
+        ----------
+        other : :class:`.ContactFrequency`
+            contact frequency made from the frames to remove from this
+            contact frequency
+        """
+        self._check_compatibility(other)
+        self._atom_contacts_count += other._atom_contacts_count
+        self._residue_contacts_count += other._residue_contacts_count
+
+    def subtract_contact_frequency(self, other):
+        """Subtracts results from `other` from internal counter.
+
+        Note that this is intended for the case that you're removing a
+        subtrajectory of the already-calculated trajectory. If you want to
+        compare two different contact frequency maps, use
+        :class:`.ContactDifference`.
+
+        Parameters
+        ----------
+        other : :class:`.ContactFrequency`
+            contact frequency made from the frames to remove from this
+            contact frequency
+        """
+        self._check_compatibility(other)
+        self._atom_contacts_count -= other._atom_contacts_count
+        self._residue_contacts_count -= other._residue_contacts_count
 
     @property
     def atom_contacts(self):
