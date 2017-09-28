@@ -1,3 +1,4 @@
+import os
 import collections
 import itertools
 import pytest
@@ -125,7 +126,11 @@ class TestContactMap(object):
         assert beauty_idx == truth
 
     def test_saving(self, idx):
-        pytest.skip()
+        m = self.maps[idx]
+        m.save_to_file("test_file.p")
+        m2 = ContactMap.from_file("test_file.p")
+        assert m.atom_contacts.counter == m2.atom_contacts.counter
+        os.remove("test_file.p")
 
 
 class TestContactFrequency(object):
