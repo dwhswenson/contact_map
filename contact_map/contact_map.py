@@ -209,7 +209,7 @@ class ContactObject(object):
         try:
             res_B_idx = res_B.index
         except AttributeError:
-            resB_idx = res_B
+            res_B_idx = res_B
             res_B = self.topology.residue(res_B_idx)
         atom_idxs_A = set(atom.index for atom in res_A.atoms)
         atom_idxs_B = set(atom.index for atom in res_B.atoms)
