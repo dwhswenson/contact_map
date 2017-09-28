@@ -17,46 +17,95 @@ def test_residue_neighborhood():
             len_n = 2*n + 1 - from_top - from_bottom
             assert len(residue_neighborhood(res, n=n)) == len_n
 
+def counter_of_inner_list(ll):
+    return collections.Counter([frozenset(i) for i in ll])
 
+def index_pairs_to_atom(ll, topology):
+    return [frozenset([topology.atom(j) for j in i]) for i in ll]
+
+def index_pairs_to_residue(ll, topology):
+    return [frozenset([topology.residue(j) for j in i]) for i in ll]
+
+@pytest.mark.parametrize("idx", [0, 4])
 class TestContactMap(object):
     def setup(self):
+        self.topology = traj.topology
         self.map0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
         self.map4 = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        self.maps = {0: self.map0, 4: self.map4}
 
-    def test_setup(self):
-        for m in [self.map0, self.map4]:
-            assert set(m.query) == set(range(10))
-            assert set(m.haystack) == set(range(10))
-            assert m.n_neighbors_ignored == 0
-            for res in m.topology.residues:
-                ignored_atoms = m.residue_ignore_atom_idxs[res.index]
-                assert ignored_atoms == set([a.index for a in res.atoms])
-
-    def test_contact_map(self):
-        # this tests the internal structure contact map object; note that
-        # this only underscored attributes, so this test can change
-        expected_atom_contacts = {
+        self.expected_atom_contacts = {
             self.map0: [[1, 4], [4, 6], [5, 6]],
             self.map4: [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4],
                         [8, 5], [4, 6], [4, 7], [5, 6], [5, 7]]
         }
 
-        expected_residue_contacts = {
+        self.expected_residue_contacts = {
             self.map0: [[0, 2], [2, 3]],
             self.map4: [[0, 2], [2, 3], [0, 4], [2, 4]]
         }
-        for m, contacts in expected_atom_contacts.items():
-            expected = collections.Counter([frozenset(c) for c in contacts])
-            assert m._atom_contacts == expected
-        for m, contacts in expected_residue_contacts.items():
-            expected = collections.Counter([frozenset(c) for c in contacts])
-            assert m._residue_contacts == expected
 
-    def test_atom_contacts(self):
+    def test_setup(self, idx):
+        m = self.maps[idx]
+        assert set(m.query) == set(range(10))
+        assert set(m.haystack) == set(range(10))
+        assert m.n_neighbors_ignored == 0
+        assert m.topology == self.topology
+        for res in m.topology.residues:
+            ignored_atoms = m.residue_ignore_atom_idxs[res.index]
+            assert ignored_atoms == set([a.index for a in res.atoms])
+
+    def test_contact_map(self, idx):
+        # this tests the internal structure contact map object; note that
+        # this only underscored attributes, so this test can change
+        m = self.maps[idx]
+        expected = counter_of_inner_list(self.expected_atom_contacts[m])
+        assert m._atom_contacts == expected
+        assert m.atom_contacts.counter == expected
+        expected = counter_of_inner_list(self.expected_residue_contacts[m])
+        assert m._residue_contacts == expected
+        assert m.residue_contacts.counter == expected
+
+    def test_with_ignores(self, idx):
         pytest.skip()
 
-    def test_residue_contacts(self):
+    def test_most_common_atoms_for_residue(self, idx):
         pytest.skip()
+
+    def test_most_common_atoms_for_contact(self, idx):
+        pytest.skip()
+
+    def test_saving(self, idx):
+        pytest.skip()
+
+
+class TestContactCount(object):
+    def setup(self):
+        self.map = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
+        self.topology = self.map.topology
+        self.atom_contacts = self.map.atom_contacts
+        self.residue_contacts = self.map.residue_contacts
+
+    def test_initialization(self):
+        assert self.atom_contacts._object_f == self.topology.atom
+        assert self.atom_contacts.n_x == self.topology.n_atoms
+        assert self.atom_contacts.n_y == self.topology.n_atoms
+        assert self.residue_contacts._object_f == self.topology.residue
+        assert self.residue_contacts.n_x == self.topology.n_residues
+        assert self.residue_contacts.n_y == self.topology.n_residues
+
+    def test_sparse_matrix(self):
+        pytest.skip()
+
+    def test_df(self):
+        pytest.skip()
+
+    def test_most_common(self):
+        pytest.skip()
+
+    def test_most_common_idx(self):
+        pytest.skip()
+
 
 
 
