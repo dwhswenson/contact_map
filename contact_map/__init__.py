@@ -1,6 +1,7 @@
 from contact_map import (
-    ContactMap, ContactFrequency, ContactDifference, NearestAtoms,
-    MinimumDistanceCounter
+    ContactMap, ContactFrequency, ContactDifference
 )
+
+from min_dist import NearestAtoms, MinimumDistanceCounter
 
 # import concurrence
