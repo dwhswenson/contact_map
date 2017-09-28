@@ -148,9 +148,9 @@ class ContactObject(object):
         # all inits required: no defaults for abstract class!
         self._topology = topology
         if query is None:
-            query = topology.select("not water and not symbol == 'H'")
+            query = topology.select("not water and symbol != 'H'")
         if haystack is None:
-            haystack = topology.select("not water and not symbol == 'H'")
+            haystack = topology.select("not water and symbol != 'H'")
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
