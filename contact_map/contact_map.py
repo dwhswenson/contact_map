@@ -5,10 +5,10 @@ Contact map analysis.
 # Licensed under LGPL, version 2.1 or greater
 import collections
 import itertools
+import pickle
 import scipy
 import pandas as pd
 import mdtraj as md
-import pickle
 
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
@@ -384,6 +384,7 @@ class ContactFrequency(ContactObject):
 
     @property
     def n_frames(self):
+        """Number of frames in the mapped trajectory"""
         return self._n_frames
 
     @property

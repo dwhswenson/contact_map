@@ -3,9 +3,16 @@ import collections
 import itertools
 import pytest
 import mdtraj as md
-from contact_map.contact_map import ContactMap, residue_neighborhood
+
+# stuff to be testing in this file
+from contact_map.contact_map import *
 
 traj = md.load("./trajectory.pdb")
+
+test_file = "test_file.p"
+
+def counter_of_inner_list(ll):
+    return collections.Counter([frozenset(i) for i in ll])
 
 def test_residue_neighborhood():
     top = traj.topology
@@ -18,14 +25,6 @@ def test_residue_neighborhood():
             len_n = 2*n + 1 - from_top - from_bottom
             assert len(residue_neighborhood(res, n=n)) == len_n
 
-def counter_of_inner_list(ll):
-    return collections.Counter([frozenset(i) for i in ll])
-
-def index_pairs_to_atom(ll, topology):
-    return [frozenset([topology.atom(j) for j in i]) for i in ll]
-
-def index_pairs_to_residue(ll, topology):
-    return [frozenset([topology.residue(j) for j in i]) for i in ll]
 
 @pytest.mark.parametrize("idx", [0, 4])
 class TestContactMap(object):
@@ -119,7 +118,7 @@ class TestContactMap(object):
 
         beauty = {frozenset(ll[0]): ll[1] for ll in most_common_atoms}
         beauty_idx = {frozenset(ll[0]): ll[1] for ll in most_common_idx}
-        truth = {frozenset([top.atom(a) for a in ll]): 1 
+        truth = {frozenset([top.atom(a) for a in ll]): 1
                  for ll in expected_atom_indices_contact_0_2[m]}
 
         assert beauty == truth
@@ -127,21 +126,43 @@ class TestContactMap(object):
 
     def test_saving(self, idx):
         m = self.maps[idx]
-        m.save_to_file("test_file.p")
-        m2 = ContactMap.from_file("test_file.p")
+        m.save_to_file(test_file)
+        m2 = ContactMap.from_file(test_file)
         assert m.atom_contacts.counter == m2.atom_contacts.counter
-        os.remove("test_file.p")
+        os.remove(test_file)
 
 
 class TestContactFrequency(object):
     def setup(self):
+        self.map = ContactFrequency(traj,
+                                    cutoff=0.075,
+                                    n_neighbors_ignored=0)
+        # TODO: add in expected counters here
         pass
+
+    def test_initialization(self):
+        assert self.map.n_frames == len(traj)
+        assert self.map.topology == traj.topology
+        assert set(self.map.query) == set(range(10))
+        assert set(self.map.haystack) == set(range(10))
+        assert self.map.n_neighbors_ignored == 0
+        for res in self.map.topology.residues:
+            ignored_atoms = self.map.residue_ignore_atom_idxs[res.index]
+            assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self):
         pytest.skip()
 
-    def test_saving(self):
+    def test_frames_parameter(self):
+        # test that the frames parameter in initialization works
         pytest.skip()
+
+    def test_saving(self):
+        m = self.map
+        m.save_to_file(test_file)
+        m2 = ContactMap.from_file(test_file)
+        assert m.atom_contacts.counter == m2.atom_contacts.counter
+        os.remove(test_file)
 
     def test_most_common_atoms_for_residue(self):
         pytest.skip()
@@ -180,4 +201,41 @@ class TestContactCount(object):
 
 
 class TestContactDifference(object):
-    pass
+    def test_diff_traj_frame(self):
+        pytest.skip()
+
+    def test_diff_frame_frame(self):
+        m0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
+        m4 = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        # one of these simply has more contacts than the other, so to test
+        # both positive diff and negative diff we flip the sign
+        diff_1 = m4 - m0
+        diff_2 = m0 - m4
+        # expected diffs are present in m4, not in m0
+        expected_atom_diff = [[0, 9], [0, 8], [1, 8], [1, 9], [4, 8],
+                              [5, 8], [4, 7], [5, 7]]
+        expected_atom_common = [[1, 4], [4, 6], [5, 6]]
+        expected_residue_diff = [[0, 4], [2, 4]]
+        expected_residue_common = [[0, 2], [2, 3]]
+
+        expected_atoms_1 = counter_of_inner_list(expected_atom_diff)
+        # add the zeros
+        expected_atoms_1.update({frozenset(pair): 0 
+                                 for pair in expected_atom_common})
+        assert diff_1.atom_contacts.counter == expected_atoms_1
+        expected_atoms_2 = {k: -v for (k, v) in expected_atoms_1.items()}
+        assert diff_2.atom_contacts.counter == expected_atoms_2
+
+        expected_residues_1 = counter_of_inner_list(expected_residue_diff)
+        expected_residues_1.update({frozenset(pair): 0
+                                    for pair in expected_residue_common})
+        assert diff_1.residue_contacts.counter == expected_residues_1
+        expected_residues_2 = {k: -v 
+                               for (k, v) in expected_residues_1.items()}
+        assert diff_2.residue_contacts.counter == expected_residues_2
+
+    def test_diff_traj_traj(self):
+        pytest.skip()
+
+    def test_saving(self):
+        pytest.skip()
