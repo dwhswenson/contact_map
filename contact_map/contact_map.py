@@ -442,8 +442,8 @@ class ContactFrequency(ContactObject):
     @property
     def atom_contacts(self):
         """Atoms pairs mapped to fraction of trajectory with that contact"""
-        n_x = len(self.haystack)
-        n_y = len(self.query)
+        n_x = self.topology.n_atoms
+        n_y = self.topology.n_atoms
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._atom_contacts_count.items()
