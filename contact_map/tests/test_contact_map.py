@@ -158,7 +158,6 @@ class TestContactFrequency(object):
             frozenset([2, 4]): 1
         }
         self.expected_n_frames = 5
-        pass
 
     def test_initialization(self):
         assert self.map.n_frames == len(traj)
@@ -293,7 +292,8 @@ class TestContactFrequency(object):
 class TestContactCount(object):
     def setup(self):
         # TODO: this should be based on the ContactFrequency
-        self.map = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
+        self.map = ContactFrequency(traj[0], cutoff=0.075,
+                                    n_neighbors_ignored=0)
         self.topology = self.map.topology
         self.atom_contacts = self.map.atom_contacts
         self.residue_contacts = self.map.residue_contacts
@@ -321,7 +321,39 @@ class TestContactCount(object):
 
 class TestContactDifference(object):
     def test_diff_traj_frame(self):
-        pytest.skip()
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        expected_atom_count = {
+            frozenset([0, 8]): -1.0,
+            frozenset([0, 9]): -1.0,
+            frozenset([1, 4]): 0.75 - 1.0,
+            frozenset([1, 5]): 0.25,
+            frozenset([1, 8]): -1.0,
+            frozenset([1, 9]): -1.0,
+            frozenset([4, 6]): 0.0,
+            frozenset([4, 7]): 0.25 - 1.0,
+            frozenset([4, 8]): -1.0,
+            frozenset([5, 6]): 0.0,
+            frozenset([5, 7]): 0.25 - 1.0,
+            frozenset([5, 8]): -1.0
+        }
+        expected_residue_count = {
+            frozenset([0, 2]): 0.0,
+            frozenset([0, 4]): -1.0,
+            frozenset([2, 3]): 0.0,
+            frozenset([2, 4]): -1.0
+        }
+        diff_1 = ttraj - frame
+        diff_2 = frame - ttraj
+
+        assert diff_1.atom_contacts.counter == expected_atom_count
+        assert diff_2.atom_contacts.counter == \
+                {k: -v for (k, v) in expected_atom_count.items()}
+
+        assert diff_1.residue_contacts.counter == expected_residue_count
+        assert diff_2.residue_contacts.counter == \
+                {k: -v for (k, v) in expected_residue_count.items()}
 
     def test_diff_frame_frame(self):
         m0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
@@ -354,7 +386,52 @@ class TestContactDifference(object):
         assert diff_2.residue_contacts.counter == expected_residues_2
 
     def test_diff_traj_traj(self):
-        pytest.skip()
+        traj_1 = ContactFrequency(trajectory=traj[0:2],
+                                  cutoff=0.075,
+                                  n_neighbors_ignored=0)
+        traj_2 = ContactFrequency(trajectory=traj[3:5],
+                                  cutoff=0.075,
+                                  n_neighbors_ignored=0)
+
+        expected_atom_count = {
+            frozenset([0, 8]): -0.5,
+            frozenset([0, 9]): -0.5,
+            frozenset([1, 4]): 0.5 - 1.0,
+            frozenset([1, 5]): 0.5,
+            frozenset([1, 8]): -0.5,
+            frozenset([1, 9]): -0.5,
+            frozenset([4, 6]): 0.0,
+            frozenset([4, 7]): -1.0,
+            frozenset([4, 8]): -0.5,
+            frozenset([5, 6]): 0.0,
+            frozenset([5, 7]): -1.0,
+            frozenset([5, 8]): -0.5
+        }
+        expected_residue_count = {
+            frozenset([0, 2]): 0,
+            frozenset([0, 4]): -0.5,
+            frozenset([2, 3]): 0,
+            frozenset([2, 4]): -0.5
+        }
+
+        diff_1 = traj_1 - traj_2
+        diff_2 = traj_2 - traj_1
+
+        assert diff_1.atom_contacts.counter == expected_atom_count
+        assert diff_2.atom_contacts.counter == \
+                {k: -v for (k, v) in expected_atom_count.items()}
+
+        assert diff_1.residue_contacts.counter == expected_residue_count
+        assert diff_2.residue_contacts.counter == \
+                {k: -v for (k, v) in expected_residue_count.items()}
 
     def test_saving(self):
-        pytest.skip()
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        diff = ttraj - frame
+
+        diff.save_to_file(test_file)
+        reloaded = ContactDifference.from_file(test_file)
+        assert diff.atom_contacts.counter == reloaded.atom_contacts.counter
+        os.remove(test_file)
