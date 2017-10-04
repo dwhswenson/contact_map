@@ -232,11 +232,62 @@ class TestContactFrequency(object):
         assert m.atom_contacts.counter == m2.atom_contacts.counter
         os.remove(test_file)
 
-    def test_most_common_atoms_for_residue(self):
-        pytest.skip()
+    @pytest.mark.parametrize('select_by', ['res', 'idx'])
+    def test_most_common_atoms_for_residue(self, select_by):
+        if select_by == 'res':
+            res_2 = self.map.topology.residue(2)
+        elif select_by == 'idx':
+            res_2 = 2
+        else:
+            raise RuntimeError("This should not happen")
+        # call both by residue and residue number
+        most_common_2 = self.map.most_common_atoms_for_residue(res_2)
+        # check order is correct
+        for i in range(len(most_common_2) - 1):
+            assert most_common_2[i][1] >= most_common_2[i+1][1]
 
-    def test_most_common_atoms_for_contact(self):
-        pytest.skip()
+        most_common_numbers_2 = {frozenset([k[0].index, k[1].index]): v
+                                 for (k, v) in most_common_2}
+        # check contents are correct; residue 2 is atoms [4, 5]
+        expected_numbers_2 = {
+            frozenset([1, 4]): 0.8,
+            frozenset([1, 5]): 0.2,
+            frozenset([4, 6]): 1.0,
+            frozenset([4, 7]): 0.4,
+            frozenset([4, 8]): 0.2,
+            frozenset([5, 6]): 1.0,
+            frozenset([5, 7]): 0.4,
+            frozenset([5, 8]): 0.2
+        }
+        assert most_common_numbers_2 == expected_numbers_2
+
+    @pytest.mark.parametrize('select_by', ['res', 'idx'])
+    def test_most_common_atoms_for_contact(self, select_by):
+        top = self.map.topology
+        if select_by == 'res':
+            pair = [top.residue(2), top.residue(3)]
+        elif select_by == 'idx':
+            pair = [2, 3]
+        else:
+            raise RuntimeError("This should not happen")
+
+        most_common_2_3 = self.map.most_common_atoms_for_contact(pair)
+
+        # check order is correct
+        for i in range(len(most_common_2_3) - 1):
+            assert most_common_2_3[i][1] >= most_common_2_3[i+1][1]
+
+        most_common_2_3_frozenset = [(frozenset(ll[0]), ll[1])
+                                     for ll in most_common_2_3]
+
+        # residue 2: atoms 4, 5; residue 3: atoms 6, 7
+        expected_2_3 = [
+            (frozenset([top.atom(4), top.atom(6)]), 1.0),
+            (frozenset([top.atom(5), top.atom(6)]), 1.0),
+            (frozenset([top.atom(4), top.atom(7)]), 0.4),
+            (frozenset([top.atom(5), top.atom(7)]), 0.4)
+        ]
+        assert set(most_common_2_3_frozenset) == set(expected_2_3)
 
 
 class TestContactCount(object):
