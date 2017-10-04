@@ -2,12 +2,36 @@ import os
 import collections
 import itertools
 import pytest
+import numpy as np
+from numpy.testing import assert_array_equal
 import mdtraj as md
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
 
 traj = md.load("./trajectory.pdb")
+
+traj_atom_contact_count = {
+    frozenset([0, 8]): 1,
+    frozenset([0, 9]): 1,
+    frozenset([1, 4]): 4,
+    frozenset([1, 5]): 1,
+    frozenset([1, 8]): 1,
+    frozenset([1, 9]): 1,
+    frozenset([4, 6]): 5,
+    frozenset([4, 7]): 2,
+    frozenset([4, 8]): 1,
+    frozenset([5, 6]): 5,
+    frozenset([5, 7]): 2,
+    frozenset([5, 8]): 1
+}
+
+traj_residue_contact_count = {
+    frozenset([0, 2]): 5,
+    frozenset([0, 4]): 1,
+    frozenset([2, 3]): 5,
+    frozenset([2, 4]): 1
+}
 
 test_file = "test_file.p"
 
@@ -137,26 +161,8 @@ class TestContactFrequency(object):
         self.map = ContactFrequency(trajectory=traj,
                                     cutoff=0.075,
                                     n_neighbors_ignored=0)
-        self.expected_atom_contact_count = {
-            frozenset([0, 8]): 1,
-            frozenset([0, 9]): 1,
-            frozenset([1, 4]): 4,
-            frozenset([1, 5]): 1,
-            frozenset([1, 8]): 1,
-            frozenset([1, 9]): 1,
-            frozenset([4, 6]): 5,
-            frozenset([4, 7]): 2,
-            frozenset([4, 8]): 1,
-            frozenset([5, 6]): 5,
-            frozenset([5, 7]): 2,
-            frozenset([5, 8]): 1
-        }
-        self.expected_residue_contact_count = {
-            frozenset([0, 2]): 5,
-            frozenset([0, 4]): 1,
-            frozenset([2, 3]): 5,
-            frozenset([2, 4]): 1
-        }
+        self.expected_atom_contact_count = traj_atom_contact_count
+        self.expected_residue_contact_count = traj_residue_contact_count
         self.expected_n_frames = 5
 
     def test_initialization(self):
@@ -291,12 +297,33 @@ class TestContactFrequency(object):
 
 class TestContactCount(object):
     def setup(self):
-        # TODO: this should be based on the ContactFrequency
-        self.map = ContactFrequency(traj[0], cutoff=0.075,
+        self.map = ContactFrequency(traj, cutoff=0.075,
                                     n_neighbors_ignored=0)
         self.topology = self.map.topology
         self.atom_contacts = self.map.atom_contacts
         self.residue_contacts = self.map.residue_contacts
+
+        self.atom_matrix = np.array([
+            #  0    1    2    3    4    5    6    7    8    9
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2], # 0
+            [0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.2, 0.2], # 1
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # 2
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # 3
+            [0.0, 0.8, 0.0, 0.0, 0.0, 0.0, 1.0, 0.4, 0.2, 0.0], # 4
+            [0.0, 0.2, 0.0, 0.0, 0.0, 0.0, 1.0, 0.4, 0.2, 0.0], # 5
+            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], # 6
+            [0.0, 0.0, 0.0, 0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 0.0], # 7
+            [0.2, 0.2, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0], # 8
+            [0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 9
+        ])
+        self.residue_matrix = np.array([
+            #  0    1    2    3    4
+            [0.0, 0.0, 1.0, 0.0, 0.2], # 0
+            [0.0, 0.0, 0.0, 0.0, 0.0], # 1
+            [1.0, 0.0, 0.0, 1.0, 0.2], # 2
+            [0.0, 0.0, 1.0, 0.0, 0.0], # 3
+            [0.2, 0.0, 0.2, 0.0, 0.0]  # 4
+        ])
 
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
@@ -307,16 +334,94 @@ class TestContactCount(object):
         assert self.residue_contacts.n_y == self.topology.n_residues
 
     def test_sparse_matrix(self):
-        pytest.skip()
+        assert_array_equal(self.map.atom_contacts.sparse_matrix.todense(),
+                           self.atom_matrix)
+        assert_array_equal(self.map.residue_contacts.sparse_matrix.todense(),
+                           self.residue_matrix)
 
     def test_df(self):
-        pytest.skip()
+        atom_df = self.map.atom_contacts.df
+        residue_df = self.map.residue_contacts.df
+        assert isinstance(atom_df, pd.SparseDataFrame)
+        assert isinstance(residue_df, pd.SparseDataFrame)
 
-    def test_most_common(self):
-        pytest.skip()
+        assert_array_equal(atom_df.to_dense().as_matrix(), self.atom_matrix)
+        assert_array_equal(residue_df.to_dense().as_matrix(),
+                           self.residue_matrix)
 
-    def test_most_common_idx(self):
-        pytest.skip()
+    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
+    def test_most_common(self, obj_type):
+        if obj_type == 'atom':
+            source_expected = traj_atom_contact_count
+            contacts = self.map.atom_contacts
+            obj_func = self.topology.atom
+        elif obj_type == 'res':
+            source_expected = traj_residue_contact_count
+            contacts = self.map.residue_contacts
+            obj_func = self.topology.residue
+        else:
+            raise RuntimeError("This shouldn't happen")
+
+        expected = [
+            (frozenset([obj_func(idx) for idx in ll[0]]), float(ll[1]) / 5.0)
+            for ll in source_expected.items()
+        ]
+
+        most_common = contacts.most_common()
+        cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
+
+        # check order
+        for i in range(len(most_common) - 1):
+            assert most_common[i][1] >= most_common[i+1][1]
+
+        # check contents
+        assert set(cleaned) == set(expected)
+
+    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
+    def test_most_common_with_object(self, obj_type):
+        top = self.topology
+        if obj_type == 'atom':
+            source_expected = traj_atom_contact_count
+            contacts = self.map.atom_contacts
+            obj = top.atom(4)
+            expected = [(frozenset([obj, top.atom(6)]), 1.0),
+                        (frozenset([obj, top.atom(1)]), 0.8),
+                        (frozenset([obj, top.atom(7)]), 0.4),
+                        (frozenset([obj, top.atom(8)]), 0.2)]
+        elif obj_type == 'res':
+            source_expected = traj_residue_contact_count
+            contacts = self.map.residue_contacts
+            obj = self.topology.residue(2)
+            expected = [(frozenset([obj, top.residue(0)]), 1.0),
+                        (frozenset([obj, top.residue(3)]), 1.0),
+                        (frozenset([obj, top.residue(4)]), 0.2)]
+        else:
+            raise RuntimeError("This shouldn't happen")
+    
+        most_common = contacts.most_common(obj)
+        cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
+
+        # check order
+        for i in range(len(most_common) - 1):
+            assert most_common[i][1] >= most_common[i+1][1]
+
+        # check contents
+        assert set(cleaned) == set(expected)
+
+    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
+    def test_most_common_idx(self, obj_type):
+        if obj_type == 'atom':
+            source_expected = traj_atom_contact_count
+            contacts = self.map.atom_contacts
+        elif obj_type == 'res':
+            source_expected = traj_residue_contact_count
+            contacts = self.map.residue_contacts
+        else:
+            raise RuntimeError("This shouldn't happen")
+
+        expected_count = [(ll[0], float(ll[1]) / 5.0)
+                          for ll in source_expected.items()]
+        assert set(contacts.most_common_idx()) == set(expected_count)
 
 
 class TestContactDifference(object):
