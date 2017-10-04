@@ -194,7 +194,36 @@ class TestContactFrequency(object):
                                     cutoff=0.075,
                                     n_neighbors_ignored=0,
                                     frames=frames)
-        pytest.skip()
+        expected_atom_raw_count = {
+            frozenset([0, 8]): 1,
+            frozenset([0, 9]): 1,
+            frozenset([1, 4]): 2,
+            frozenset([1, 5]): 1,
+            frozenset([1, 8]): 1,
+            frozenset([1, 9]): 1,
+            frozenset([4, 6]): 3,
+            frozenset([4, 7]): 2,
+            frozenset([4, 8]): 1,
+            frozenset([5, 6]): 3,
+            frozenset([5, 7]): 2,
+            frozenset([5, 8]): 1
+        }
+        expected_residue_raw_count = {
+            frozenset([0, 2]): 3,
+            frozenset([0, 4]): 1,
+            frozenset([2, 3]): 3,
+            frozenset([2, 4]): 1
+        }
+
+        expected_atom_count = {
+            k: v/3.0 for (k, v) in expected_atom_raw_count.items()
+        }
+        assert contacts.atom_contacts.counter == expected_atom_count
+
+        expected_residue_count = {
+            k: v/3.0 for (k, v) in expected_residue_raw_count.items()
+        }
+        assert contacts.residue_contacts.counter == expected_residue_count
 
     def test_saving(self):
         m = self.map
