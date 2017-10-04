@@ -134,10 +134,30 @@ class TestContactMap(object):
 
 class TestContactFrequency(object):
     def setup(self):
-        self.map = ContactFrequency(traj,
+        self.map = ContactFrequency(trajectory=traj,
                                     cutoff=0.075,
                                     n_neighbors_ignored=0)
-        # TODO: add in expected counters here
+        self.expected_atom_contact_count = {
+            frozenset([0, 8]): 1,
+            frozenset([0, 9]): 1,
+            frozenset([1, 4]): 4,
+            frozenset([1, 5]): 1,
+            frozenset([1, 8]): 1,
+            frozenset([1, 9]): 1,
+            frozenset([4, 6]): 5,
+            frozenset([4, 7]): 2,
+            frozenset([4, 8]): 1,
+            frozenset([5, 6]): 5,
+            frozenset([5, 7]): 2,
+            frozenset([5, 8]): 1
+        }
+        self.expected_residue_contact_count = {
+            frozenset([0, 2]): 5,
+            frozenset([0, 4]): 1,
+            frozenset([2, 3]): 5,
+            frozenset([2, 4]): 1
+        }
+        self.expected_n_frames = 5
         pass
 
     def test_initialization(self):
@@ -151,10 +171,29 @@ class TestContactFrequency(object):
             assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self):
-        pytest.skip()
+        assert self.map.n_frames == self.expected_n_frames
+
+        atom_contacts = self.map.atom_contacts
+        expected_atom_contacts = {
+            k: float(v) / self.expected_n_frames
+            for (k, v) in self.expected_atom_contact_count.items()
+        }
+        assert atom_contacts.counter == expected_atom_contacts
+
+        residue_contacts = self.map.residue_contacts
+        expected_residue_contacts = {
+            k: float(v) / self.expected_n_frames
+            for (k, v) in self.expected_residue_contact_count.items()
+        }
+        assert residue_contacts.counter == expected_residue_contacts
 
     def test_frames_parameter(self):
         # test that the frames parameter in initialization works
+        frames = [1, 3, 4]
+        contacts = ContactFrequency(trajectory=traj,
+                                    cutoff=0.075,
+                                    n_neighbors_ignored=0,
+                                    frames=frames)
         pytest.skip()
 
     def test_saving(self):
@@ -220,7 +259,7 @@ class TestContactDifference(object):
 
         expected_atoms_1 = counter_of_inner_list(expected_atom_diff)
         # add the zeros
-        expected_atoms_1.update({frozenset(pair): 0 
+        expected_atoms_1.update({frozenset(pair): 0
                                  for pair in expected_atom_common})
         assert diff_1.atom_contacts.counter == expected_atoms_1
         expected_atoms_2 = {k: -v for (k, v) in expected_atoms_1.items()}
@@ -230,7 +269,7 @@ class TestContactDifference(object):
         expected_residues_1.update({frozenset(pair): 0
                                     for pair in expected_residue_common})
         assert diff_1.residue_contacts.counter == expected_residues_1
-        expected_residues_2 = {k: -v 
+        expected_residues_2 = {k: -v
                                for (k, v) in expected_residues_1.items()}
         assert diff_2.residue_contacts.counter == expected_residues_2
 
