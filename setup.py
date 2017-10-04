@@ -109,7 +109,7 @@ def buildKeywordDictionary():
     outputString=""
     firstTab     = 40
     secondTab    = 60
-    for key in sorted( setupKeywords.iterkeys() ):
+    for key in sorted( setupKeywords.keys() ):
          value         = setupKeywords[key]
          outputString += (key.rjust(firstTab)
                           + str(value).rjust(secondTab) + "\n")
