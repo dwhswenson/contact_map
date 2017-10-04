@@ -1,3 +1,5 @@
+cython
 mdtraj
 pandas
+numpy
 scipy
