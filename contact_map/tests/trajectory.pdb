@@ -1,0 +1,62 @@
+REMARK   1 HAND-WRITTEN TEST TRAJECTORY
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  XXX A   1       0.250   0.750   0.000  1.00  0.00           C
+HETATM    2  C2  XXX A   1       0.250   1.250   0.000  1.00  0.00           C
+HETATM    3  C1  XXX A   2       2.250   2.750   0.000  1.00  0.00           C
+HETATM    4  C2  XXX A   2       2.750   2.750   0.000  1.00  0.00           C
+HETATM    5  C1  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    6  C2  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    7  C1  XXX A   4       1.250   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  XXX A   4       1.250   2.750   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       2.250   0.250   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       2.250   0.750   0.000  1.00  0.00           C
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  XXX A   1       0.250   0.750   0.000  1.00  0.00           C
+HETATM    2  C2  XXX A   1       0.250   1.250   0.000  1.00  0.00           C
+HETATM    3  C1  XXX A   2       2.250   2.750   0.000  1.00  0.00           C
+HETATM    4  C2  XXX A   2       2.750   2.750   0.000  1.00  0.00           C
+HETATM    5  C1  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    6  C2  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    7  C1  XXX A   4       1.250   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  XXX A   4       1.250   2.750   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       2.250   0.250   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       2.250   0.750   0.000  1.00  0.00           C
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  XXX A   1       0.250   0.750   0.000  1.00  0.00           C
+HETATM    2  C2  XXX A   1       0.250   1.250   0.000  1.00  0.00           C
+HETATM    3  C1  XXX A   2       2.250   2.750   0.000  1.00  0.00           C
+HETATM    4  C2  XXX A   2       2.750   2.750   0.000  1.00  0.00           C
+HETATM    5  C1  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    6  C2  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    7  C1  XXX A   4       1.250   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  XXX A   4       1.250   2.750   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       2.250   0.250   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       2.250   0.750   0.000  1.00  0.00           C
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  XXX A   1       0.250   0.750   0.000  1.00  0.00           C
+HETATM    2  C2  XXX A   1       0.250   1.250   0.000  1.00  0.00           C
+HETATM    3  C1  XXX A   2       2.250   2.750   0.000  1.00  0.00           C
+HETATM    4  C2  XXX A   2       2.750   2.750   0.000  1.00  0.00           C
+HETATM    5  C1  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    6  C2  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    7  C1  XXX A   4       0.750   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  XXX A   4       1.250   2.250   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       2.250   0.250   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       2.250   0.750   0.000  1.00  0.00           C
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  XXX A   1       0.250   0.750   0.000  1.00  0.00           C
+HETATM    2  C2  XXX A   1       0.250   1.250   0.000  1.00  0.00           C
+HETATM    3  C1  XXX A   2       2.250   2.750   0.000  1.00  0.00           C
+HETATM    4  C2  XXX A   2       2.750   2.750   0.000  1.00  0.00           C
+HETATM    5  C1  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    6  C2  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    7  C1  XXX A   4       0.750   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  XXX A   4       1.250   2.250   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       0.750   1.250   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       0.750   0.750   0.000  1.00  0.00           C
+ENDMDL
+END
