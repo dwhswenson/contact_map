@@ -12,16 +12,16 @@ environment:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
 
   matrix:
-    - PYTHON: "C:\\Python27"
+    - PYTHON: "C:\\Miniconda"
       PYTHON_VERSION: "2.7"
       ARCH: "32"
-    - PYTHON: "C:\\Python27-x64"
+    - PYTHON: "C:\\Miniconda-x64"
       PYTHON_VERSION: "2.7"
       ARCH: "64"
-    - PYTHON: "C:\\Python36"
+    - PYTHON: "C:\\Miniconda36"
       PYTHON_VERSION: "3.6"
       ARCH: "32"
-    - PYTHON: "C:\\Python36-x64"
+    - PYTHON: "C:\\Miniconda36-x64"
       PYTHON_VERSION: "3.6"
       ARCH: "64"
 
@@ -32,14 +32,9 @@ install:
   # test python version
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "pip install --disable-pip-version-check --user --upgrade pip"
   # now we do our own install
-  #- "call ci\\pip-install\\install.sh"
-  - "pip install cython"
-  - "pip install --upgrade --force-reinstall numpy"
-  - "pip install -r requirements.txt"
-  - "pip install ."
-  - "pip install pytest"
+  - "%CMD_IN_ENV% conda build --quiet devtools\\conda-recipe"
 
 test_script:
-  - "py.test"
+  - "%CMD_IN_ENV% conda install -y pytest"
+  - "%CMD_IN_ENV% py.test"

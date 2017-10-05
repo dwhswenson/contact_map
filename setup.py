@@ -22,7 +22,7 @@ Contact maps based on MDTraj; useful for studying for intramolecular and
 intermolecular contacts from simulations of biomolecular systems. For a
 more detailed description, see package's documentation.
 """
-if os.exists('README.rst'):
+if os.path.isfile('README.rst'):
     DESCRIPTION = open('README.rst').read()
 
 ################################################################################
@@ -109,6 +109,7 @@ setup(
     package_data={},
     ext_modules=[],
     scripts=[],
+    long_description=DESCRIPTION,
     platforms=['Linux', 'Mac OS X', 'Unix', 'Windows'],
     install_requires=REQUIREMENTS,
     requires=REQUIREMENTS,
