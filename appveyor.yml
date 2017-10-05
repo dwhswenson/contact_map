@@ -1,6 +1,10 @@
 # See also:
 # https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
 
+branches:
+  only:
+    - master
+
 environment:
   global:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
@@ -28,8 +32,8 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "pip install --disable-pip-version-check --user --upgrade pip"
   # now we do our own install
-  - "%CMD_IN_ENV% pip install -r requirements.txt"
-  - "%CMD_IN_ENV% pip install pytest"
+  - "pip install -r requirements.txt"
+  - "pip install pytest"
 
 test_script:
-  - "%CMD_IN_ENV% py.test"
+  - "py.test"
