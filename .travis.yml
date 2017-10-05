@@ -2,15 +2,25 @@ language: python
 
 python:
     - "2.7"
+    #- "3.4"
     - "3.5"
     - "3.6"
-    - "3.7-dev"
+    #- "3.7-dev"
 
 install:
-    - source ci/pip-install/install.sh
+    - pip install future  # DEBUG
+    - echo "BEFORE NUMPY REINSTALL"
+    - python -c "from __future__ import print_function; import numpy; print(numpy)"
+    - pip install cython
+    - pip install --upgrade --force-reinstall numpy
+    - pip install pandas
+    - pip install scipy
+    - echo "AFTER NUMPy REINSTALL"
+    - python -c "from __future__ import print_function; import numpy; print(numpy)"
+    - pip install mdtraj
+    - pip install .
+    #- source ci/pip-install/install.sh
     - pip install -r ci/pip-install/test_requirements.txt
 
 script:
-    - export PYTEST="pytest"
-    - if ! [ -x "$(command -v pytest)" ]; then export PYTEST="py.test"; fi
     - py.test -vv --cov=contact_map
