@@ -5,6 +5,8 @@ branches:
   only:
     - master
 
+max_jobs: 4
+
 environment:
   global:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
@@ -32,7 +34,11 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "pip install --disable-pip-version-check --user --upgrade pip"
   # now we do our own install
+  #- "call ci\\pip-install\\install.sh"
+  - "pip install cython"
+  - "pip install --upgrade --force-reinstall numpy"
   - "pip install -r requirements.txt"
+  - "pip install ."
   - "pip install pytest"
 
 test_script:

@@ -1,5 +1,4 @@
 future
-cython
 numpy
 scipy
 pandas
