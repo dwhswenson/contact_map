@@ -123,8 +123,9 @@ class ContactObject(object):
 
     @classmethod
     def from_file(cls, filename):
-        f = open(filename, "r")
-        return pickle.load(f)
+        with open(filename, "rb") as f:
+            reloaded = pickle.load(f)
+        return reloaded
 
     def __sub__(self, other):
         return ContactDifference(positive=self, negative=other)
