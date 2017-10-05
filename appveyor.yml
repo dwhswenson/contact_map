@@ -1,0 +1,35 @@
+# See also:
+# https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+
+environment:
+  global:
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+
+  matrix:
+    - PYTHON: "C:\\Python27"
+      PYTHON_VERSION: "2.7"
+      ARCH: "32"
+    - PYTHON: "C:\\Python27-x64"
+      PYTHON_VERSION: "2.7"
+      ARCH: "64"
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6"
+      ARCH: "32"
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
+      ARCH: "64"
+
+install:
+  # install python
+  - ps: if (-not(Test-Path($env:PYTHON))) { & appveyor\install.ps1 }
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  # test python version
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  - "pip install --disable-pip-version-check --user --upgrade pip"
+  # now we do our own install
+  - "%CMD_IN_ENV% pip install -r requirements.txt"
+  - "%CMD_IN_ENV% pip install pytest"
+
+test_script:
+  - "%CMD_IN_ENV% py.test"
