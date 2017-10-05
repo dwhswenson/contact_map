@@ -9,18 +9,8 @@ python:
 
 install:
     - pip install future  # DEBUG
-    - echo "BEFORE NUMPY REINSTALL"
-    - python -c "from __future__ import print_function; import numpy; print(numpy)"
-    - pip install cython
-    - pip install --upgrade --force-reinstall numpy
-    - pip install pandas
-    - pip install scipy
-    - echo "AFTER NUMPy REINSTALL"
-    - python -c "from __future__ import print_function; import numpy; print(numpy)"
-    - pip install mdtraj
-    - pip install .
-    #- source ci/pip-install/install.sh
-    - pip install -r ci/pip-install/test_requirements.txt
+    - source ci/pip-install/install.sh
+    - pip install -r ci/pip-install/testing_requirements.txt
 
 script:
     - py.test -vv --cov=contact_map
