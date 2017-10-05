@@ -1,0 +1,50 @@
+package:
+  name: contact_map
+  version: "0.1.0"
+
+source:
+  path: ../../
+
+build:
+  preserve_egg_dir: True
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - mdtraj
+    - numpy
+    - scipy
+    - pandas
+
+  run:
+    - python
+    - mdtraj
+    - numpy
+    - scipy
+    - pandas
+
+test:
+  requires:
+    - pytest
+    #- pytest-cov
+    #- python-coveralls
+
+  source_files:
+    - contact_map/tests/*
+
+  #files:
+    #- contact_map/tests/*pdb
+
+  imports:
+    - contact_map
+
+  commands:
+    - py.test -vv
+
+about:
+  home: https://github.com/dwhswenson/contact_map
+  license: LGPL-2.1 or later
+  summary: "Contact maps based on MDTraj"

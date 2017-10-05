@@ -106,7 +106,7 @@ setup(
         'contact_map': 'contact_map',
         'contact_map.tests': 'contact_map/tests'
     },
-    package_data={},
+    package_data={'contact_map': ['tests/*pdb']},
     ext_modules=[],
     scripts=[],
     long_description=DESCRIPTION,
