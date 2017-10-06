@@ -1,14 +1,18 @@
 import os
 import collections
-import itertools
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 import mdtraj as md
+
+# pylint: disable=W0401, R0201
+# wildcard imports, method could be function
+
 from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
+
 
 traj = md.load(test_file("trajectory.pdb"))
 
@@ -382,7 +386,6 @@ class TestContactCount(object):
     def test_most_common_with_object(self, obj_type):
         top = self.topology
         if obj_type == 'atom':
-            source_expected = traj_atom_contact_count
             contacts = self.map.atom_contacts
             obj = top.atom(4)
             expected = [(frozenset([obj, top.atom(6)]), 1.0),
@@ -390,7 +393,6 @@ class TestContactCount(object):
                         (frozenset([obj, top.atom(7)]), 0.4),
                         (frozenset([obj, top.atom(8)]), 0.2)]
         elif obj_type == 'res':
-            source_expected = traj_residue_contact_count
             contacts = self.map.residue_contacts
             obj = self.topology.residue(2)
             expected = [(frozenset([obj, top.residue(0)]), 1.0),
@@ -398,7 +400,7 @@ class TestContactCount(object):
                         (frozenset([obj, top.residue(4)]), 0.2)]
         else:
             raise RuntimeError("This shouldn't happen")
-    
+
         most_common = contacts.most_common(obj)
         cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
 
