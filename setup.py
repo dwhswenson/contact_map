@@ -100,7 +100,7 @@ setup(
     author_email="dwhs@hyperblazer.net",
     version=PACKAGE_VERSION,
     license="LGPL",
-    url="http//github.com/dwhswenson/contact_map",
+    url="http://github.com/dwhswenson/contact_map",
     packages=['contact_map', 'contact_map.tests'],
     package_dir= {
         'contact_map': 'contact_map',
