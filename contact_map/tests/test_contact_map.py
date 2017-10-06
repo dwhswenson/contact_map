@@ -1,14 +1,18 @@
 import os
 import collections
-import itertools
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 import mdtraj as md
+
+# pylint: disable=W0401, R0201
+# wildcard imports, method could be function
+
 from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
+
 
 traj = md.load(test_file("trajectory.pdb"))
 
@@ -38,6 +42,10 @@ test_file = "test_file.p"
 
 def counter_of_inner_list(ll):
     return collections.Counter([frozenset(i) for i in ll])
+
+def check_most_common_order(most_common):
+    for i in range(len(most_common) - 1):
+        assert most_common[i][1] >= most_common[i+1][1]
 
 def test_residue_neighborhood():
     top = traj.topology
@@ -248,9 +256,7 @@ class TestContactFrequency(object):
             raise RuntimeError("This should not happen")
         # call both by residue and residue number
         most_common_2 = self.map.most_common_atoms_for_residue(res_2)
-        # check order is correct
-        for i in range(len(most_common_2) - 1):
-            assert most_common_2[i][1] >= most_common_2[i+1][1]
+        check_most_common_order(most_common_2)
 
         most_common_numbers_2 = {frozenset([k[0].index, k[1].index]): v
                                  for (k, v) in most_common_2}
@@ -278,11 +284,7 @@ class TestContactFrequency(object):
             raise RuntimeError("This should not happen")
 
         most_common_2_3 = self.map.most_common_atoms_for_contact(pair)
-
-        # check order is correct
-        for i in range(len(most_common_2_3) - 1):
-            assert most_common_2_3[i][1] >= most_common_2_3[i+1][1]
-
+        check_most_common_order(most_common_2_3)
         most_common_2_3_frozenset = [(frozenset(ll[0]), ll[1])
                                      for ll in most_common_2_3]
 
@@ -371,18 +373,13 @@ class TestContactCount(object):
         most_common = contacts.most_common()
         cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
 
-        # check order
-        for i in range(len(most_common) - 1):
-            assert most_common[i][1] >= most_common[i+1][1]
-
-        # check contents
+        check_most_common_order(most_common)
         assert set(cleaned) == set(expected)
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_most_common_with_object(self, obj_type):
         top = self.topology
         if obj_type == 'atom':
-            source_expected = traj_atom_contact_count
             contacts = self.map.atom_contacts
             obj = top.atom(4)
             expected = [(frozenset([obj, top.atom(6)]), 1.0),
@@ -390,7 +387,6 @@ class TestContactCount(object):
                         (frozenset([obj, top.atom(7)]), 0.4),
                         (frozenset([obj, top.atom(8)]), 0.2)]
         elif obj_type == 'res':
-            source_expected = traj_residue_contact_count
             contacts = self.map.residue_contacts
             obj = self.topology.residue(2)
             expected = [(frozenset([obj, top.residue(0)]), 1.0),
@@ -398,15 +394,11 @@ class TestContactCount(object):
                         (frozenset([obj, top.residue(4)]), 0.2)]
         else:
             raise RuntimeError("This shouldn't happen")
-    
+
         most_common = contacts.most_common(obj)
         cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
 
-        # check order
-        for i in range(len(most_common) - 1):
-            assert most_common[i][1] >= most_common[i+1][1]
-
-        # check contents
+        check_most_common_order(most_common)
         assert set(cleaned) == set(expected)
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])

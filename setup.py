@@ -3,7 +3,7 @@ Modified from the OPSPiggybacker setup.py
 """
 #from distutils.sysconfig import get_config_var
 # from distutils.core import setup, Extension
-from setuptools import setup, Extension
+from setuptools import setup
 # import numpy
 # import glob
 import os
