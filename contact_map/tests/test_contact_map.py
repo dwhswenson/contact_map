@@ -43,6 +43,10 @@ test_file = "test_file.p"
 def counter_of_inner_list(ll):
     return collections.Counter([frozenset(i) for i in ll])
 
+def check_most_common_order(most_common):
+    for i in range(len(most_common) - 1):
+        assert most_common[i][1] >= most_common[i+1][1]
+
 def test_residue_neighborhood():
     top = traj.topology
     residues = list(top.residues)
@@ -252,9 +256,7 @@ class TestContactFrequency(object):
             raise RuntimeError("This should not happen")
         # call both by residue and residue number
         most_common_2 = self.map.most_common_atoms_for_residue(res_2)
-        # check order is correct
-        for i in range(len(most_common_2) - 1):
-            assert most_common_2[i][1] >= most_common_2[i+1][1]
+        check_most_common_order(most_common_2)
 
         most_common_numbers_2 = {frozenset([k[0].index, k[1].index]): v
                                  for (k, v) in most_common_2}
@@ -282,11 +284,7 @@ class TestContactFrequency(object):
             raise RuntimeError("This should not happen")
 
         most_common_2_3 = self.map.most_common_atoms_for_contact(pair)
-
-        # check order is correct
-        for i in range(len(most_common_2_3) - 1):
-            assert most_common_2_3[i][1] >= most_common_2_3[i+1][1]
-
+        check_most_common_order(most_common_2_3)
         most_common_2_3_frozenset = [(frozenset(ll[0]), ll[1])
                                      for ll in most_common_2_3]
 
@@ -375,11 +373,7 @@ class TestContactCount(object):
         most_common = contacts.most_common()
         cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
 
-        # check order
-        for i in range(len(most_common) - 1):
-            assert most_common[i][1] >= most_common[i+1][1]
-
-        # check contents
+        check_most_common_order(most_common)
         assert set(cleaned) == set(expected)
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
@@ -404,11 +398,7 @@ class TestContactCount(object):
         most_common = contacts.most_common(obj)
         cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
 
-        # check order
-        for i in range(len(most_common) - 1):
-            assert most_common[i][1] >= most_common[i+1][1]
-
-        # check contents
+        check_most_common_order(most_common)
         assert set(cleaned) == set(expected)
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
