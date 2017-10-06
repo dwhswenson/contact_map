@@ -3,6 +3,8 @@ engines:
         enabled: true
         exclude_paths:
             - "*/tests/"
+        config:
+            threshold: "C"
 
     fixme:
         enabled: true
