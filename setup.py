@@ -11,9 +11,19 @@ import subprocess
 
 ##########################
 VERSION = "0.1.0"
-ISRELEASED = True
+ISRELEASED = False
 __version__ = VERSION
+PACKAGE_VERSION = VERSION
+REQUIREMENTS=['future', 'numpy', 'mdtraj', 'scipy', 'pandas']
 ##########################
+
+DESCRIPTION="""
+Contact maps based on MDTraj; useful for studying for intramolecular and
+intermolecular contacts from simulations of biomolecular systems. For a
+more detailed description, see package's documentation.
+"""
+if os.path.isfile('README.rst'):
+    DESCRIPTION = open('README.rst').read()
 
 ################################################################################
 # Writing version control information to the module
@@ -84,46 +94,37 @@ if not release:
 
 write_version_py()
 
-def buildKeywordDictionary():
-    # from distutils.core import Extension
-    setupKeywords = {}
-    setupKeywords["name"]              = "contact_map"
-    setupKeywords["version"]           = "0.1.0"
-    setupKeywords["author"]            = "David W.H. Swenson"
-    setupKeywords["author_email"]      = "dwhs@hyperblazer.net"
-    setupKeywords["license"]           = "LGPL 2.1 of greater"
-    setupKeywords["download_url"]      = "http://github.com/dwhswenson/contact_map"
-    setupKeywords["packages"]          = ['contact_map',
-                                          'contact_map.tests']
-    setupKeywords["package_dir"]       = {
-        'contact_map' : 'contact_map',
-        'contact_map.tests' : 'contact_map/tests'
-    }
-    setupKeywords["data_files"]        = []
-    setupKeywords["ext_modules"]       = []
-    setupKeywords["platforms"]         = ["Linux", "Mac OS X", "Windows"]
-    setupKeywords["description"]       = "MDTraj-based contact maps"
-    setupKeywords["requires"]          = ["mdtraj", "nose"]
-    setupKeywords["long_description"]  = """Blah
-    """
-    outputString=""
-    firstTab     = 40
-    secondTab    = 60
-    for key in sorted( setupKeywords.iterkeys() ):
-         value         = setupKeywords[key]
-         outputString += (key.rjust(firstTab)
-                          + str(value).rjust(secondTab) + "\n")
-
-    print("%s" % outputString)
-
-    return setupKeywords
-
-
-def main():
-    setupKeywords = buildKeywordDictionary()
-    setup(**setupKeywords)
-
-if __name__ == '__main__':
-    main()
+setup(
+    name="contact_map",
+    author="David W.H. Swenson",
+    author_email="dwhs@hyperblazer.net",
+    version=PACKAGE_VERSION,
+    license="LGPL",
+    url="http//github.com/dwhswenson/contact_map",
+    packages=['contact_map', 'contact_map.tests'],
+    package_dir= {
+        'contact_map': 'contact_map',
+        'contact_map.tests': 'contact_map/tests'
+    },
+    package_data={'contact_map': ['tests/*pdb']},
+    ext_modules=[],
+    scripts=[],
+    long_description=DESCRIPTION,
+    platforms=['Linux', 'Mac OS X', 'Unix', 'Windows'],
+    install_requires=REQUIREMENTS,
+    requires=REQUIREMENTS,
+    tests_require=["pytest", "pytest-cov", "python-coveralls"],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'Operating System :: POSIX',
+        'Operating System :: Microsoft :: Windows',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Topic :: Scientific/Engineering :: Chemistry'
+    ]
+)
 
 

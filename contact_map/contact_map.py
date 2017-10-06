@@ -115,16 +115,17 @@ class ContactObject(object):
         filename : string
             the file to write to
         mode : 'w' or 'a'
-            file writing mode. Use 'w' to overwrite, 'a' to append.
+            file writing mode. Use 'w' to overwrite, 'a' to append. Note
+            that writing by bytes ('b' flag) is automatically added.
         """
-        f = open(filename, mode)
-        pickle.dump(self, f)
-        f.close()
+        with open(filename, mode+"b") as f:
+            pickle.dump(self, f)
 
     @classmethod
     def from_file(cls, filename):
-        f = open(filename, "r")
-        return pickle.load(f)
+        with open(filename, "rb") as f:
+            reloaded = pickle.load(f)
+        return reloaded
 
     def __sub__(self, other):
         return ContactDifference(positive=self, negative=other)

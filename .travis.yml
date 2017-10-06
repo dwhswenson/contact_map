@@ -1,0 +1,32 @@
+language: python
+
+python:
+    - "2.7"
+    - "3.4"
+    - "3.5"
+    - "3.6"
+    #- "3.7-dev"  # need to do custom requirements install for this
+
+env:
+    - MDTRAJ="release"
+    - MDTRAJ="dev"
+
+matrix:
+    exclude:  # don't run MDTRAJ dev for everything
+        - env: MDTRAJ="dev"
+          python: "3.4"
+        - env: MDTRAJ="dev"
+          python: "3.5"
+
+install:
+    - source ci/pip-install/install.sh
+    - pip install -r ci/pip-install/testing_requirements.txt
+    - if [ "$MDTRAJ" = "dev" ]; then pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
+    - pip list
+
+script:
+    - py.test -vv --cov=contact_map
+
+after_success:
+    - coveralls
+

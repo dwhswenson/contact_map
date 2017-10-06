@@ -5,11 +5,12 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 import mdtraj as md
+from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
 
-traj = md.load("./trajectory.pdb")
+traj = md.load(test_file("trajectory.pdb"))
 
 traj_atom_contact_count = {
     frozenset([0, 8]): 1,
