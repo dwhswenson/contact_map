@@ -1,3 +1,4 @@
+import collections
 import mdtraj as md
 
 class NearestAtoms(object):

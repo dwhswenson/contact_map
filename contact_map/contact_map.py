@@ -190,7 +190,7 @@ class ContactObject(object):
         return result
 
     def most_common_atoms_for_residue(self, residue):
-        (residue, residue_idx) = _residue_and_index(residue, self.topology)
+        residue = _residue_and_index(residue, self.topology)[0]
         residue_atoms = set(atom.index for atom in residue.atoms)
         results = []
         for contact in self.atom_contacts.most_common_idx():
@@ -203,11 +203,9 @@ class ContactObject(object):
         return results
 
     def most_common_atoms_for_contact(self, contact_pair):
-        contact_pair = frozenset(contact_pair)
-        res_A = list(contact_pair)[0]
-        res_B = list(contact_pair)[1]
-        (res_A, res_A_idx) = _residue_and_index(res_A, self.topology)
-        (res_B, res_B_idx) = _residue_and_index(res_B, self.topology)
+        contact_pair = list(contact_pair)
+        res_A = _residue_and_index(contact_pair[0], self.topology)[0]
+        res_B = _residue_and_index(contact_pair[1], self.topology)[0]
         atom_idxs_A = set(atom.index for atom in res_A.atoms)
         atom_idxs_B = set(atom.index for atom in res_B.atoms)
         all_atom_pairs = [

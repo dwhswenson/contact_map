@@ -13,6 +13,9 @@ engines:
 
     duplication:
         enabled: true
+        languages:
+            python:
+                mass_threshold: 35
 
 ratings:
     paths:
