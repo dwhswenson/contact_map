@@ -204,13 +204,13 @@ class ContactObject(object):
 
     def most_common_atoms_for_contact(self, contact_pair):
         contact_pair = list(contact_pair)
-        res_A = _residue_and_index(contact_pair[0], self.topology)[0]
-        res_B = _residue_and_index(contact_pair[1], self.topology)[0]
-        atom_idxs_A = set(atom.index for atom in res_A.atoms)
-        atom_idxs_B = set(atom.index for atom in res_B.atoms)
+        res_1 = _residue_and_index(contact_pair[0], self.topology)[0]
+        res_2 = _residue_and_index(contact_pair[1], self.topology)[0]
+        atom_idxs_1 = set(atom.index for atom in res_1.atoms)
+        atom_idxs_2 = set(atom.index for atom in res_2.atoms)
         all_atom_pairs = [
             frozenset(pair)
-            for pair in itertools.product(atom_idxs_A, atom_idxs_B)
+            for pair in itertools.product(atom_idxs_1, atom_idxs_2)
         ]
         result = [([self.topology.atom(idx) for idx in contact[0]], contact[1])
                   for contact in self.atom_contacts.most_common_idx()

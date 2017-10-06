@@ -5,8 +5,9 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import mdtraj as md
 
-# pylint: disable=W0401, R0201
-# wildcard imports, method could be function
+# pylint: disable=wildcard-import, missing-docstring, protected-access
+# pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
+# pylint: disable=wrong-import-order, unused-wildcard-import
 
 from .utils import *
 

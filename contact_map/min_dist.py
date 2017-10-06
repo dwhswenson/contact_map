@@ -1,4 +1,5 @@
 import collections
+import itertools
 import mdtraj as md
 
 class NearestAtoms(object):
