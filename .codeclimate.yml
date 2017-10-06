@@ -1,0 +1,17 @@
+engines:
+    radon:
+        enabled: true
+        exclude_paths:
+            - "*/tests/"
+
+    fixme:
+        enabled: true
+        exclude_paths:
+            - "**pdb"
+
+    duplication:
+        enabled: true
+
+ratings:
+    paths:
+        - "**py"
