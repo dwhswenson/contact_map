@@ -1,6 +1,9 @@
 [![Linux Build Status](https://travis-ci.org/dwhswenson/contact_map.svg?branch=master)](https://travis-ci.org/dwhswenson/contact_map)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/em3fo96sjrg2vmcc/branch/master?svg=true)](https://ci.appveyor.com/project/dwhswenson/contact-map/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/dwhswenson/contact_map/badge.svg?branch=master)](https://coveralls.io/github/dwhswenson/contact_map?branch=master)
+[![codebeat badge](https://codebeat.co/badges/c7fb604a-35a8-4ccf-afea-18d6bd494726)](https://codebeat.co/projects/github-com-dwhswenson-contact_map-master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f7f3cf53698e4655ac8895f13fa5dea6)](https://www.codacy.com/app/dwhswenson/contact_map?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dwhswenson/contact_map&amp;utm_campaign=Badge_Grade)
+[![Code Climate](https://codeclimate.com/github/dwhswenson/contact_map/badges/gpa.svg)](https://codeclimate.com/github/dwhswenson/contact_map)
 
 # Contact Maps
 
