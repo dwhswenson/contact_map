@@ -8,14 +8,17 @@ engines:
 
     fixme:
         enabled: true
+        issue_override:
+            severity: info
         exclude_paths:
             - "**pdb"
 
     duplication:
         enabled: true
-        languages:
-            python:
-                mass_threshold: 35
+        config:
+            languages:
+                python:
+                    mass_threshold: 35
 
 ratings:
     paths:

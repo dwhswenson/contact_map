@@ -250,14 +250,14 @@ class ContactObject(object):
                 contact_neighbors = contact_neighbors & self._haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
-                                  # for neighb in contact_neighbors)
+                #                   for neighb in contact_neighbors)
                 local_pairs = set(map(
                     frozenset,
                     itertools.product([atom_idx], contact_neighbors)
                 ))
                 contact_pairs |= local_pairs
                 # contact_pairs |= set(frozenset((atom_idx, neighb))
-                                     # for neighb in contact_neighbors)
+                #                      for neighb in contact_neighbors)
                 local_residue_partners = set(self._atom_idx_to_residue_idx[a]
                                              for a in contact_neighbors)
                 local_res_pairs = set(map(
@@ -268,8 +268,8 @@ class ContactObject(object):
 
         atom_contacts = collections.Counter(contact_pairs)
         # residue_pairs = set(
-            # frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
-            # for pair in contact_pairs
+        #     frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
+        #     for pair in contact_pairs
         # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
