@@ -14,8 +14,9 @@ builds on the excellent tools provided by [MDTraj](http://mdtraj.org).
 
 ## Installation
 
-TODO: Neither of these installs actually work until we have a release! Use
-developer build until then.
+> TODO: So far only the `pip`-based install works. The `conda` install is
+> still in development as of 0.1.1. Both approaches will work before 0.2.0.
+> Both approaches work for getting requirements in a developer install.
 
 The easiest way to install is with `conda`. Conda is a powerful package and
 environment management system; if you do not already have a highly
@@ -30,8 +31,8 @@ conda install -c conda-forge contact_map
 
 The second-easiest install, which will work on any Python setup (conda or
 not) is to install via `pip`. Because of some weirdness in how `pip` handles
-packages (like MDTraj) that depend on Numpy, you should install Cython and
-Numpy separately, so the whole install is:
+packages (such as MDTraj) that depend on Numpy, you should install Cython
+and Numpy separately, so the whole install is:
 
 ```bash
 pip install cython
@@ -40,16 +41,24 @@ pip install contact_map
 ```
 
 If you already have Numpy installed, you may need to re-install it with `pip
-install -U --force-reinstall numpy`.
+install -U --force-reinstall numpy`. Note that some systems may require you
+to preface `pip install` commands with `sudo` (depending on where Python
+keeps its packages).
 
 
-### Installing a developer build
+### Developer installation
 
 If you plan to work with the source, or if you want to stay on the bleeding
 edge, you can install a version so that your downloaded/cloned version of
-this git repository 
+this git repository is the live code your Python interpreter sees. We call
+that a "developer installation."
 
 #### 1. Download or clone the respository
+
+If you plan to contribute changes back to the repository, please fork it on
+GitHub and then clone your fork. Otherwise, you can download or clone the
+main repository following [GitHub's
+instructions](https://help.github.com/articles/cloning-a-repository/).
 
 #### 2. Install the requirements
 
@@ -70,18 +79,23 @@ conda install -y --file requirements.txt
 Or install using `pip`:
 
 ```bash
+pip install cython
+pip install numpy
 pip install -r requirements.txt
 ```
 
-Note that MDTraj can be a bit particular about the numpy that it uses. If,
-in the first step of the `pip` install, MDTraj complains, try running the
-following commands:
-
-```bash
-pip install cython
-pip install --upgrade --force-reinstall numpy
-```
+In some cases, you may need to add `-U --force-reinstall` to the Numpy step.
 
 #### 3. Install the package
 
-##
+Change into the package directory (which you got when you cloned/downloaded
+the repository in step 1). This should be the directory with the `setup.py`
+from `contact_map`. Run the command:
+
+```bash
+pip install -e .
+```
+
+The `-e` means that the installation is "editable" (developer version; the
+stuff in this directory will be the live code your Python interpreted uses)
+and the `.` tells it to find `setup.py` in the current directory.

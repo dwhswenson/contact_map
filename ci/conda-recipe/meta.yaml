@@ -1,6 +1,7 @@
 package:
   name: contact_map
-  version: "0.1.2.dev"
+  # add ".dev" for unreleased versions
+  version: "0.1.3.dev"
 
 source:
   path: ../../
@@ -14,10 +15,6 @@ requirements:
   build:
     - python
     - setuptools
-    - mdtraj
-    - numpy
-    - scipy
-    - pandas
 
   run:
     - python
@@ -34,9 +31,6 @@ test:
 
   source_files:
     - contact_map/tests/*
-
-  #files:
-    #- contact_map/tests/*pdb
 
   imports:
     - contact_map
