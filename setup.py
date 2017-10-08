@@ -107,7 +107,7 @@ setup(
     package_data={'contact_map': ['tests/*pdb']},
     ext_modules=[],
     scripts=[],
-    description="Contact maps based on MDTraj"
+    description="Contact maps based on MDTraj",
     long_description=DESCRIPTION,
     platforms=['Linux', 'Mac OS X', 'Unix', 'Windows'],
     install_requires=REQUIREMENTS,
