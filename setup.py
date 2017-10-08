@@ -10,8 +10,8 @@ import os
 import subprocess
 
 ##########################
-VERSION = "0.1.1"
-ISRELEASED = True
+VERSION = "0.1.2-dev"
+ISRELEASED = False
 __version__ = VERSION
 PACKAGE_VERSION = VERSION
 REQUIREMENTS=['future', 'numpy', 'mdtraj', 'scipy', 'pandas']
