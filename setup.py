@@ -6,8 +6,8 @@ import os
 import subprocess
 
 ##########################
-VERSION = "0.1.2"
-ISRELEASED = True
+VERSION = "0.1.3"
+ISRELEASED = False
 if not ISRELEASED:
     VERSION += ".dev"
 __version__ = VERSION
