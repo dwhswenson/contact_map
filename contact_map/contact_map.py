@@ -40,6 +40,15 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
+def _residue_and_index(residue, topology):
+    res = residue
+    try:
+        res_idx = res.index
+    except AttributeError:
+        res_idx = residue
+        res = topology.residue(res_idx)
+    return (res, res_idx)
+
 
 class ContactCount(object):
     def __init__(self, counter, object_f, n_x, n_y):
@@ -181,12 +190,7 @@ class ContactObject(object):
         return result
 
     def most_common_atoms_for_residue(self, residue):
-        try:
-            residue_idx = residue.index
-        except AttributeError:
-            residue_idx = residue
-            residue = self.topology.residue(residue_idx)
-
+        residue = _residue_and_index(residue, self.topology)[0]
         residue_atoms = set(atom.index for atom in residue.atoms)
         results = []
         for contact in self.atom_contacts.most_common_idx():
@@ -199,24 +203,14 @@ class ContactObject(object):
         return results
 
     def most_common_atoms_for_contact(self, contact_pair):
-        contact_pair = frozenset(contact_pair)
-        res_A = list(contact_pair)[0]
-        res_B = list(contact_pair)[1]
-        try:
-            res_A_idx = res_A.index
-        except AttributeError:
-            res_A_idx = res_A
-            res_A = self.topology.residue(res_A_idx)
-        try:
-            res_B_idx = res_B.index
-        except AttributeError:
-            res_B_idx = res_B
-            res_B = self.topology.residue(res_B_idx)
-        atom_idxs_A = set(atom.index for atom in res_A.atoms)
-        atom_idxs_B = set(atom.index for atom in res_B.atoms)
+        contact_pair = list(contact_pair)
+        res_1 = _residue_and_index(contact_pair[0], self.topology)[0]
+        res_2 = _residue_and_index(contact_pair[1], self.topology)[0]
+        atom_idxs_1 = set(atom.index for atom in res_1.atoms)
+        atom_idxs_2 = set(atom.index for atom in res_2.atoms)
         all_atom_pairs = [
             frozenset(pair)
-            for pair in itertools.product(atom_idxs_A, atom_idxs_B)
+            for pair in itertools.product(atom_idxs_1, atom_idxs_2)
         ]
         result = [([self.topology.atom(idx) for idx in contact[0]], contact[1])
                   for contact in self.atom_contacts.most_common_idx()
@@ -256,14 +250,14 @@ class ContactObject(object):
                 contact_neighbors = contact_neighbors & self._haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
-                                  # for neighb in contact_neighbors)
+                #                   for neighb in contact_neighbors)
                 local_pairs = set(map(
                     frozenset,
                     itertools.product([atom_idx], contact_neighbors)
                 ))
                 contact_pairs |= local_pairs
                 # contact_pairs |= set(frozenset((atom_idx, neighb))
-                                     # for neighb in contact_neighbors)
+                #                      for neighb in contact_neighbors)
                 local_residue_partners = set(self._atom_idx_to_residue_idx[a]
                                              for a in contact_neighbors)
                 local_res_pairs = set(map(
@@ -274,8 +268,8 @@ class ContactObject(object):
 
         atom_contacts = collections.Counter(contact_pairs)
         # residue_pairs = set(
-            # frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
-            # for pair in contact_pairs
+        #     frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
+        #     for pair in contact_pairs
         # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
@@ -359,9 +353,7 @@ class ContactFrequency(ContactObject):
         # TODO: this whole thing should be cleaned up and should replace
         # MDTraj's really slow old computer_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
-        topology = self.topology
         trajectory = self.trajectory
-        cutoff = self.cutoff
         self._atom_contacts_count = collections.Counter([])
         self._residue_contacts_count = collections.Counter([])
 
@@ -429,7 +421,7 @@ class ContactDifference(ContactObject):
     def __sub__(self, other):
         raise NotImplementedError
 
-    def contact_map(self, *args, **kwargs):
+    def contact_map(self, *args, **kwargs):  #pylint: disable=W0221
         raise NotImplementedError
 
     @property

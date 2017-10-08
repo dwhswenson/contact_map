@@ -1,0 +1,25 @@
+engines:
+    radon:
+        enabled: true
+        exclude_paths:
+            - "*/tests/"
+        config:
+            threshold: "C"
+
+    fixme:
+        enabled: true
+        issue_override:
+            severity: info
+        exclude_paths:
+            - "**pdb"
+
+    duplication:
+        enabled: true
+        config:
+            languages:
+                python:
+                    mass_threshold: 35
+
+ratings:
+    paths:
+        - "**py"

@@ -3,15 +3,15 @@ Modified from the OPSPiggybacker setup.py
 """
 #from distutils.sysconfig import get_config_var
 # from distutils.core import setup, Extension
-from setuptools import setup, Extension
+from setuptools import setup
 # import numpy
 # import glob
 import os
 import subprocess
 
 ##########################
-VERSION = "0.1.0"
-ISRELEASED = False
+VERSION = "0.1.1"
+ISRELEASED = True
 __version__ = VERSION
 PACKAGE_VERSION = VERSION
 REQUIREMENTS=['future', 'numpy', 'mdtraj', 'scipy', 'pandas']

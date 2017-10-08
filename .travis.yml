@@ -1,5 +1,10 @@
 language: python
 
+branches:
+    only:
+        - master
+        - stable
+
 python:
     - "2.7"
     - "3.4"
@@ -8,8 +13,11 @@ python:
     #- "3.7-dev"  # need to do custom requirements install for this
 
 env:
-    - MDTRAJ="release"
-    - MDTRAJ="dev"
+    global:
+        - CODECLIMATE=""  # add this later
+    matrix:
+        - MDTRAJ="release"
+        - MDTRAJ="dev"
 
 matrix:
     exclude:  # don't run MDTRAJ dev for everything
@@ -25,8 +33,8 @@ install:
     - pip list
 
 script:
-    - py.test -vv --cov=contact_map
+    - py.test -vv --cov=contact_map --cov-report xml:cov.xml
 
 after_success:
     - coveralls
-
+    - python-codacy-coverage -r cov.xml
