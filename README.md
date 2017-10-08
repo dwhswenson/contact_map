@@ -4,6 +4,7 @@
 [![codebeat badge](https://codebeat.co/badges/c7fb604a-35a8-4ccf-afea-18d6bd494726)](https://codebeat.co/projects/github-com-dwhswenson-contact_map-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f7f3cf53698e4655ac8895f13fa5dea6)](https://www.codacy.com/app/dwhswenson/contact_map?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dwhswenson/contact_map&amp;utm_campaign=Badge_Grade)
 [![Code Climate](https://codeclimate.com/github/dwhswenson/contact_map/badges/gpa.svg)](https://codeclimate.com/github/dwhswenson/contact_map)
+[![PyPI](https://img.shields.io/pypi/v/contact-map.svg)](https://pypi.python.org/pypi/contact-map/)
 
 # Contact Maps
 
