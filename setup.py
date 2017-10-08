@@ -1,17 +1,15 @@
 """
-Modified from the OPSPiggybacker setup.py
+setup.py for contact_map
 """
-#from distutils.sysconfig import get_config_var
-# from distutils.core import setup, Extension
 from setuptools import setup
-# import numpy
-# import glob
 import os
 import subprocess
 
 ##########################
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 ISRELEASED = True
+if not ISRELEASED:
+    VERSION += ".dev"
 __version__ = VERSION
 PACKAGE_VERSION = VERSION
 REQUIREMENTS=['future', 'numpy', 'mdtraj', 'scipy', 'pandas']
@@ -77,7 +75,7 @@ if not release:
         GIT_REVISION = 'Unknown'
 
     if not ISRELEASED:
-        FULLVERSION += '.dev-' + GIT_REVISION[:7]
+        FULLVERSION += '-' + GIT_REVISION[:7]
 
     a = open(filename, 'w')
     try:
@@ -109,6 +107,7 @@ setup(
     package_data={'contact_map': ['tests/*pdb']},
     ext_modules=[],
     scripts=[],
+    description="Contact maps based on MDTraj",
     long_description=DESCRIPTION,
     platforms=['Linux', 'Mac OS X', 'Unix', 'Windows'],
     install_requires=REQUIREMENTS,
