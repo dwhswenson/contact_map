@@ -51,6 +51,8 @@ def _residue_and_index(residue, topology):
 
 
 class ContactCount(object):
+    """Return object when dealing with contacts (residue or atom).
+    """
     def __init__(self, counter, object_f, n_x, n_y):
         self._counter = counter
         self._object_f = object_f
@@ -126,12 +128,32 @@ class ContactObject(object):
         mode : 'w' or 'a'
             file writing mode. Use 'w' to overwrite, 'a' to append. Note
             that writing by bytes ('b' flag) is automatically added.
+
+        See also
+        --------
+        from_file : load from generated file
         """
         with open(filename, mode+"b") as f:
             pickle.dump(self, f)
 
     @classmethod
     def from_file(cls, filename):
+        """Load this object from a given file
+
+        Parameters
+        ----------
+        filename : string
+            the file to read from
+
+        Returns
+        -------
+        :class:`.ContactObject`:
+            the reloaded object
+
+        See also
+        --------
+        save_to_file : save to a file
+        """
         with open(filename, "rb") as f:
             reloaded = pickle.load(f)
         return reloaded
