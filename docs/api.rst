@@ -7,7 +7,6 @@ Contact Map API
 
 .. autosummary:: 
     :toctree: api/generated/
-    :show-inheritance:
 
     contact_map.ContactCount
     ContactMap

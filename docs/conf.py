@@ -16,9 +16,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import os
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../contact_map/'))
+sys.path.append(os.path.abspath('_themes'))
 
 # -- General configuration ------------------------------------------------
 
@@ -26,7 +28,13 @@
 #
 # needs_sphinx = '1.0'
 
+import sys
+import os
 import sphinx_rtd_theme
+
+# this sys.path stuff is ugly, but I'm not sure how to do it better
+sys.path.insert(0, os.path.abspath('../contact_map/'))
+sys.path.append(os.path.abspath('_themes'))
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -39,7 +47,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    'sphinxcontrib.napoleon'
+    'sphinx.ext.napoleon'
 ]
 
 # Napolean settings

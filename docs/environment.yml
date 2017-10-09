@@ -1,7 +1,6 @@
 name: test
 channels:
     - omnia
-    - bokeh  # for sphinxcontrib-napoleon
     - defaults
 dependencies:
     - python
@@ -9,4 +8,3 @@ dependencies:
     - numpy
     - scipy
     - pandas
-    - sphinxcontrib-napoleon

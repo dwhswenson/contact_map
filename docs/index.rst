@@ -12,6 +12,7 @@ contact_map
    :maxdepth: 2
 
    installing
+   examples
    understanding_docs
 
 API Reference
@@ -21,11 +22,5 @@ API Reference
 
     api
 
-
-Indices and tables
-==================
-
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
