@@ -71,7 +71,7 @@ This is a three-step process:
    
    .. code:: bash
 
-      conda install -y --file requirements
+      conda install -y --file requirements.txt
 
    Or, using ``pip``:
 
@@ -109,7 +109,7 @@ with
 
    python -c "import contact_map"
 
-If your Python interpreted can find the newly-installed package, that should
+If your Python interpreter can find the newly-installed package, that should
 exit without complaint.
 
 For a more thorough check that everything works, you should run our test

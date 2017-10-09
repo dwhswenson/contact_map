@@ -2,8 +2,12 @@
 
 .. currentmodule:: contact_map
 
-Contact Map API
----------------
+#############
+API Reference
+#############
+
+Contact maps
+------------
 
 .. autosummary:: 
     :toctree: api/generated/

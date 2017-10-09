@@ -13,14 +13,9 @@ contact_map
 
    installing
    examples
-   understanding_docs
+   api
 
-API Reference
--------------
-.. toctree::
-    :maxdepth: 1
-
-    api
+.. Add understanding_docs at some point
 
 * :ref:`genindex`
 
