@@ -54,3 +54,71 @@ If you plan to work with the source, or if you want to stay on the bleeding
 edge, you can install a version so that your downloaded/cloned version of
 this git repository is the live code your Python interpreter sees. We call
 that a "developer installation."
+
+This is a three-step process:
+
+1. **Download or clone the repository.** If you plan to contribute changes
+   back to the repository, please fork it on GitHub and then clone your
+   fork. Otherwise, you can download or clone the main repository. You can
+   follow `GitHub's instructions on how to do this
+   <https://help.github.com/articles/fork-a-repo/>`_, and apply those steps
+   to forking our repository at http://github.com/dwhswenson/contact_map.
+
+2. **Install the requirements.** This can be done using either ``pip`` or
+   ``conda``. First, change into the directory for the repository. You
+   should see ``setup.py`` and ``requirements.txt`` (among many other
+   things) in that directory. Using conda:
+   
+   .. code:: bash
+
+      conda install -y --file requirements
+
+   Or, using ``pip``:
+
+   .. code:: bash
+       
+      pip install cython
+      pip install numpy
+      pip install -r requirements.txt
+
+   In some cases, you may need to add ``-U --force-reinstall`` to the Numpy
+   step.
+
+3. **Install the package.** Whether you get the requirements with ``pip`` or
+   with ``conda``, you can install the package (again, from the directory
+   containing ``setup.py``) with:
+
+   .. code:: bash
+
+      pip install -e .
+
+   The ``-e`` means that the installation is "editable" (developer version;
+   the stuff in this directory will be the live code your Python
+   interpreted uses) and the ``.`` tells it to find ``setup.py`` in the
+   current directory.
+
+
+Testing your installation
+=========================
+
+However you have installed it, you should test that your installation works.
+To do so, first check that the new package can be imported. This can be done
+with
+
+.. code:: bash
+
+   python -c "import contact_map"
+
+If your Python interpreted can find the newly-installed package, that should
+exit without complaint.
+
+For a more thorough check that everything works, you should run our test
+suite. This can be done by installing ``pytest`` (using either ``pip`` or
+``conda``) and then running the command:
+
+.. code:: bash
+
+   py.test --pyargs contact_map -v
+
+This will run the tests on the installed version of ``contact_map``. All
+tests should either pass or skip.

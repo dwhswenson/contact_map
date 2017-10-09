@@ -16,9 +16,11 @@ and our examples. These were written by a human, in an effort to teach a new
 user how to do these things.
 
 On the other hand, a significant (and perhaps longer) part of this
-documentation is the reference documentation that is autoamtically generated
+documentation is the reference documentation that is automatically generated
 from the source code. This is designed to makes it very easy for advanced
 users to get into the details to find the answer to a specific question that
 they might have.
 
-One danger is that we make it very easy to get from the 
+We try to make it very easy to get from the user manual to the details in
+the reference documenation by having lots of links to that. However, this
+also creates a danger that new users can get lost in there.
