@@ -1,0 +1,12 @@
+name: test
+channels:
+    - omnia
+    - bokeh  # for sphinxcontrib-napoleon
+    - defaults
+dependencies:
+    - python
+    - mdtraj
+    - numpy
+    - scipy
+    - pandas
+    - sphinxcontrib-napoleon
