@@ -41,5 +41,5 @@ script:
 after_success:
     - pushd ~
     - coveralls
-    - python-codacy-coverage -r cov.xml
+    - python-codacy-coverage -c $TRAVIS_COMMIT -d $TRAVIS_BUILD_DIR -r cov.xml
     - popd
