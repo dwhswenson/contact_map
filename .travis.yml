@@ -33,8 +33,12 @@ install:
     - pip list
 
 script:
+    - pushd ~
     - py.test --pyargs contact_map -vv --cov=contact_map --cov-report xml:cov.xml
+    - popd
 
 after_success:
+    - pushd ~
     - coveralls
     - python-codacy-coverage -r cov.xml
+    - popd
