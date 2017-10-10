@@ -2,7 +2,7 @@ engines:
     radon:
         enabled: true
         exclude_paths:
-            - "*/tests/"
+            - "*/tests/"  # many asserts mean high McCabe
         config:
             threshold: "C"
 
@@ -19,6 +19,9 @@ engines:
             languages:
                 python:
                     mass_threshold: 35
+
+exclude_paths:
+    - "docs/"
 
 ratings:
     paths:

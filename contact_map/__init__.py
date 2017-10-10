@@ -1,3 +1,6 @@
+from . import version
+from .version import version as __version__
+
 from .contact_map import (
     ContactMap, ContactFrequency, ContactDifference, ContactCount
 )
