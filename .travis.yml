@@ -33,7 +33,7 @@ install:
     - pip list
 
 script:
-    - py.test -vv --cov=contact_map --cov-report xml:cov.xml
+    - py.test --pyargs contact_map -vv --cov=contact_map --cov-report xml:cov.xml
 
 after_success:
     - coveralls
