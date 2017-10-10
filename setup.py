@@ -65,8 +65,11 @@ def get_git_version():
         env['LANGUAGE'] = 'C'
         env['LANG'] = 'C'
         env['LC_ALL'] = 'C'
-        out = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, env=env).communicate()[0]
+        with open(os.devnull, 'w') as err_out:
+            out = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
+                                   stderr=err_out, # maybe debug later?
+                                   env=env).communicate()[0]
         return out
 
     try:

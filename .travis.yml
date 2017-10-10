@@ -34,6 +34,7 @@ install:
 
 script:
     - pushd ~
+    - python -c "import contact_map"
     - py.test --pyargs contact_map -vv --cov=contact_map --cov-report xml:cov.xml
     - popd
 
