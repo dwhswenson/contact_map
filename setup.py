@@ -1,16 +1,17 @@
 """
 setup.py for contact_map
 """
-from setuptools import setup
 import os
 import subprocess
 import inspect
+from setuptools import setup
 
 ####################### USER SETUP AREA #################################
-# * IS_RELEASED: whether this is a release
-# * DEV_NUM: .dev version number (for us, always 0)
+# * VERSION: base version (do not include .dev0, etc -- that's automatic)
+# * IS_RELEASE: whether this is a release
 VERSION = "0.1.3"
 IS_RELEASE = False
+
 DEV_NUM = 0  # always 0: we don't do public (pypi) .dev releases
 PRE_TYPE = ""  # a, b, or rc (although we rarely release such versions)
 PRE_NUM = 0
