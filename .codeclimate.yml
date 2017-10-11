@@ -2,7 +2,7 @@ engines:
     radon:
         enabled: true
         exclude_paths:
-            - "*/tests/"
+            - "*/tests/"  # many asserts mean high McCabe
         config:
             threshold: "C"
 
@@ -15,10 +15,24 @@ engines:
 
     duplication:
         enabled: true
+        checks:
+            Similar code:
+                enabled: true
+                issue_override:
+                    severity: info
         config:
             languages:
                 python:
                     mass_threshold: 35
+
+file-lines:
+    config:
+        threshold: 750  # 1000 is really the hard edge
+        # Note that this counts *all* lines, not logical lines. So including
+        # good documentation counts against the default 250-line limit!
+
+exclude_paths:
+    - "docs/"
 
 ratings:
     paths:

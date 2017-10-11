@@ -27,13 +27,17 @@ matrix:
           python: "3.5"
 
 install:
-    - source ci/pip-install/install.sh
+    - source ci/pip-install/install_requirements.sh
+    - pip install -e .
     - pip install -r ci/pip-install/testing_requirements.txt
     - if [ "$MDTRAJ" = "dev" ]; then pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
     - pip list
 
 script:
+    - python -c "import contact_map"
     - py.test -vv --cov=contact_map --cov-report xml:cov.xml
+      # TODO: add a step here that does extra tests on stable: check that
+      # the installed version will actually pass tests, too
 
 after_success:
     - coveralls

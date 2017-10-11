@@ -1,3 +1,10 @@
+try:
+    from . import version
+except ImportError:
+    from . import _version as version
+
+__version__ = version.version
+
 from .contact_map import (
     ContactMap, ContactFrequency, ContactDifference, ContactCount
 )
