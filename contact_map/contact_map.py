@@ -10,6 +10,14 @@ import scipy
 import pandas as pd
 import mdtraj as md
 
+# matplotlib is technically optional, but required for plotting
+try:
+    import matplotlib
+except ImportError:
+    HAS_MATPLOTLIB = False
+else:
+    HAS_MATPLOTLIB = True
+
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
 #   replace the current mdtraj._compute_neighbors with something that
@@ -53,8 +61,16 @@ def _residue_and_index(residue, topology):
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
 
-    In general, this shouldn't be directly created by a user. However, it is
-    the return object for the several of the contact map codes, and so users
+    This contains all the information about the contacts of a given type.
+    This information can be represented several ways. One is as a list of
+    contact pairs, each associated with the fraction of time the contact
+    occurs. Another is as a matrix, where the rows and columns label the
+    pair number, and the value is the fraction of time. This class provides
+    several methods to get different representations of this data for
+    further analysis.
+
+    In general, instances of this class shouldn't be created by a user using
+    ``__init__``; instead, they will be returned by other methods. So users
     will often need to use this object for analysis.
 
     Parameters
@@ -112,7 +128,56 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        return pd.SparseDataFrame(self.sparse_matrix.todense())
+        mtx = self.sparse_matrix.tocoo()
+        index = list(range(self.n_x))
+        columns = list(range(self.n_y))
+        return pd.SparseDataFrame(mtx, index=index, columns=columns)
+
+    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0):
+        """
+        Plot contact matrix (requires matplotlib)
+
+        Parameters
+        ----------
+        cmap : str
+            color map name, default 'seismic'
+        vmin : float
+            minimum value for color map interpolation; default -1.0
+        vmax : float
+            maximum value for color map interpolation; default 1.0
+
+        Returns
+        -------
+        fig : :class:`matplotlib.Figure`
+            matplotlib figure object for this plot
+        ax : :class:`matplotlib.Axes`
+            matplotlib axes object for this plot
+        """
+        if not HAS_MATPLOTLIB:
+            raise RuntimeError("Error importing matplotlib")
+        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+        cmap_f = matplotlib.pyplot.get_cmap(cmap)
+
+        fig, ax = matplotlib.pyplot.subplots()
+        ax.axis([0, self.n_x, 0, self.n_y])
+        ax.set_facecolor(cmap_f(norm(0.0)))
+
+        for (pair, value) in self.counter.items():
+            pair_list = list(pair)
+            patch_0 = matplotlib.patches.Rectangle(
+                pair_list, 1, 1,
+                facecolor=cmap_f(norm(value)),
+                linewidth=0
+            )
+            patch_1 = matplotlib.patches.Rectangle(
+                (pair_list[1], pair_list[0]), 1, 1,
+                facecolor=cmap_f(norm(value)),
+                linewidth=0
+            )
+            ax.add_patch(patch_0)
+            ax.add_patch(patch_1)
+
+        return (fig, ax)
 
     def most_common(self, obj=None):
         """
