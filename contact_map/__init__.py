@@ -1,6 +1,6 @@
 try:
     from . import version
-except ImportError:
+except ImportError:  # pragma: no cover
     from . import _version as version
 
 __version__ = version.version

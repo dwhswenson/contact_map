@@ -3,6 +3,8 @@ import itertools
 import mdtraj as md
 
 class NearestAtoms(object):
+    """
+    """
     def __init__(self, trajectory, cutoff, frame_number=0):
         # TODO: add support for a subset of all atoms with `atoms`
         self.cutoff = cutoff
@@ -27,7 +29,8 @@ class NearestAtoms(object):
 
 class MinimumDistanceCounter(object):
     # count how many times each atom pair has minimum distance
-    def __init__(self, trajectory, query, haystack, cutoff=0.45):
+    def __init__(self, trajectory, query, haystack):
+        self.contact_map = None
         self.atom_pairs = list(itertools.product(query, haystack))
         distances = md.compute_distances(trajectory,
                                          atom_pairs=self.atom_pairs)
@@ -35,6 +38,11 @@ class MinimumDistanceCounter(object):
         self.minimum_distances = distances.min(axis=1)
         self.topology = trajectory.topology
         self.cutoff = cutoff
+
+    @classmethod
+    def from_contact_map(cls, contact_map):
+        # TODO: create query and haystack from actual contacts
+        pass
 
     def _remap(self, pair_number):
         pair = self.atom_pairs[pair_number]
