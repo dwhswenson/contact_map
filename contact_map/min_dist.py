@@ -29,19 +29,12 @@ class NearestAtoms(object):
         self.frame_number = frame_number
         self.excluded = self._parse_excluded(excluded, trajectory)
         self.nearest, self.nearest_distance = \
-                self._calculate_nearest(trajectory)
+                self._calculate_nearest(trajectory, self.cutoff,
+                                        self.frame_number, self.excluded)
 
 
-    def _calculate_nearest(self, trajectory, cutoff=None, frame_number=None,
-                           excluded=None):
-        if cutoff is None:
-            cutoff = self.cutoff
-        if excluded is None:
-            excluded = self.excluded
-        if frame_number is None:
-            frame_number = self.frame_number
-
-
+    def _calculate_nearest(self, trajectory, cutoff, frame_number,
+                           excluded):
         neighborlist = md.compute_neighborlist(trajectory, cutoff,
                                                frame_number)
         nearest = {}
