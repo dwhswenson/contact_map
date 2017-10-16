@@ -64,7 +64,7 @@ HETATM    5  C1  XXX A   3       0.750   1.750   0.000  1.00  0.00           C
 HETATM    6  C2  XXX A   3       1.250   1.750   0.000  1.00  0.00           C
 HETATM    7  C1  XXX A   4       0.750   2.260   0.000  1.00  0.00           C
 HETATM    8  C2  XXX A   4       1.250   2.260   0.000  1.00  0.00           C
-HETATM    9  C1  XXX A   5       0.700   1.240   0.000  1.00  0.00           C
-HETATM   10  C2  XXX A   5       0.700   0.750   0.000  1.00  0.00           C
+HETATM    9  C1  XXX A   5       0.720   1.240   0.000  1.00  0.00           C
+HETATM   10  C2  XXX A   5       0.720   0.750   0.000  1.00  0.00           C
 ENDMDL
 END
