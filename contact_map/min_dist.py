@@ -20,6 +20,15 @@ class NearestAtoms(object):
         the atom for the key atom_index. Default is ``None``, which ignores
         all atoms in the same residue. Passing an empty dict, ``{}``, will
         result in all atom pairs being considered
+
+
+    Attributes
+    ----------
+    nearest : dict
+        dictionary mapping atom index to the atom index of the nearest atom
+        to this one
+    nearest_distance : dict
+        dictionary mapping atom index to the distance to the nearest atom
     """
     # TODO: this can probably be refactored to match the behavior of the
     # mindist object; can't be fully removed because this will be a more
@@ -31,7 +40,6 @@ class NearestAtoms(object):
         self.nearest, self.nearest_distance = \
                 self._calculate_nearest(trajectory, self.cutoff,
                                         self.frame_number, self.excluded)
-
 
     def _calculate_nearest(self, trajectory, cutoff, frame_number,
                            excluded):
@@ -74,6 +82,27 @@ class NearestAtoms(object):
 
 class MinimumDistanceCounter(object):
     """Count how often each atom pair is the minimum distance.
+
+    Parameters
+    ----------
+    trajectory : :class:`mdtraj.Trajectory`
+        trajectory to be analyzed
+    query : list
+        list of the (integer) atom indices to use as the query
+    haystack : list
+        list of the (integer) atom indices to use as the haystack
+
+
+    Attributes
+    ----------
+    topology : :class:`mdtraj.Topology`
+        the topology object associated with the class
+    atom_pairs : list
+        list of 2-tuples representing atom index pairs to calculate
+        distances for
+    minimum_distances : list
+        the minimum distance between query group and haystack group at each
+        frame of the trajectory
     """
     # count how many times each atom pair has minimum distance
     def __init__(self, trajectory, query, haystack):

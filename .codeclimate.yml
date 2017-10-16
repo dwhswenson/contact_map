@@ -30,6 +30,11 @@ plugins:
             severity: info
         exclude_paths:
             - "**pdb"
+        config:
+            strings:
+                - FIXME
+                - BUG
+                - TODO
 
     duplication:
         enabled: true
