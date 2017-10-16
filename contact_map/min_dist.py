@@ -6,6 +6,9 @@ class NearestAtoms(object):
     """
     Identify nearest atoms (within a cutoff) to an atom.
 
+    This was primarily written to quickly look for atoms that are nearly
+    overlapping, but should be extendable to have other uses.
+
     Parameters
     ----------
     trajectory : :class:`mdtraj.Trajectory`
@@ -64,7 +67,7 @@ class NearestAtoms(object):
     @staticmethod
     def _parse_excluded(excluded, trajectory):
         if excluded == {}:
-            excluded = {idx: [] for idx in range(trajectory.n_atoms)}
+            excluded = {idx: [idx] for idx in range(trajectory.n_atoms)}
         if excluded is None:
             top = trajectory.topology
             excluded = {
@@ -75,9 +78,14 @@ class NearestAtoms(object):
 
     @property
     def sorted_distances(self):
+        """
+        list :
+            3-tuple (atom_index, nearest_atom_index, nearest_distance) for
+            each atom, sorted by distance.
+        """
         listed = [(atom, self.nearest[atom], dist)
                   for (atom, dist) in list(self.nearest_distance.items())]
-        return sorted(listed, key=lambda tup: tup[2])
+        return list(sorted(listed, key=lambda tup: tup[2]))
 
 
 class MinimumDistanceCounter(object):
