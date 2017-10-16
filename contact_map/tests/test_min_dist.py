@@ -34,9 +34,9 @@ class TestNearestAtoms(object):
             4: {0: 0.047,
                 1: 0.04701063709417263364,  # 0.1*sqrt(0.47^2 + 0.01^2)
                 4: 0.051,
-                5: 0.051,
+                5: 0.052,
                 6: 0.051,
-                7: 0.051,
+                7: 0.052,
                 8: 0.04701063709417263364,
                 9: 0.047}
         }[idx]
@@ -51,6 +51,8 @@ class TestNearestAtoms(object):
                 7: 0.05522680508593630387},  # 0.1*sqrt(0.05^2 + 0.55^2)
             4: {0: 0.047,
                 1: 0.04701063709417263364,  # 0.1*sqrt(0.47^2 + 0.01^2
+                6: 0.05000999900019995001,  # 0.1*sqrt(0.50^2 + 0.01^2)
+                7: 0.05000999900019995001,  # 0.1*sqrt(0.50^2 + 0.01^2)
                 8: 0.04701063709417263364,  # 0.1*sqrt(0.47^2 + 0.01^2
                 9: 0.047}
         }[idx]
@@ -88,9 +90,9 @@ class TestNearestAtoms(object):
             4: [(0, 9, 0.047),
                 (1, 8, 0.04701063709417263364),
                 (4, 6, 0.051),
-                (5, 7, 0.051),
+                (5, 7, 0.052),
                 (6, 4, 0.051),
-                (7, 5, 0.051),
+                (7, 5, 0.052),
                 (8, 1, 0.04701063709417263364),
                 (9, 0, 0.047)]
         }[idx]
@@ -106,25 +108,72 @@ class TestNearestAtoms(object):
 
 class TestMinimumDistanceCounter(object):
     def setup(self):
-        pass
+        self.topology = traj.topology
+        query = [4, 5]
+        haystack = list(set(range(10)) - set(query))
+        self.min_dist = MinimumDistanceCounter(traj, query, haystack)
+        self.expected_atom_history_idx = [(5, 6), (4, 6), (5, 6), (5, 7),
+                                          (4, 6)]
+        self.expected_residue_history_idx = [(2, 3), (2, 3), (2, 3), (2, 3),
+                                             (2, 3)]
 
     def test_initialization(self):
-        pytest.skip()
+        assert traj.topology == self.min_dist.topology
+        expected_atom_pairs = [(4, 0), (4, 1), (4, 2), (4, 3),
+                               (4, 6), (4, 7), (4, 8), (4, 9),
+                               (5, 0), (5, 1), (5, 2), (5, 3),
+                               (5, 6), (5, 7), (5, 8), (5, 9)]
+        expected_atom_sets = [frozenset(p) for p in expected_atom_pairs]
+        atom_sets = [frozenset(p) for p in self.min_dist.atom_pairs]
+        assert set(atom_sets) == set(expected_atom_sets)
+        expected_min_dist = [
+            0.045276925690687083132,
+            0.045276925690687083132,
+            0.045276925690687083132,
+            0.05,
+            0.051
+        ]
+        assert self.min_dist.minimum_distances == \
+                pytest.approx(expected_min_dist)
 
-    def test_from_contact_map(self):
-        pytest.skip()
-
-    def test_remap(self):
-        pytest.skip()
+    @staticmethod
+    def _pairs_to_frozensets(pairs, convert=None):
+        if convert is None:
+            convert = lambda x: x
+        return [frozenset([convert(p) for p in pair]) for pair in pairs]
 
     def test_atom_history(self):
-        pytest.skip()
+        expected_history = self._pairs_to_frozensets(
+            pairs=self.expected_atom_history_idx,
+            convert=self.topology.atom
+        )
+        history = self._pairs_to_frozensets(self.min_dist.atom_history)
+        assert history == expected_history
 
     def test_atom_count(self):
-        pytest.skip()
+        expected_atom_idx_count = {(5, 6): 2, (5, 7): 1, (4, 6): 2}
+        expected_atom_count = {
+            self._pairs_to_frozensets(
+                pairs=[k],
+                convert=self.topology.atom
+            )[0]: expected_atom_idx_count[k]
+            for k in expected_atom_idx_count
+        }
+        actual_atom_count = {frozenset(k): v
+                             for (k, v) in self.min_dist.atom_count.items()}
+        assert actual_atom_count == expected_atom_count
 
     def test_residue_history(self):
-        pytest.skip()
+        expected_history = self._pairs_to_frozensets(
+            pairs=self.expected_residue_history_idx,
+            convert=self.topology.residue
+        )
+        history = self._pairs_to_frozensets(self.min_dist.residue_history)
+        assert history == expected_history
 
     def test_residue_count(self):
-        pytest.skip()
+        convert = self.topology.residue
+        expected_count = {frozenset([convert(2), convert(3)]): 5}
+        actual_count = {frozenset(k): v
+                        for (k, v) in self.min_dist.residue_count.items()}
+        assert actual_count == expected_count

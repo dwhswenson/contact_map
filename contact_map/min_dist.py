@@ -121,17 +121,6 @@ class MinimumDistanceCounter(object):
         self.minimum_distances, self._min_pairs = \
                 self._compute_from_atom_pairs(trajectory, self.atom_pairs)
 
-    @classmethod
-    def from_contact_map(cls, trajectory, contact_map):
-        """contact_map based constructor"""
-        min_dist = cls.__new__()
-        min_dist.topology = trajectory.topology
-        min_dist.atom_pairs = [list(c) for c in contact_map.atom_contacts]
-        min_dist.minimum_distances, min_dist._min_pairs = \
-                min_dist._compute_from_atom_pairs(trajectory,
-                                                  min_dist.atom_pairs)
-        return min_dist
-
     @staticmethod
     def _compute_from_atom_pairs(trajectory, atom_pairs):
         distances = md.compute_distances(trajectory, atom_pairs)
