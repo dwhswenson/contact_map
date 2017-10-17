@@ -1,4 +1,22 @@
-engines:
+version: "2"
+
+checks:
+    file-lines:
+        enabled: true
+        config:
+            threshold: 750  # 1000 is really the hard edge
+
+    method-lines:
+        enabled: true
+        config:
+            threshold: 35  # up from default 25 b/c lines, not statements
+
+    argument-count:
+        enabled: true
+        config:
+            threshold: 5  # add 1 for `self` in Python
+
+plugins:
     radon:
         enabled: true
         exclude_paths:
@@ -12,6 +30,11 @@ engines:
             severity: info
         exclude_paths:
             - "**pdb"
+        config:
+            strings:
+                - FIXME
+                - BUG
+                - TODO
 
     duplication:
         enabled: true
@@ -25,14 +48,9 @@ engines:
                 python:
                     mass_threshold: 35
 
-file-lines:
-    config:
-        threshold: 750  # 1000 is really the hard edge
-        # Note that this counts *all* lines, not logical lines. So including
-        # good documentation counts against the default 250-line limit!
-
-exclude_paths:
+exclude_patterns:
     - "docs/"
+    - "**.pdb"
 
 ratings:
     paths:

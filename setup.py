@@ -134,7 +134,7 @@ if not release:
     version = full_version
 """
 
-def write_version_py(filename='contact_map/version.py'):
+def write_version_py(filename):
     # Adding the git rev number needs to be done inside write_version_py(),
     # otherwise the import of numpy.version messes up the build under Python 3.
     git_version_code = inspect.getsource(get_git_version)

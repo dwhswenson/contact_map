@@ -1,21 +1,19 @@
 import os
 import collections
-import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
 import mdtraj as md
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
 # pylint: disable=wrong-import-order, unused-wildcard-import
 
+# includes pytest
 from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
 
-
-traj = md.load(test_file("trajectory.pdb"))
+traj = md.load(find_testfile("trajectory.pdb"))
 
 traj_atom_contact_count = {
     frozenset([0, 8]): 1,
