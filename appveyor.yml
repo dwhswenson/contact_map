@@ -15,16 +15,16 @@ environment:
   matrix:
     - PYTHON: "C:\\Miniconda"
       CONDA_PY: "27"
-      ARCH: 32
+      ARCH: '32'
     - PYTHON: "C:\\Miniconda-x64"
       CONDA_PY: "27"
-      ARCH: 64
+      ARCH: '64'
     - PYTHON: "C:\\Miniconda36"
       CONDA_PY: "36"
-      ARCH: 32
+      ARCH: '32'
     - PYTHON: "C:\\Miniconda36-x64"
       CONDA_PY: "36"
-      ARCH: 64
+      ARCH: '64'
 
 build: false
 
@@ -34,7 +34,7 @@ install:
   # test python version
   - "%CMD_IN_ENV% conda config --add channels omnia"  # TODO: switch to conda-forge?
   - "%CMD_IN_ENV% conda update -yq --all"
-  - "%CMD_IN_ENV% conda install -yq conda-build"
+  - "%CMD_IN_ENV% conda install -yq conda-build=3.0.25"
   - "%CMD_IN_ENV% python --version"
   - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
   # now we do our own install
