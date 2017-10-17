@@ -46,6 +46,11 @@ class NearestAtoms(object):
 
     def _calculate_nearest(self, trajectory, cutoff, frame_number,
                            excluded):
+        """
+        Calculate the nearest atoms from the input data.
+
+        Useful in alterative constructors. See class docs for parameters.
+        """
         neighborlist = md.compute_neighborlist(trajectory, cutoff,
                                                frame_number)
         nearest = {}
@@ -66,6 +71,19 @@ class NearestAtoms(object):
 
     @staticmethod
     def _parse_excluded(excluded, trajectory):
+        """Regularize the input value of ``excluded``.
+
+        ``excluded`` input can be:
+            * dict of {atom_index: [excluded_atom_indices}. This is the
+              desired format, but a pain for users to create in many common
+              cases.
+            * None. This is the default; in this case, this function returns
+              a dict in the desired format allowing all atoms not in the
+              same residue as the atom_index.
+            * empty dict ``{}``. In this case, this function returns a dict
+              in the desired format where no atoms are excluded (absolute
+              nearest atoms)
+        """
         if excluded == {}:
             excluded = {idx: [idx] for idx in range(trajectory.n_atoms)}
         if excluded is None:
@@ -106,8 +124,8 @@ class MinimumDistanceCounter(object):
     topology : :class:`mdtraj.Topology`
         the topology object associated with the class
     atom_pairs : list
-        list of 2-tuples representing atom index pairs to calculate
-        distances for
+        list of 2-tuples representing atom index pairs to use when looking
+        for the minimum distance
     minimum_distances : list
         the minimum distance between query group and haystack group at each
         frame of the trajectory
@@ -123,27 +141,69 @@ class MinimumDistanceCounter(object):
 
     @staticmethod
     def _compute_from_atom_pairs(trajectory, atom_pairs):
+        """Compute minimum distances/atom index pairs from atom_pairs.
+
+        Useful for alternative constructors.
+
+        Parameters
+        ----------
+        trajectory : :class:`mdtraj.Trajectory`
+            trajectory to be analyzed
+        atom_pairs : list
+            list of 2-tuples representing atom index pairs to use when
+            looking for the minimum distance
+
+        Returns
+        -------
+        minimum_distances : list
+            the minimum distance between query group and haystack group at
+            each frame of the trajectory
+        min_pairs : list of 2-tuple
+            the atom indices for the pair of atoms corresponding to the
+            reported minimum distance each frame of the trajectory
+        """
         distances = md.compute_distances(trajectory, atom_pairs)
         min_pairs = distances.argmin(axis=1)
         minimum_distances = distances.min(axis=1)
         return minimum_distances, min_pairs
 
     def _remap(self, pair_number):
+        """Remap a pair of atom indices to the Atom objects"""
         pair = self.atom_pairs[pair_number]
         return (self.topology.atom(pair[0]), self.topology.atom(pair[1]))
 
     @property
     def atom_history(self):
+        """
+        list of 2-tuples :
+            list of atom pairs when represent the minimum distance at each
+            frame of the trajectory
+        """
         return [self._remap(k) for k in self._min_pairs]
 
     @property
     def atom_count(self):
+        """
+        :class:`collections.Counter` :
+            map from atom pair to the number of times that pair is the
+            minimum distance
+        """
         return collections.Counter(self.atom_history)
 
     @property
     def residue_history(self):
+        """
+        list of 2-tuples :
+            list of residue pairs when represent the minimum distance at
+            each frame of the trajectory
+        """
         return [(a[0].residue, a[1].residue) for a in self.atom_history]
 
     @property
     def residue_count(self):
+        """
+        :class:`collections.Counter` :
+            map from residue pair to the number of times that pair is the
+            minimum distance
+        """
         return collections.Counter(self.residue_history)
