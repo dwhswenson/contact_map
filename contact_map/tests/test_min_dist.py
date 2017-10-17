@@ -126,15 +126,18 @@ class TestMinimumDistanceCounter(object):
         expected_atom_sets = [frozenset(p) for p in expected_atom_pairs]
         atom_sets = [frozenset(p) for p in self.min_dist.atom_pairs]
         assert set(atom_sets) == set(expected_atom_sets)
-        expected_min_dist = [
+        expected_min_dist = pytest.approx([
             0.045276925690687083132,
             0.045276925690687083132,
             0.045276925690687083132,
             0.05,
             0.051
-        ]
-        assert self.min_dist.minimum_distances == \
-                pytest.approx(expected_min_dist)
+        ])
+        # In Py-3.4 (at least on Travis), the equality returned a numpy
+        # array, leading to a need for .all(). Elsewhere it returned a bool.
+        # Forcing minimum_distances to list should fix.
+        minimum_distances = self.min_dist.minimum_distances.tolist()
+        assert minimum_distances == expected_min_dist
 
     @staticmethod
     def _pairs_to_frozensets(pairs, convert=None):

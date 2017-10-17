@@ -15,16 +15,16 @@ environment:
   matrix:
     - PYTHON: "C:\\Miniconda"
       CONDA_PY: "27"
-      ARCH: "32"
+      ARCH: 32
     - PYTHON: "C:\\Miniconda-x64"
       CONDA_PY: "27"
-      ARCH: "64"
+      ARCH: 64
     - PYTHON: "C:\\Miniconda36"
       CONDA_PY: "36"
-      ARCH: "32"
+      ARCH: 32
     - PYTHON: "C:\\Miniconda36-x64"
       CONDA_PY: "36"
-      ARCH: "64"
+      ARCH: 64
 
 build: false
 

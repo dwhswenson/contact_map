@@ -319,21 +319,20 @@ class ContactObject(object):
         -------
         list :
             Atom contact pairs involving given residue, order of frequency.
-            Referring to the list as``l``, each element of the list ``l[e]``
-            consists of two parts: ``l[e][0]`` is a list containing the two
-            MDTraj Atom objects that make up the contact, and ``l[e][1]`` is
-            the measure of how often the contact occurs.
+            Referring to the list as ``l``, each element of the list
+            ``l[e]`` consists of two parts: ``l[e][0]`` is a list containing
+            the two MDTraj Atom objects that make up the contact, and
+            ``l[e][1]`` is the measure of how often the contact occurs.
         """
         residue = _residue_and_index(residue, self.topology)[0]
         residue_atoms = set(atom.index for atom in residue.atoms)
         results = []
-        for contact in self.atom_contacts.most_common_idx():
-            atoms = contact[0]
-            number = contact[1]
-            for atom in atoms:
-                if atom in residue_atoms:
-                    results.append(([self.topology.atom(a) for a in atoms],
-                                    number))
+        for atoms, number in self.atom_contacts.most_common_idx():
+            atoms_in_residue = atoms & residue_atoms
+            if atoms_in_residue:
+                as_atoms = [self.topology.atom(a) for a in atoms]
+                results += [(as_atoms, number)]
+
         return results
 
     def most_common_atoms_for_contact(self, contact_pair):
@@ -350,7 +349,7 @@ class ContactObject(object):
         -------
         list :
             Atom contact pairs for the residue contact pair, in order of
-            frequency.  Referring to the list as``l``, each element of the
+            frequency.  Referring to the list as ``l``, each element of the
             list ``l[e]`` consists of two parts: ``l[e][0]`` is a list
             containing the two MDTraj Atom objects that make up the contact,
             and ``l[e][1]`` is the measure of how often the contact occurs.
