@@ -1,6 +1,5 @@
 .. _api:
 
-.. currentmodule:: contact_map
 
 #############
 API Reference
@@ -9,6 +8,8 @@ API Reference
 Contact maps
 ------------
 
+.. currentmodule:: contact_map
+
 .. autosummary:: 
     :toctree: api/generated/
 
@@ -16,3 +17,14 @@ Contact maps
     ContactMap
     ContactFrequency
     ContactDifference
+
+Minimum Distance (and related)
+------------------------------
+
+.. currentmodule:: min_dist
+
+.. autosummary::
+    :toctree: api/generated/
+
+    MinimumDistanceCounter
+    NearestAtoms
