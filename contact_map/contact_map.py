@@ -13,6 +13,7 @@ import mdtraj as md
 # matplotlib is technically optional, but required for plotting
 try:
     import matplotlib
+    import matplotlib.pyplot as plt
 except ImportError:
     HAS_MATPLOTLIB = False
 else:
@@ -156,9 +157,9 @@ class ContactCount(object):
         if not HAS_MATPLOTLIB:
             raise RuntimeError("Error importing matplotlib")
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap_f = matplotlib.pyplot.get_cmap(cmap)
+        cmap_f = plt.get_cmap(cmap)
 
-        fig, ax = matplotlib.pyplot.subplots()
+        fig, ax = plt.subplots()
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 

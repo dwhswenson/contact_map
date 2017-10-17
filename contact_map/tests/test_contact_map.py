@@ -327,6 +327,13 @@ class TestContactCount(object):
             [0.2, 0.0, 0.2, 0.0, 0.0]  # 4
         ])
 
+    # HAS_MATPLOTLIB imported by contact_map wildcard
+    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
+    def test_plot(self):
+        # purely smoke test
+        self.residue_contacts.plot()
+        self.atom_contacts.plot()
+
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
         assert self.atom_contacts.n_x == self.topology.n_atoms
@@ -532,3 +539,4 @@ class TestContactDifference(object):
         reloaded = ContactDifference.from_file(test_file)
         assert diff.atom_contacts.counter == reloaded.atom_contacts.counter
         os.remove(test_file)
+
