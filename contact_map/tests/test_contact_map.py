@@ -354,9 +354,10 @@ class TestContactCount(object):
         assert isinstance(atom_df, pd.SparseDataFrame)
         assert isinstance(residue_df, pd.SparseDataFrame)
 
-        assert_array_equal(atom_df.to_dense().as_matrix(), self.atom_matrix)
+        assert_array_equal(atom_df.to_dense().as_matrix(),
+                           zero_to_nan(self.atom_matrix))
         assert_array_equal(residue_df.to_dense().as_matrix(),
-                           self.residue_matrix)
+                           zero_to_nan(self.residue_matrix))
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_most_common(self, obj_type):
