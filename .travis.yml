@@ -41,6 +41,7 @@ install:
     - pip list
 
 script:
+    - export MPLBACKEND=PS
     # Test that the import works, then run the test suite
     - python -c "import contact_map"
     - py.test -vv --cov=contact_map --cov-report xml:cov.xml
