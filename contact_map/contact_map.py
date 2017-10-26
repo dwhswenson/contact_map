@@ -154,7 +154,7 @@ class ContactCount(object):
         ax : :class:`matplotlib.Axes`
             matplotlib axes object for this plot
         """
-        if not HAS_MATPLOTLIB:
+        if not HAS_MATPLOTLIB:  # pragma: no cover
             raise RuntimeError("Error importing matplotlib")
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
