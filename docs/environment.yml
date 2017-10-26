@@ -1,0 +1,10 @@
+name: test
+channels:
+    - omnia
+    - defaults
+dependencies:
+    - python
+    - mdtraj
+    - numpy
+    - scipy
+    - pandas

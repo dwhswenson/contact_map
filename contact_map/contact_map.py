@@ -5,10 +5,10 @@ Contact map analysis.
 # Licensed under LGPL, version 2.1 or greater
 import collections
 import itertools
+import pickle
 import scipy
 import pandas as pd
 import mdtraj as md
-import pickle
 
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
@@ -40,61 +40,39 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
-class NearestAtoms(object):
-    def __init__(self, trajectory, cutoff, frame_number=0):
-        # TODO: add support for a subset of all atoms with `atoms`
-        self.cutoff = cutoff
-        self.frame_number = frame_number
-        neighborlist = md.compute_neighborlist(trajectory, self.cutoff,
-                                               self.frame_number)
-        frame = trajectory[frame_number]
-        self.nearest = {}
-        self.nearest_distance = {}
-        for (atom, neighbors) in enumerate(neighborlist):
-            pairs = itertools.product([atom], neighbors)
-            distances = md.compute_distances(frame, pairs)[0]  # 0th frame
-            nearest = sorted(zip(distances, neighbors))[0]
-            self.nearest[atom] = nearest[1]
-            self.nearest_distance[atom] = nearest[0]
+def _residue_and_index(residue, topology):
+    res = residue
+    try:
+        res_idx = res.index
+    except AttributeError:
+        res_idx = residue
+        res = topology.residue(res_idx)
+    return (res, res_idx)
 
-    @property
-    def sorted_distances(self):
-        listed = [(atom, self.nearest[atom], dist)
-                  for (atom, dist) in list(self.nearest_distance.items())]
-        return sorted(listed, key=lambda tup: tup[2])
-
-class MinimumDistanceCounter(object):
-    # count how many times each atom pair has minimum distance
-    def __init__(self, trajectory, query, haystack, cutoff=0.45):
-        self.atom_pairs = list(itertools.product(query, haystack))
-        distances = md.compute_distances(trajectory,
-                                         atom_pairs=self.atom_pairs)
-        self._min_pairs = distances.argmin(axis=1)
-        self.minimum_distances = distances.min(axis=1)
-        self.topology = trajectory.topology
-        self.cutoff = cutoff
-
-    def _remap(self, pair_number):
-        pair = self.atom_pairs[pair_number]
-        return (self.topology.atom(pair[0]), self.topology.atom(pair[1]))
-
-    @property
-    def atom_history(self):
-        return [self._remap(k) for k in self._min_pairs]
-
-    @property
-    def atom_count(self):
-        return collections.Counter(self.atom_history)
-
-    @property
-    def residue_history(self):
-        return [(a[0].residue, a[1].residue) for a in self.atom_history]
-
-    @property
-    def residue_count(self):
-        return collections.Counter(self.residue_history)
 
 class ContactCount(object):
+    """Return object when dealing with contacts (residue or atom).
+
+    In general, this shouldn't be directly created by a user. However, it is
+    the return object for the several of the contact map codes, and so users
+    will often need to use this object for analysis.
+
+    Parameters
+    ----------
+    counter : :class:`collections.Counter`
+        the counter describing the count of how often the contact occurred;
+        key is a frozenset of a pair of numbers (identifying the
+        atoms/residues); value is the raw count of the number of times it
+        occurred
+    object_f : callable
+        method to obtain the object associated with the number used in
+        ``counter``; typically :meth:`mdtraj.Topology.residue` or
+        :meth:`mdtraj.Topology.atom`.
+    n_x : int
+        number of objects in the x direction (used in plotting)
+    n_y : int
+        number of objects in the y direction (used in plotting)
+    """
     def __init__(self, counter, object_f, n_x, n_y):
         self._counter = counter
         self._object_f = object_f
@@ -103,10 +81,21 @@ class ContactCount(object):
 
     @property
     def counter(self):
+        """
+        :class:`collections.Counter` :
+            keys use index number; count is contact occurrences
+        """
         return self._counter
 
     @property
     def sparse_matrix(self):
+        """
+        :class:`scipy.sparse.dok.dok_matrix` :
+            sparse matrix representation of contacts
+
+            Rows/columns correspond to indices and the values correspond to
+            the count
+        """
         mtx = scipy.sparse.dok_matrix((self.n_x, self.n_y))
         for (k, v) in self._counter.items():
             key = list(k)
@@ -116,9 +105,42 @@ class ContactCount(object):
 
     @property
     def df(self):
+        """
+        :class:`pandas.SparseDataFrame` :
+            DataFrame representation of the contact matrix
+
+            Rows/columns correspond to indices and the values correspond to
+            the count
+        """
         return pd.SparseDataFrame(self.sparse_matrix.todense())
 
     def most_common(self, obj=None):
+        """
+        Most common values (ordered) with object as keys.
+
+        This uses the objects for the contact pair (typically MDTraj
+        ``Atom`` or ``Residue`` objects), instead of numeric indices. This
+        is more readable and can be easily used for further manipulation.
+
+        Parameters
+        ----------
+        obj : MDTraj Atom or Residue
+            if given, the return value only has entries including this
+            object (allowing one to, for example, get the most common
+            contacts with a specific residue)
+
+        Returns
+        -------
+        list :
+            the most common contacts in order. If the list is ``l``, then
+            each element ``l[e]`` is a tuple with two parts: ``l[e][0]`` is
+            the key, which is a pair of Atom or Residue objects, and
+            ``l[e][1]`` is the count of how often that contact occurred.
+
+        See also
+        --------
+        most_common_idx : same thing, using index numbers as key
+        """
         if obj is None:
             result = [
                 ([self._object_f(idx) for idx in common[0]], common[1])
@@ -134,6 +156,22 @@ class ContactCount(object):
         return result
 
     def most_common_idx(self):
+        """
+        Most common values (ordered) with indices as keys.
+
+        Returns
+        -------
+        list :
+            the most common contacts in order. The if the list is ``l``,
+            then each element ``l[e]`` consists of two parts: ``l[e][0]`` is
+            a pair of integers, representing the indices of the objects
+            associated with the contact, and ``l[e][1]`` is the count of how
+            often that contact occurred
+
+        See also
+        --------
+        most_common : same thing, using objects as key
+        """
         return self._counter.most_common()
 
 
@@ -148,9 +186,9 @@ class ContactObject(object):
         # all inits required: no defaults for abstract class!
         self._topology = topology
         if query is None:
-            query = topology.select("not water and not symbol == 'H'")
+            query = topology.select("not water and symbol != 'H'")
         if haystack is None:
-            haystack = topology.select("not water and not symbol == 'H'")
+            haystack = topology.select("not water and symbol != 'H'")
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
@@ -168,42 +206,76 @@ class ContactObject(object):
         filename : string
             the file to write to
         mode : 'w' or 'a'
-            file writing mode. Use 'w' to overwrite, 'a' to append.
+            file writing mode. Use 'w' to overwrite, 'a' to append. Note
+            that writing by bytes ('b' flag) is automatically added.
+
+        See also
+        --------
+        from_file : load from generated file
         """
-        f = open(filename, mode)
-        pickle.dump(self, f)
-        f.close()
+        with open(filename, mode+"b") as f:
+            pickle.dump(self, f)
 
     @classmethod
     def from_file(cls, filename):
-        f = open(filename, "r")
-        return pickle.load(f)
+        """Load this object from a given file
+
+        Parameters
+        ----------
+        filename : string
+            the file to read from
+
+        Returns
+        -------
+        :class:`.ContactObject`:
+            the reloaded object
+
+        See also
+        --------
+        save_to_file : save to a file
+        """
+        with open(filename, "rb") as f:
+            reloaded = pickle.load(f)
+        return reloaded
 
     def __sub__(self, other):
         return ContactDifference(positive=self, negative=other)
 
     @property
     def cutoff(self):
+        """float : cutoff distance for contacts, in nanometers"""
         return self._cutoff
 
     @property
     def n_neighbors_ignored(self):
+        """int : number of neighbor residues (in same chain) to ignore"""
         return self._n_neighbors_ignored
 
     @property
     def query(self):
+        """list of int : indices of atoms to include as query"""
         return list(self._query)
 
     @property
     def haystack(self):
+        """list of int : indices of atoms to include as haystack"""
         return list(self._haystack)
 
     @property
     def topology(self):
+        """
+        :class:`mdtraj.Topology` :
+            topology object for this system
+
+            The topology includes information about the atoms, how they are
+            grouped into residues, and how the residues are grouped into
+            chains.
+        """
         return self._topology
 
     @property
     def residue_query_atom_idxs(self):
+        """dict : maps query residue index to atom indices in query"""
         result = {}
         for atom_idx in self._query:
             residue_idx = self.topology.atom(atom_idx).residue.index
@@ -216,6 +288,7 @@ class ContactObject(object):
 
     @property
     def residue_ignore_atom_idxs(self):
+        """dict : maps query residue index to atom indices to ignore"""
         result = {}
         for residue_idx in self.residue_query_atom_idxs.keys():
             residue = self.topology.residue(residue_idx)
@@ -233,42 +306,62 @@ class ContactObject(object):
         return result
 
     def most_common_atoms_for_residue(self, residue):
-        try:
-            residue_idx = residue.index
-        except AttributeError:
-            residue_idx = residue
-            residue = self.topology.residue(residue_idx)
+        """
+        Most common atom contact pairs for contacts with the given residue
 
+        Parameters
+        ----------
+        residue : Residue or int
+            the Residue object or index representing the residue for which
+            the most common atom contact pairs will be calculated
+
+        Returns
+        -------
+        list :
+            Atom contact pairs involving given residue, order of frequency.
+            Referring to the list as ``l``, each element of the list
+            ``l[e]`` consists of two parts: ``l[e][0]`` is a list containing
+            the two MDTraj Atom objects that make up the contact, and
+            ``l[e][1]`` is the measure of how often the contact occurs.
+        """
+        residue = _residue_and_index(residue, self.topology)[0]
         residue_atoms = set(atom.index for atom in residue.atoms)
         results = []
-        for contact in self.atom_contacts.most_common_idx():
-            atoms = contact[0]
-            number = contact[1]
-            for atom in atoms:
-                if atom in residue_atoms:
-                    results.append(([self.topology.atom(a) for a in atoms],
-                                    number))
+        for atoms, number in self.atom_contacts.most_common_idx():
+            atoms_in_residue = atoms & residue_atoms
+            if atoms_in_residue:
+                as_atoms = [self.topology.atom(a) for a in atoms]
+                results += [(as_atoms, number)]
+
         return results
 
     def most_common_atoms_for_contact(self, contact_pair):
-        contact_pair = frozenset(contact_pair)
-        res_A = list(contact_pair)[0]
-        res_B = list(contact_pair)[1]
-        try:
-            res_A_idx = res_A.index
-        except AttributeError:
-            res_A_idx = res_A
-            res_A = self.topology.residue(res_A_idx)
-        try:
-            res_B_idx = res_B.index
-        except AttributeError:
-            resB_idx = res_B
-            res_B = self.topology.residue(res_B_idx)
-        atom_idxs_A = set(atom.index for atom in res_A.atoms)
-        atom_idxs_B = set(atom.index for atom in res_B.atoms)
+        """
+        Most common atom contacts for a given residue contact pair
+
+        Parameters
+        ----------
+        contact_pair : length 2 list of Residue or int
+            the residue contact pair for which the most common atom contact
+            pairs will be calculated
+
+        Returns
+        -------
+        list :
+            Atom contact pairs for the residue contact pair, in order of
+            frequency.  Referring to the list as ``l``, each element of the
+            list ``l[e]`` consists of two parts: ``l[e][0]`` is a list
+            containing the two MDTraj Atom objects that make up the contact,
+            and ``l[e][1]`` is the measure of how often the contact occurs.
+        """
+        contact_pair = list(contact_pair)
+        res_1 = _residue_and_index(contact_pair[0], self.topology)[0]
+        res_2 = _residue_and_index(contact_pair[1], self.topology)[0]
+        atom_idxs_1 = set(atom.index for atom in res_1.atoms)
+        atom_idxs_2 = set(atom.index for atom in res_2.atoms)
         all_atom_pairs = [
             frozenset(pair)
-            for pair in itertools.product(atom_idxs_A, atom_idxs_B)
+            for pair in itertools.product(atom_idxs_1, atom_idxs_2)
         ]
         result = [([self.topology.atom(idx) for idx in contact[0]], contact[1])
                   for contact in self.atom_contacts.most_common_idx()
@@ -308,14 +401,14 @@ class ContactObject(object):
                 contact_neighbors = contact_neighbors & self._haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
-                                  # for neighb in contact_neighbors)
+                #                   for neighb in contact_neighbors)
                 local_pairs = set(map(
                     frozenset,
                     itertools.product([atom_idx], contact_neighbors)
                 ))
                 contact_pairs |= local_pairs
                 # contact_pairs |= set(frozenset((atom_idx, neighb))
-                                     # for neighb in contact_neighbors)
+                #                      for neighb in contact_neighbors)
                 local_residue_partners = set(self._atom_idx_to_residue_idx[a]
                                              for a in contact_neighbors)
                 local_res_pairs = set(map(
@@ -326,8 +419,8 @@ class ContactObject(object):
 
         atom_contacts = collections.Counter(contact_pairs)
         # residue_pairs = set(
-            # frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
-            # for pair in contact_pairs
+        #     frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
+        #     for pair in contact_pairs
         # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
@@ -373,8 +466,11 @@ class ContactFrequency(ContactObject):
     ----------
     trajectory : mdtraj.Trajectory
         Trajectory (segment) to analyze
-    query_residues : list of int
-        Indices of the residues to be included as query. Default `None`
+    query : list of int
+        Indices of the atoms to be included as query. Default ``None``
+        means all atoms.
+    haystack : list of int
+        Indices of the atoms to be included as haystack. Default ``None``
         means all atoms.
     cutoff : float
         Cutoff distance for contacts, in nanometers. Default 0.45.
@@ -401,9 +497,7 @@ class ContactFrequency(ContactObject):
         # TODO: this whole thing should be cleaned up and should replace
         # MDTraj's really slow old compute_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
-        topology = self.topology
         trajectory = self.trajectory
-        cutoff = self.cutoff
         self._atom_contacts_count = collections.Counter([])
         self._residue_contacts_count = collections.Counter([])
 
@@ -427,6 +521,7 @@ class ContactFrequency(ContactObject):
 
     @property
     def n_frames(self):
+        """Number of frames in the mapped trajectory"""
         return self._n_frames
 
     def _check_compatibility(self, other):
@@ -470,8 +565,8 @@ class ContactFrequency(ContactObject):
     @property
     def atom_contacts(self):
         """Atoms pairs mapped to fraction of trajectory with that contact"""
-        n_x = len(self.haystack)
-        n_y = len(self.query)
+        n_x = self.topology.n_atoms
+        n_y = self.topology.n_atoms
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._atom_contacts_count.items()
@@ -493,7 +588,9 @@ class ContactDifference(ContactObject):
     Contact map comparison (atomic and residue).
 
     This can compare single frames or entire trajectories (or even mix the
-    two!)
+    two!) While this can be directly instantiated by the user, the more
+    common way to make this object is by using the ``-`` operator, i.e.,
+    ``diff = map_1 - map_2``.
     """
     def __init__(self, positive, negative):
         self.positive = positive
@@ -508,7 +605,7 @@ class ContactDifference(ContactObject):
     def __sub__(self, other):
         raise NotImplementedError
 
-    def contact_map(self, *args, **kwargs):
+    def contact_map(self, *args, **kwargs):  #pylint: disable=W0221
         raise NotImplementedError
 
     @property

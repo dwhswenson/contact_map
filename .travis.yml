@@ -1,0 +1,52 @@
+language: python
+
+branches:
+    only:
+        - master
+        - stable
+
+python:
+    - "2.7"
+    - "3.4"
+    - "3.5"
+    - "3.6"
+    #- "3.7-dev"  # need to do custom requirements install for this
+
+env:
+    global:
+        - CANONICAL_PYTHON="3.6"
+        - CANONICAL_MDTRAJ="release"
+        - CODECLIMATE=""  # add this later
+    matrix:
+        - MDTRAJ="release"
+        - MDTRAJ="dev"
+
+matrix:
+    exclude:  # don't run MDTRAJ dev for everything
+        - env: MDTRAJ="dev"
+          python: "3.4"
+        - env: MDTRAJ="dev"
+          python: "3.5"
+
+before_install:
+    # TODO: add proper stuff here
+    - echo "before install"
+
+install:
+    - source ci/pip-install/install_requirements.sh
+    - pip install -e .
+    - pip install -r ci/pip-install/testing_requirements.txt
+    - if [ "$MDTRAJ" = "dev" ]; then pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
+    - pip list
+
+script:
+    # Test that the import works, then run the test suite
+    - python -c "import contact_map"
+    - py.test -vv --cov=contact_map --cov-report xml:cov.xml
+      # TODO: add a step here that does extra tests on stable: check that
+      # the installed version will actually pass tests, too
+
+after_success:
+    # upload coverage information to various services
+    - coveralls
+    - python-codacy-coverage -r cov.xml
