@@ -2,9 +2,12 @@ name: test
 channels:
     - omnia
     - defaults
+    - conda-forge
 dependencies:
     - python
     - mdtraj
     - numpy
     - scipy
     - pandas
+    - nbsphinx
+    - pandoc
