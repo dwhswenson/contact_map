@@ -1,21 +1,19 @@
 import os
 import collections
-import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
 import mdtraj as md
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
 # pylint: disable=wrong-import-order, unused-wildcard-import
 
+# includes pytest
 from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
 
-
-traj = md.load(test_file("trajectory.pdb"))
+traj = md.load(find_testfile("trajectory.pdb"))
 
 traj_atom_contact_count = {
     frozenset([0, 8]): 1,
@@ -329,6 +327,13 @@ class TestContactCount(object):
             [0.2, 0.0, 0.2, 0.0, 0.0]  # 4
         ])
 
+    # HAS_MATPLOTLIB imported by contact_map wildcard
+    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
+    def test_plot(self):
+        # purely smoke test
+        self.residue_contacts.plot()
+        self.atom_contacts.plot()
+
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
         assert self.atom_contacts.n_x == self.topology.n_atoms
@@ -349,9 +354,10 @@ class TestContactCount(object):
         assert isinstance(atom_df, pd.SparseDataFrame)
         assert isinstance(residue_df, pd.SparseDataFrame)
 
-        assert_array_equal(atom_df.to_dense().as_matrix(), self.atom_matrix)
+        assert_array_equal(atom_df.to_dense().as_matrix(),
+                           zero_to_nan(self.atom_matrix))
         assert_array_equal(residue_df.to_dense().as_matrix(),
-                           self.residue_matrix)
+                           zero_to_nan(self.residue_matrix))
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_most_common(self, obj_type):
@@ -534,3 +540,4 @@ class TestContactDifference(object):
         reloaded = ContactDifference.from_file(test_file)
         assert diff.atom_contacts.counter == reloaded.atom_contacts.counter
         os.remove(test_file)
+
