@@ -93,7 +93,7 @@ jobs:
       if: "(branch = stable) and (not type in (pull_request, cron))"
       python: '3.6'
       install:
-        - pip install .  # usually would just need to install autorelease
+        - pip install autorelease
       script:
         - VERSION=`python setup.py --version`
         - PROJECT=`python setup.py --name`
