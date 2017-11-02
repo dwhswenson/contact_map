@@ -11,3 +11,4 @@ dependencies:
     - pandas
     - nbsphinx
     - pandoc
+    - jupyter
