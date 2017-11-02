@@ -59,7 +59,7 @@ jobs:
     - stage: deploy testpypi
       # This stage runs when you make a PR to stable. It tests that the
       # deployment to testpypi works.
-      if: "(branch = master) and (type = pull_request)"
+      if: "(branch = stable) and (type = pull_request)"
       python: '3.6'
       addons:
         apt_packages:
@@ -78,11 +78,13 @@ jobs:
       if: "(branch = master) and (type = pull_request)"
       python: '3.6'
       install:
-        - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple autorelease
+        - source ci/pip-install/install_requirements.sh
+        - pip install -r ci/pip-install/testing_requirements.txt
+        - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple contact_map
       script:
         - cd ~
-        - python -c "import autorelease"
-        - echo "py.test --pyargs autorelease"  # if I had py.test stuff
+        - python -c "import contact_map"
+        - py.test --pyargs contact_map
       after_success: skip
     - stage: cut release
       # This stage runs after you merge a PR into stable. It cuts the GitHub
