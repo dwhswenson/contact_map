@@ -59,7 +59,7 @@ jobs:
     - stage: deploy testpypi
       # This stage runs when you make a PR to stable. It tests that the
       # deployment to testpypi works.
-      if: "(branch = stable) and (type = pull_request)"
+      if: "(branch = master) and (type = pull_request)"
       python: '3.6'
       addons:
         apt_packages:
@@ -75,7 +75,7 @@ jobs:
       # This stage run when you make a PR to stable; after the package has
       # been deployed to testpypi. It checks that the deployed package
       # works.
-      if: "(branch = stable) and (type = pull_request)"
+      if: "(branch = master) and (type = pull_request)"
       python: '3.6'
       install:
         - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple autorelease

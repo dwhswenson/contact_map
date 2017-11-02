@@ -19,6 +19,8 @@
 import os
 import sys
 import sphinx_rtd_theme
+import pkg_resources
+import packaging.version
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../contact_map/'))
 sys.path.append(os.path.abspath('_themes'))
@@ -33,10 +35,13 @@ sys.path.append(os.path.abspath('_themes'))
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
+release = pkg_resources.get_distribution('contact_map').version
+version = packaging.version.Version(release).base_version
+
 # The short X.Y version.
-version = u'0.1.3'
+#version = u'0.1.3'
 # The full version, including alpha/beta/rc tags. (dev0 for development)
-release = u'0.1.3.dev0'
+#release = u'0.1.3.dev0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom

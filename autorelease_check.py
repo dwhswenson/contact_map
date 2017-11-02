@@ -1,6 +1,5 @@
 #/usr/bin/env python
 from __future__ import print_function
-import sys
 import setup
 import contact_map
 from autorelease import DefaultCheckRunner, conda_recipe_version
