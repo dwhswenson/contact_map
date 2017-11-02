@@ -35,10 +35,10 @@ It also facilitates visualization of the contact matrix, with colors
 representing the fraction of trajectory time that the contact was present.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    installing
-   examples
+   examples/index
    api
 
 .. Add understanding_docs at some point

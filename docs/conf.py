@@ -18,12 +18,18 @@
 #
 import os
 import sys
+import shutil
 import sphinx_rtd_theme
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../contact_map/'))
 sys.path.append(os.path.abspath('_themes'))
 
 # -- General configuration ------------------------------------------------
+try:
+    shutil.copytree(os.path.abspath("../examples"),
+                    os.path.abspath("examples/nb"))
+except OSError:
+    pass  # should make sure a back-up is in place
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -49,7 +55,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'nbsphinx',
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
 # Napolean settings
@@ -110,7 +118,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
+                    '**ipynb-checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
