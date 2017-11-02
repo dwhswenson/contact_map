@@ -9,6 +9,7 @@ dependencies:
     - numpy
     - scipy
     - pandas
+    - packaging
     - nbsphinx
     - pandoc
     - jupyter
