@@ -1,7 +1,7 @@
 package:
   name: contact_map
   # add ".dev0" for unreleased versions
-  version: "0.1.4.dev0"
+  version: "0.1.4"
 
 source:
   path: ../../
