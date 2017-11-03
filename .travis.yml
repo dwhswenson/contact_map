@@ -109,7 +109,7 @@ jobs:
       install: skip
       script:
           - pandoc --from=markdown --to=rst --output=README.rst README.md
-      after_success: skip
+      after_success: true
       deploy:
         provider: pypi
         distributions: sdist bdist_wheel
