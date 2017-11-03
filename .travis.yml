@@ -97,7 +97,7 @@ jobs:
       script:
         - VERSION=`python setup.py --version`
         - PROJECT=`python setup.py --name`
-        - python autorelease/scripts/autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
+        - python autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
       after_success: skip
     - stage: deploy pypi
       # This stage runs when a version-labelled tag is made. It deploys the
