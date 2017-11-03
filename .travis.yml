@@ -20,7 +20,7 @@ env:
     # TWINE_PASSWORD
     - secure: "onsUSX6Yxt0HJApAsyUr5iFQW1ZngBiMxKmdiI5aN0TqnVSQ6819xx0YIxBjgburG/pFoW1F8bh8KYITV6TKK7RpcwdOspqpeO0X6L0DdBvNWQdl99QtJZcuMS3nPBiJ4guwrJCkQa/iKgZ7k27YukTw5pgKKDgC2d10P5SQiVFHNkX8lo4FzZIBnpA93Nq9G+j2pi14PpGtxaXhktqLOSvLvy/7BIWfzy69HDGjKZ38SMF4RFRnHiBI0G2uON6N5AuLovBWpRrmPmCTiX3p2lgxss8oUSKsA9OlikAoGlLyOjzMU2Fu3JqgoXPSyjDzkqO/Bavd1S03RYUeB5cRM9kBoORjCYl2dBCAmh7U41ZigvivYC2UZ/2p300f9YmolZ4vcj9tz4THXfF5/ZgIoARFIVk3fIQOHJCnXwa3gDcf0AEmsYOUOSKJKyYxruQhyjb2reFxUyA6bqtelV82qpMT53fSZ1/ZJjA+yJJgbeB9qkrMjvUf9AjlY8faqXyIafJsogFuvg1rg+FddMlc56zUWCEdc/pgbTesQuF8GCqje++7eaN68KiWBPwjDSX6cuNkeg86xx1E4VsRcXH6rQ9JXCsGs/HN4JRZ5J+ZH4YOHaUc5pTG82mTEZHGCjAN+BuhGfSFcgSoGO6oOHRGVjw47emOLvNpjS05B/zu/4c="
     # AUTORELEASE_TOKEN
-    - secure: "ebgtSYLiy9ACnCCynWxSvw7Bhb1/aRBV3ojx/O/jwQZP0jt/yo8vo3LjVM/rrrlQ3uNnHxcyLfrWT0GRaiZqJ6xPuORB7vkLsUknnnY2on7S2A8iiXdpszXDcEIUBdqGwAcReZAo5RcfYWdexgt27deTw/amcWFv4qh/8eoAGPamUHTpZCZpUth9s5JioasUzTgiJkkGd/DpZ+d2xugevI0ujz6UMOJwyrzK0G/Oo6tLYdtamw8XGiD1PQ1M/+HC/ztNne1sjL+p09vxzIZUHBCPS+GzySVKoWQ+fjPxth4Fh/JrEuD2rrDUO9icK2KzMZ9tmA2g3yyLvU1h0ZbfbwkiL02Ur4jdb7bN3Kq+SfpdUEcGArM5YZ4bsos4VKPqMpubV0siwd3jFZFErZ3NpkjbBsGowejcW6KnLRLDSoICyiB2NNcEciUEmugR9XLovsFFoZuEEuwTzZnR7K73BlDl0idulCCehT4X03B8FkWv+lYFxmKU7AgRgG2x2q1dGLAziNdvdWUp9lTBqoJyoyW6eRSMW+UvCgBqYcW9ADM54/vy5xN+SWBZTndW8PfbDg9b2JwGLs/8upWdBEznSs5dSoVt1XZPalR/23RTxKKM587hR0cyGd6ofq6cxeDV2wMRN9gyh6oBzoCgG7UMcNA7kqgLnARfsNy7ajbr91U="
+    - secure: "g+pFYJ62KN/gfnzrzQlfRTyDwvIpwQp4aQvwB4GVrWUISoOx3X8IlK5+S26Wb/BK4cCIGAKWs+dVgCr1Ag0v4TBhmi4CBlkZXQTNv3TcbGwyhmXYbO7kf03lpapsxKu5JkFlZqe0fniwocut6d2BiAuRQjvJ1B+xhEkl3t/ARarg0G/e+1geNyCopULD3tzcUDV4BFUw6cjfm4Sqn008m+7F8vgNOG+HitPtjggmZfFgoZVvS3nnZbFxGq99Uit8PST8Rdus3PJFNJlguf4XTpsdYZeW2CjFfd9P/v8hvfM3ATSCJ8Mzh8PuWJFP48Be6IvJAn6qhgJW7jSDK6bcCahS0BXBr0EqT9maC3jNXTQiem8WT990mUbK9tpbj6a9HPaD/E1XfmfC2he/EIRt/p14hNPB8rMIR0NRcA0Hy4mTn6AsfUgzwFSRZqjicvLlgwFokn32usZAkcNsW7KQE2+YVnUq6VYG/wpCd5w3x/4sws/HWTTR0Kg98pqt31s3oI0KCktFCuz2Ipxj4sNYJ8ExwqJ3v4zr0505YpYLnJCqy02nbwBcmHv8GrodmlGn2Y5Wid3BZrn5VYQIZVWVSVosfT7B5VpcFVdXRSY5VoKE8mTU7c98HmvASOygG6TZyQBkwXWsEBDoKMssK6QuCjaJpoQt1ZkvpMVsFzzoJkY="
   matrix:
     - MDTRAJ="release"
     - MDTRAJ="dev"
@@ -93,11 +93,11 @@ jobs:
       if: "(branch = stable) and (not type in (pull_request, cron))"
       python: '3.6'
       install:
-        - pip install .  # usually would just need to install autorelease
+        - pip install autorelease
       script:
         - VERSION=`python setup.py --version`
         - PROJECT=`python setup.py --name`
-        - python autorelease/scripts/autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
+        - autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
       after_success: skip
     - stage: deploy pypi
       # This stage runs when a version-labelled tag is made. It deploys the
