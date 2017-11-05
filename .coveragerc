@@ -1,0 +1,12 @@
+[report]
+omit = 
+    */python?.?/*
+    */*/tests/*
+    */mdtraj/*
+    */setup.py
+    */version.py
+    */_version.py
+exclude_lines = 
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError

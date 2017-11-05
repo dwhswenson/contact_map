@@ -1,0 +1,57 @@
+version: "2"
+
+checks:
+    file-lines:
+        enabled: true
+        config:
+            threshold: 750  # 1000 is really the hard edge
+
+    method-lines:
+        enabled: true
+        config:
+            threshold: 35  # up from default 25 b/c lines, not statements
+
+    argument-count:
+        enabled: true
+        config:
+            threshold: 5  # add 1 for `self` in Python
+
+plugins:
+    radon:
+        enabled: true
+        exclude_paths:
+            - "*/tests/"  # many asserts mean high McCabe
+        config:
+            threshold: "C"
+
+    fixme:
+        enabled: true
+        issue_override:
+            severity: info
+        exclude_paths:
+            - "**pdb"
+        config:
+            strings:
+                - FIXME
+                - BUG
+                - TODO
+
+    duplication:
+        enabled: true
+        checks:
+            Similar code:
+                enabled: true
+                issue_override:
+                    severity: info
+        config:
+            languages:
+                python:
+                    mass_threshold: 35
+
+exclude_patterns:
+    - "docs/"
+    - "**.pdb"
+
+ratings:
+    paths:
+        - "**py"

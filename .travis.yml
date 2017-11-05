@@ -1,0 +1,121 @@
+language: python
+python:
+  - '3.6'
+  - '2.7'
+  - '3.4'
+  - '3.5'
+
+branches:
+  only:
+  - master
+  - stable
+  - /^v\d+(\.\d+)+$/
+
+env:
+  global:
+    - CANONICAL_PYTHON="3.6"
+    - CANONICAL_MDTRAJ="release"
+    - CODECLIMATE=""
+    - TWINE_USERNAME="dwhswenson"
+    # TWINE_PASSWORD
+    - secure: "onsUSX6Yxt0HJApAsyUr5iFQW1ZngBiMxKmdiI5aN0TqnVSQ6819xx0YIxBjgburG/pFoW1F8bh8KYITV6TKK7RpcwdOspqpeO0X6L0DdBvNWQdl99QtJZcuMS3nPBiJ4guwrJCkQa/iKgZ7k27YukTw5pgKKDgC2d10P5SQiVFHNkX8lo4FzZIBnpA93Nq9G+j2pi14PpGtxaXhktqLOSvLvy/7BIWfzy69HDGjKZ38SMF4RFRnHiBI0G2uON6N5AuLovBWpRrmPmCTiX3p2lgxss8oUSKsA9OlikAoGlLyOjzMU2Fu3JqgoXPSyjDzkqO/Bavd1S03RYUeB5cRM9kBoORjCYl2dBCAmh7U41ZigvivYC2UZ/2p300f9YmolZ4vcj9tz4THXfF5/ZgIoARFIVk3fIQOHJCnXwa3gDcf0AEmsYOUOSKJKyYxruQhyjb2reFxUyA6bqtelV82qpMT53fSZ1/ZJjA+yJJgbeB9qkrMjvUf9AjlY8faqXyIafJsogFuvg1rg+FddMlc56zUWCEdc/pgbTesQuF8GCqje++7eaN68KiWBPwjDSX6cuNkeg86xx1E4VsRcXH6rQ9JXCsGs/HN4JRZ5J+ZH4YOHaUc5pTG82mTEZHGCjAN+BuhGfSFcgSoGO6oOHRGVjw47emOLvNpjS05B/zu/4c="
+    # AUTORELEASE_TOKEN
+    - secure: "g+pFYJ62KN/gfnzrzQlfRTyDwvIpwQp4aQvwB4GVrWUISoOx3X8IlK5+S26Wb/BK4cCIGAKWs+dVgCr1Ag0v4TBhmi4CBlkZXQTNv3TcbGwyhmXYbO7kf03lpapsxKu5JkFlZqe0fniwocut6d2BiAuRQjvJ1B+xhEkl3t/ARarg0G/e+1geNyCopULD3tzcUDV4BFUw6cjfm4Sqn008m+7F8vgNOG+HitPtjggmZfFgoZVvS3nnZbFxGq99Uit8PST8Rdus3PJFNJlguf4XTpsdYZeW2CjFfd9P/v8hvfM3ATSCJ8Mzh8PuWJFP48Be6IvJAn6qhgJW7jSDK6bcCahS0BXBr0EqT9maC3jNXTQiem8WT990mUbK9tpbj6a9HPaD/E1XfmfC2he/EIRt/p14hNPB8rMIR0NRcA0Hy4mTn6AsfUgzwFSRZqjicvLlgwFokn32usZAkcNsW7KQE2+YVnUq6VYG/wpCd5w3x/4sws/HWTTR0Kg98pqt31s3oI0KCktFCuz2Ipxj4sNYJ8ExwqJ3v4zr0505YpYLnJCqy02nbwBcmHv8GrodmlGn2Y5Wid3BZrn5VYQIZVWVSVosfT7B5VpcFVdXRSY5VoKE8mTU7c98HmvASOygG6TZyQBkwXWsEBDoKMssK6QuCjaJpoQt1ZkvpMVsFzzoJkY="
+  matrix:
+    - MDTRAJ="release"
+    - MDTRAJ="dev"
+
+matrix:
+  exclude:
+    - env: MDTRAJ="dev"
+      python: "3.4"
+    - env: MDTRAJ="dev"
+      python: "3.5"
+
+before_install:
+  - echo "before install"
+  - git fetch --tags
+
+install:
+  - source ci/pip-install/install_requirements.sh
+  - pip install -e .
+  - pip install -r ci/pip-install/testing_requirements.txt
+  - if [ "$MDTRAJ" = "dev" ]; then pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
+  - if [ "$MDTRAJ" = "dev" ]; then pip install -r optional_installs.txt; fi
+  - pip list
+
+script:
+  - export MPLBACKEND=PS
+  - python -c "import contact_map"
+  - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE}
+  - py.test -vv --cov=contact_map --cov-report xml:cov.xml
+
+after_success:
+  - coveralls
+  - python-codacy-coverage -r cov.xml
+
+jobs:
+  include:
+    - stage: deploy testpypi
+      # This stage runs when you make a PR to stable. It tests that the
+      # deployment to testpypi works.
+      if: "(branch = stable) and (type = pull_request)"
+      python: '3.6'
+      addons:
+        apt_packages:
+          - pandoc
+      install:
+        - pip install twine
+      script: 
+        - pandoc --from=markdown --to=rst --output=README.rst README.md
+        - python setup.py sdist bdist_wheel
+        - twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+      after_success: skip
+    - stage: test testpypi
+      # This stage run when you make a PR to stable; after the package has
+      # been deployed to testpypi. It checks that the deployed package
+      # works.
+      if: "(branch = stable) and (type = pull_request)"
+      python: '3.6'
+      install:
+        - source ci/pip-install/install_requirements.sh
+        - pip install -r ci/pip-install/testing_requirements.txt
+        - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple contact_map
+      script:
+        - cd ~
+        - python -c "import contact_map"
+        - py.test --pyargs contact_map
+      after_success: skip
+    - stage: cut release
+      # This stage runs after you merge a PR into stable. It cuts the GitHub
+      # release based on the current stable branch and the release notes
+      # from the last PR merged into stable.
+      if: "(branch = stable) and (not type in (pull_request, cron))"
+      python: '3.6'
+      install:
+        - pip install autorelease
+      script:
+        - VERSION=`python setup.py --version`
+        - PROJECT=`python setup.py --name`
+        - autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
+      after_success: skip
+    - stage: deploy pypi
+      # This stage runs when a version-labelled tag is made. It deploys the
+      # package to PyPI.
+      if: tag =~ ^v[0-9]+\.
+      addons:
+        apt_packages:
+          - pandoc
+      install: skip
+      script:
+          - pandoc --from=markdown --to=rst --output=README.rst README.md
+      after_success: true
+      deploy:
+        provider: pypi
+        distributions: sdist bdist_wheel
+        skip_cleanup: true  # need the readme.rst from the script stage
+        user: dwhswenson
+        on:
+            tags: true
+        password:
+          secure: "UN99BfNgMlE1qOwkbvJYMEdPGVF02dnZ5iF9HZY5HwJr7nlW1ixEGn6SzICS7WwLzthfqpbwXaqVGEsbsn1YwsvQe72JyCZxftoxZC2bVi5JV/OZka5uUTx0NXtzukZp33AUTDA9J2vushIxZCHSJG+GFqx4c+L8Y194V0QS4sw/lbtGC3qZ8jmszCnRgfPbb0tmCe4Jj1snclspPXhYtXL2z9Xh4r+ImCfosBFfThtsUs6t37/Jrx1srmDrt0eaGGBm1NAcyIVP6x03TdVVUFt/ud3U7+o0iHhqdEZKfUc2Dp6YN08Ck6Zyr/dR/A0Sc3/pWvytXwXLzOj+d7BtaAmPApcAc6v5GEmwWc4mkdsD+CEEW1q3CEFbWq6RTL+oa2zvEO6k0VrnHMCni3KqsWGmF6B209tHhy8jFAmCIruD2foUz7NxEKWNEOR4bqIjOGGIgGp4mfH+1l73JrI995ZmB1PqiIkxVeX0nPrZUZtBxOUyxg6aiL+NHMaYr5NCq2uCzDYhtwWnk26Oq6/JAEMxN+SCiC+O+DSvdQaUgUp6eS5whHGvf27ZxRMkmTSYTIMN6V1/PQ9WWSFsy0QBUYB7UJf/JLFnTi5xHj08jFNzUVOmeyq9MBzJF/ztnTTBSJgzNDROV+2qsZC0Ulm/hesMe0Swxqu/S5PelzrgwCA="

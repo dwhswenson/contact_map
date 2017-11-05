@@ -1,0 +1,5 @@
+pytest
+pytest-cov
+python-coveralls
+codacy-coverage
+autorelease
