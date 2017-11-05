@@ -33,12 +33,12 @@ class Concurrence(object):
 
 class AtomContactConcurrence(Concurrence):
     def __init__(self, trajectory, atom_contacts, cutoff=0.45):
-	atom_pairs = [[contact[0][0].index, contact[0][1].index]
-		      for contact in atom_contacts]
-	labels = [str(contact[0]) for contact in atom_contacts]
-	distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
-	vector_f = np.vectorize(lambda d: d < cutoff)
-	values = zip(*vector_f(distances))
+        atom_pairs = [[contact[0][0].index, contact[0][1].index]
+                       for contact in atom_contacts]
+        labels = [str(contact[0]) for contact in atom_contacts]
+        distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
+        vector_f = np.vectorize(lambda d: d < cutoff)
+        values = zip(*vector_f(distances))
         super(AtomContactConcurrence, self).__init__(values=values,
                                                      labels=labels)
 
