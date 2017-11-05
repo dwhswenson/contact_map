@@ -163,6 +163,8 @@ class TestContactMap(object):
         assert m.atom_contacts.counter == m2.atom_contacts.counter
         os.remove(test_file)
 
+    # TODO: add tests for ContactObject._check_consistency
+
 
 class TestContactFrequency(object):
     def setup(self):
@@ -295,6 +297,43 @@ class TestContactFrequency(object):
             (frozenset([top.atom(5), top.atom(7)]), 0.4)
         ]
         assert set(most_common_2_3_frozenset) == set(expected_2_3)
+
+    def test_add_contact_frequency(self):
+        # self.map has all 5 frames
+        # we can figure out what the [0:4] would look like
+        start = ContactFrequency(trajectory=traj[:4],
+                                 cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        add_in = ContactFrequency(trajectory=traj[4:],
+                                  cutoff=0.075,
+                                  n_neighbors_ignored=0)
+
+        start.add_contact_frequency(add_in)
+
+        assert start.atom_contacts.counter == \
+                self.map.atom_contacts.counter
+
+        assert start.residue_contacts.counter == \
+                self.map.residue_contacts.counter
+
+    def test_subtract_contact_frequency(self):
+        first_four = ContactFrequency(trajectory=traj[:4],
+                                      cutoff=0.075,
+                                      n_neighbors_ignored=0)
+        last_frame = ContactFrequency(trajectory=traj[4:],
+                                      cutoff=0.075,
+                                      n_neighbors_ignored=0)
+        test_subject = ContactFrequency(trajectory=traj,
+                                        cutoff=0.075,
+                                        n_neighbors_ignored=0)
+
+        test_subject.subtract_contact_frequency(first_four)
+
+        assert test_subject.atom_contacts.counter == \
+                last_frame.atom_contacts.counter
+
+        assert test_subject.residue_contacts.counter == \
+                last_frame.residue_contacts.counter
 
 
 class TestContactCount(object):
