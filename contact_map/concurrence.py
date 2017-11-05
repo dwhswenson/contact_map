@@ -2,6 +2,14 @@ import itertools
 import mdtraj as md
 import numpy as np
 
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    HAS_MATPLOTLIB = False
+else:
+    HAS_MATPLOTLIB = True
+
+
 class Concurrence(object):
     def __init__(self, values, labels=None):
         self.values = values
@@ -64,22 +72,48 @@ class ResidueContactConcurrence(Concurrence):
         super(ResidueContactConcurrence, self).__init__(values=values,
                                                         labels=labels)
 
+
+class ConcurrencePlotter(object):
+    def __init__(self, concurrence=None, labels=None, x_values=None):
+        self.concurrence = concurrence
+        self.labels = self.get_concurrence_labels(concurrence, labels)
+        self.x_values = self.get_x_values(x_values)
+
+    def get_concurrence_labels(concurrence, labels):
+        if labels is None:
+            if concurrence and concurrence.labels is not None:
+                labels = concurrence.labels
+            else:
+                labels = [str(i) for i in range(len(values))]
+        return labels
+
+    def get_x_values(x_values):
+        if x_values is None:
+            x_values = range(len(concurrence.values[0]))
+        return x_values
+
+    def plot(concurrence=None):
+        if not HAS_MATPLOTLIB:
+            raise ImportError("matplotlib not installed")
+        if concurrence is None:
+            concurrence = self.concurrence
+        labels = self.get_concurrence_labels(concurrence=concurrence)
+        x_values = self.get_x_values()
+
+        y_val = -1.0
+        for label, val_set in zip(labels, concurrence.values):
+            x_vals = [x for (x, y) in zip(x_values, val_set) if y]
+            plt.plot(x_vals, [y_val] * len(x_vals), '.', markersize=1,
+                     label=label)
+            y_val -= 1.0
+
+        plt.ylim(ymax=0.0)
+        plt.xlim(xmin=min(x_values), xmax=max(x_values))
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+
 def plot_concurrence(concurrence, labels=None, x_values=None):
-    import matplotlib.pyplot as plt
-    if x_values is None:
-        x_values = range(len(concurrence.values[0]))
-    if labels is None:
-        if concurrence.labels is not None:
-            labels = concurrence.labels
-        else:
-            labels = [str(i) for i in range(len(values))]
-
-    y_val = -1.0
-    for label, val_set in zip(labels, concurrence.values):
-        x_vals = [x for (x, y) in zip(x_values, val_set) if y]
-        plt.plot(x_vals, [y_val] * len(x_vals), '.', markersize=1, label=label)
-        y_val -= 1.0
-
-    plt.ylim(ymax=0.0)
-    plt.xlim(xmin=min(x_values), xmax=max(x_values))
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    """
+    Convenience function for concurrence plots.
+    """
+    ConcurrencePlotter(concurrence, labels, x_values).plot()
