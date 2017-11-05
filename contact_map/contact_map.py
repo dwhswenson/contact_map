@@ -603,6 +603,8 @@ class ContactFrequency(ContactObject):
         self._check_compatibility(other)
         self._atom_contacts_count += other._atom_contacts_count
         self._residue_contacts_count += other._residue_contacts_count
+        self._n_frames += other._n_frames
+
 
     def subtract_contact_frequency(self, other):
         """Subtracts results from `other` from internal counter.
@@ -621,6 +623,7 @@ class ContactFrequency(ContactObject):
         self._check_compatibility(other)
         self._atom_contacts_count -= other._atom_contacts_count
         self._residue_contacts_count -= other._residue_contacts_count
+        self._n_frames -= other._n_frames
 
     @property
     def atom_contacts(self):
