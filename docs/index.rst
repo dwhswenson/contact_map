@@ -35,21 +35,21 @@ It also facilitates visualization of the contact matrix, with colors
 representing the fraction of trajectory time that the contact was present.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    installing
-   examples
+   examples/index
    api
 
 .. Add understanding_docs at some point
 
 * :ref:`genindex`
 
-``contact_map``` is an open source project, released under the GNU LGPL,
+``contact_map`` is an open source project, released under the GNU LGPL,
 version 2.1 or (at your option) any later version. Development takes place
 in public at https://github.com/dwhswenson/contact_map; your contributions
 would be welcome!
 
 If you have suggestions or bug reports, please raise an issue on our `GitHub
-issues page <https://github.com/dwhswenson/contact_map/issues>`.
+issues page <https://github.com/dwhswenson/contact_map/issues>`_.
 

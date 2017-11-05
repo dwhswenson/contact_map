@@ -18,12 +18,20 @@
 #
 import os
 import sys
+import shutil
 import sphinx_rtd_theme
+import pkg_resources
+import packaging.version
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../contact_map/'))
 sys.path.append(os.path.abspath('_themes'))
 
 # -- General configuration ------------------------------------------------
+try:
+    shutil.copytree(os.path.abspath("../examples"),
+                    os.path.abspath("examples/nb"))
+except OSError:
+    pass  # should make sure a back-up is in place
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -33,10 +41,13 @@ sys.path.append(os.path.abspath('_themes'))
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
+release = pkg_resources.get_distribution('contact_map').version
+version = packaging.version.Version(release).base_version
+
 # The short X.Y version.
-version = u'0.1.3'
+#version = u'0.1.3'
 # The full version, including alpha/beta/rc tags. (dev0 for development)
-release = u'0.1.3.dev0'
+#release = u'0.1.3.dev0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -49,7 +60,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'nbsphinx',
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
 # Napolean settings
@@ -110,7 +123,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
+                    '**ipynb-checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
