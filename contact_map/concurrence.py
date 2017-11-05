@@ -49,11 +49,12 @@ class ResidueContactConcurrence(Concurrence):
                          for contact in residue_contacts]
         labels = [str(contact[0]) for contact in residue_contacts]
         values = []
+        select_residue = lambda idx: trajectory.topology.select(
+            "resid " + str(idx) + " " + select
+        )
         for res_A, res_B in residue_pairs:
-            atoms_A = trajectory.topology.select("resid " + str(res_A.index)
-                                                 + " " + select)
-            atoms_B = trajectory.topology.select("resid " + str(res_B.index)
-                                                 + " " + select)
+            atoms_A = select_residue(res_A.index)
+            atoms_A = select_residue(res_B.index)
             atom_pairs = itertools.product(atoms_A, atoms_B)
             distances = md.compute_distances(trajectory,
                                              atom_pairs=atom_pairs)
