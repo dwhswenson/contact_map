@@ -44,8 +44,8 @@ class NearestAtoms(object):
                 self._calculate_nearest(trajectory, self.cutoff,
                                         self.frame_number, self.excluded)
 
-    def _calculate_nearest(self, trajectory, cutoff, frame_number,
-                           excluded):
+    @staticmethod
+    def _calculate_nearest(trajectory, cutoff, frame_number, excluded):
         """
         Calculate the nearest atoms from the input data.
 

@@ -264,6 +264,13 @@ class ContactObject(object):
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
 
+    def _check_compatibility(self, other):
+        assert self.cutoff == other.cutoff
+        assert self.topology == other.topology
+        assert self.query == other.query
+        assert self.haystack == other.haystack
+        assert self.n_neighbors_ignored == other.n_neighbors_ignored
+
     def save_to_file(self, filename, mode="w"):
         """Save this object to the given file.
 
@@ -546,7 +553,6 @@ class ContactFrequency(ContactObject):
     """
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2, frames=None):
-        self._trajectory = trajectory
         if frames is None:
             frames = range(len(trajectory))
         self.frames = frames
@@ -554,16 +560,15 @@ class ContactFrequency(ContactObject):
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
-        self._build_contact_map()
+        self._build_contact_map(trajectory)
 
-    def _build_contact_map(self):
+    def _build_contact_map(self, trajectory):
         # We actually build the contact map on a per-residue basis, although
         # we save it on a per-atom basis. This allows us ignore
         # n_nearest_neighbor residues.
         # TODO: this whole thing should be cleaned up and should replace
         # MDTraj's really slow old compute_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
-        trajectory = self.trajectory
         self._atom_contacts_count = collections.Counter([])
         self._residue_contacts_count = collections.Counter([])
 
@@ -582,20 +587,9 @@ class ContactFrequency(ContactObject):
             self._residue_contacts_count += frame_residue_contacts
 
     @property
-    def trajectory(self):
-        return self._trajectory
-
-    @property
     def n_frames(self):
         """Number of frames in the mapped trajectory"""
         return self._n_frames
-
-    def _check_compatibility(self, other):
-        assert self.cutoff == other.cutoff
-        assert self.topology == other.topology
-        assert self.query == other.query
-        assert self.haystack == other.haystack
-        assert self.n_neighbors_ignored == other.n_neighbors_ignored
 
     def add_contact_frequency(self, other):
         """Add results from `other` to the internal counter.
@@ -661,7 +655,7 @@ class ContactDifference(ContactObject):
     def __init__(self, positive, negative):
         self.positive = positive
         self.negative = negative
-        # TODO: verify that the combination is compatible: same topol, etc
+        positive._check_compatibility(negative)
         super(ContactDifference, self).__init__(positive.topology,
                                                 positive.query,
                                                 positive.haystack,
