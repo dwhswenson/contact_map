@@ -11,4 +11,4 @@ from .contact_map import (
 
 from .min_dist import NearestAtoms, MinimumDistanceCounter
 
-import concurrence
+import .concurrence
