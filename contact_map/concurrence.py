@@ -77,9 +77,10 @@ class ConcurrencePlotter(object):
     def __init__(self, concurrence=None, labels=None, x_values=None):
         self.concurrence = concurrence
         self.labels = self.get_concurrence_labels(concurrence, labels)
-        self.x_values = self.get_x_values(x_values)
+        self.x_values = x_values
 
-    def get_concurrence_labels(concurrence, labels):
+    @staticmethod
+    def get_concurrence_labels(concurrence, labels=None):
         if labels is None:
             if concurrence and concurrence.labels is not None:
                 labels = concurrence.labels
@@ -87,33 +88,43 @@ class ConcurrencePlotter(object):
                 labels = [str(i) for i in range(len(values))]
         return labels
 
-    def get_x_values(x_values):
+    @property
+    def x_values(self):
+        x_values = self._x_values
         if x_values is None:
-            x_values = range(len(concurrence.values[0]))
+            x_values = range(len(self.concurrence.values[0]))
         return x_values
 
-    def plot(concurrence=None):
+    @x_values.setter
+    def x_values(self, x_values):
+        self._x_values = x_values
+
+    def plot(self, concurrence=None):
         if not HAS_MATPLOTLIB:
             raise ImportError("matplotlib not installed")
         if concurrence is None:
             concurrence = self.concurrence
         labels = self.get_concurrence_labels(concurrence=concurrence)
-        x_values = self.get_x_values()
+        x_values = self.x_values
+
+        fig = plt.figure(1)
+        ax = fig.add_subplot(111)
 
         y_val = -1.0
         for label, val_set in zip(labels, concurrence.values):
             x_vals = [x for (x, y) in zip(x_values, val_set) if y]
-            plt.plot(x_vals, [y_val] * len(x_vals), '.', markersize=1,
-                     label=label)
+            ax.plot(x_vals, [y_val] * len(x_vals), '.', markersize=1,
+                    label=label)
             y_val -= 1.0
 
-        plt.ylim(ymax=0.0)
-        plt.xlim(xmin=min(x_values), xmax=max(x_values))
-        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        ax.set_ylim(top=0.0)
+        ax.set_xlim(left=min(x_values), right=max(x_values))
+        lgd = ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        return (fig, ax, lgd)
 
 
 def plot_concurrence(concurrence, labels=None, x_values=None):
     """
     Convenience function for concurrence plots.
     """
-    ConcurrencePlotter(concurrence, labels, x_values).plot()
+    return ConcurrencePlotter(concurrence, labels, x_values).plot()
