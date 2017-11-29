@@ -6,9 +6,12 @@ Contact map analysis.
 import collections
 import itertools
 import pickle
+import json
 import scipy
 import pandas as pd
 import mdtraj as md
+
+from .py_2_3 import inspect_method_arguments
 
 # matplotlib is technically optional, but required for plotting
 try:
@@ -263,6 +266,48 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
+
+    def to_dict(self):
+        """Convert object to a dict.
+
+        Keys should be strings; values should be (JSON-) serializable.
+        """
+        dct = {
+            'topology': self.topology.to_dataframe().to_json(),
+            'cutoff': self._cutoff,
+            'query': self._query,
+            'haystack': self._haystack,
+            'n_neighbors_ignored': self._n_neighbors_ignored,
+            'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
+        }
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        kwarg_keys = inspect_method_arguments(cls.__init__)
+        set_keys = set(dct.keys())
+        missing = set(kwarg_keys) - set_keys
+        dct.update({k: None for k in missing})
+        kwargs = {k: dct[k] for k in kwarg_keys}
+        non_kwarg_keys = set_keys - set(kwargs)
+        instance = cls(**kwargs)
+        for k in non_kwarg_keys:
+            setattr(instance, k, dct[k])
+        return instance
+
+    @staticmethod
+    def _deserialize_topology(topology_json):
+        topology_df = pd.DataFrame.from_json(topology_json)
+        topology = md.Topology.from_dataframe(topology_df)
+        return topology
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json):
+        dct = json.loads(json)
+        return cls.from_dict(dct)
 
     def _check_compatibility(self, other):
         assert self.cutoff == other.cutoff
