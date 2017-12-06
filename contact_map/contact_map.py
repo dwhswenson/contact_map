@@ -8,6 +8,7 @@ import itertools
 import pickle
 import json
 import scipy
+import numpy as np
 import pandas as pd
 import mdtraj as md
 
@@ -60,6 +61,7 @@ def _residue_and_index(residue, topology):
         res_idx = residue
         res = topology.residue(res_idx)
     return (res, res_idx)
+
 
 
 class ContactCount(object):
@@ -267,16 +269,24 @@ class ContactObject(object):
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
 
+    def __eq__(self, other):
+        is_equal = (self.cutoff == other.cutoff
+                    and self.n_neighbors_ignored == other.n_neighbors_ignored
+                    and self.query == other.query
+                    and self.haystack == other.haystack
+                    and self.topology == other.topology)
+        return is_equal
+
     def to_dict(self):
         """Convert object to a dict.
 
         Keys should be strings; values should be (JSON-) serializable.
         """
         dct = {
-            'topology': self.topology.to_dataframe().to_json(),
+            'topology': self._serialize_topology(self.topology),
             'cutoff': self._cutoff,
-            'query': self._query,
-            'haystack': self._haystack,
+            'query': list(self._query),
+            'haystack': list(self._haystack),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
         }
@@ -284,29 +294,65 @@ class ContactObject(object):
 
     @classmethod
     def from_dict(cls, dct):
+        if 'topology' in dct:
+            dct['topology'] = cls._deserialize_topology(dct['topology'])
+        for key in ['atom_contacts', 'residue_contacts']:
+            if key in dct:
+                dct[key] = cls._deserialize_contact_counter(dct[key])
+        for key in ['query', 'haystack']:
+            if key in dct:
+                dct[key] = set(dct[key])
+        for key in ['atom_idx_to_residue_idx']:
+            if key in dct:
+                val_dct = dct[key]
+                dct[key] = {int(k): val_dct[k] for k in val_dct}
+
         kwarg_keys = inspect_method_arguments(cls.__init__)
         set_keys = set(dct.keys())
         missing = set(kwarg_keys) - set_keys
         dct.update({k: None for k in missing})
-        kwargs = {k: dct[k] for k in kwarg_keys}
-        non_kwarg_keys = set_keys - set(kwargs)
-        instance = cls(**kwargs)
-        for k in non_kwarg_keys:
-            setattr(instance, k, dct[k])
+        instance = cls.__new__(cls)
+        for k in dct:
+            setattr(instance, "_" + k, dct[k])
         return instance
 
     @staticmethod
     def _deserialize_topology(topology_json):
-        topology_df = pd.DataFrame.from_json(topology_json)
-        topology = md.Topology.from_dataframe(topology_df)
+        table, bonds = json.loads(topology_json)
+        topology_df = pd.read_json(table)
+        topology = md.Topology.from_dataframe(topology_df,
+                                              np.array(bonds))
         return topology
 
+    @staticmethod
+    def _serialize_topology(topology):
+        table, bonds = topology.to_dataframe()
+        json_tuples = (table.to_json(), bonds.tolist())
+        return json.dumps(json_tuples)
+
+    # TODO: adding a separate object for these frozenset counters will be
+    # useful for many things, and this serialization should be moved there
+    @staticmethod
+    def _serialize_contact_counter(counter):
+        serializable = {json.dumps(list(key)): counter[key]
+                        for key in counter}
+        return json.dumps(serializable)
+
+    @staticmethod
+    def _deserialize_contact_counter(json_string):
+        dct = json.loads(json_string)
+        counter = collections.Counter({
+            frozenset(json.loads(key)): dct[key] for key in dct
+        })
+        return counter
+
     def to_json(self):
+        dct = self.to_dict()
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json):
-        dct = json.loads(json)
+    def from_json(cls, json_string):
+        dct = json.loads(json_string)
         return cls.from_dict(dct)
 
     def _check_compatibility(self, other):
@@ -562,13 +608,29 @@ class ContactMap(ContactObject):
     """
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
-        self._frame = frame
+        self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
                                          cutoff, n_neighbors_ignored)
         contact_maps = self.contact_map(frame, 0,
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
         (self._atom_contacts, self._residue_contacts) = contact_maps
+
+    def __eq__(self, other):
+        is_equal = (super(ContactMap, self).__eq__(other)
+                    and self._atom_contacts == other._atom_contacts
+                    and self._residue_contacts == other._residue_contacts)
+        return is_equal
+
+    def to_dict(self):
+        dct = super(ContactMap, self).to_dict()
+        atom_cntcts = self._serialize_contact_counter(self._atom_contacts)
+        res_cntcts = self._serialize_contact_counter(self._residue_contacts)
+        dct.update({
+            'atom_contacts': atom_cntcts,
+            'residue_contacts': res_cntcts
+        })
+        return dct
 
 
 class ContactFrequency(ContactObject):

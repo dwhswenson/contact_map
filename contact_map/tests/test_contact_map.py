@@ -2,6 +2,7 @@ import os
 import collections
 import numpy as np
 import mdtraj as md
+import json
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
@@ -38,6 +39,23 @@ traj_residue_contact_count = {
 }
 
 test_file = "test_file.p"
+
+def pdb_topology_dict():
+    serial = {str(i): i+1 for i in range(10)}
+    name = {str(i): "C" + str(i%2 + 1) for i in range(10)}
+    element = {str(i): "C" for i in range(10)}
+    res_seq = {str(i): str(i/2 + 1) for i in range(10)}
+    res_name = {str(i): "XXX" for i in range(10)}
+    chain_id = {str(i): 0 for i in range(10)}
+    seg_id = {str(i): "" for i in range(10)}
+    dct = {'serial': serial,
+           'name': name,
+           'element': element,
+           'resSeq': res_seq,
+           'resName': res_name,
+           'chainID': chain_id,
+           'segmentID': seg_id}
+    return dct
 
 def counter_of_inner_list(ll):
     return collections.Counter([frozenset(i) for i in ll])
@@ -96,6 +114,61 @@ class TestContactMap(object):
         expected = counter_of_inner_list(self.expected_residue_contacts[m])
         assert m._residue_contacts == expected
         assert m.residue_contacts.counter == expected
+
+    def test_to_dict(self, idx):
+        m = self.maps[idx]
+        json_topol = json.dumps(pdb_topology_dict(), [])
+        dct = m.to_dict()
+        # NOTE: topology only tested in a cycle; JSON order not guaranteed
+        assert dct['cutoff'] == 0.075
+        assert dct['query'] == list(range(10))
+        assert dct['haystack'] == list(range(10))
+        assert dct['n_neighbors_ignored'] == 0
+        assert dct['atom_idx_to_residue_idx'] == {i: i // 2
+                                                  for i in range(10)}
+
+    def test_topology_serialization_cycle(self, idx):
+        m = self.maps[idx]
+        serialized_topology = ContactMap._serialize_topology(m.topology)
+        new_top = ContactMap._deserialize_topology(serialized_topology)
+        assert m.topology == new_top
+
+    def test_counter_serialization_cycle(self, idx):
+        m = self.maps[idx]
+        serialize = ContactMap._serialize_contact_counter
+        deserialize = ContactMap._deserialize_contact_counter
+        serialized_atom_counter = serialize(m._atom_contacts)
+        serialized_residue_counter = serialize(m._residue_contacts)
+        new_atom_counter = deserialize(serialized_atom_counter)
+        new_residue_counter = deserialize(serialized_residue_counter)
+        assert new_atom_counter == m._atom_contacts
+        assert new_residue_counter == m._residue_contacts
+
+    def test_dict_serialization_cycle(self, idx):
+        m = self.maps[idx]
+        dct = m.to_dict()
+        m2 = ContactMap.from_dict(dct)
+        assert m.cutoff == m2.cutoff
+        assert m.query == m2.query
+        assert m.haystack == m2.haystack
+        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
+        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
+        assert m.topology == m2.topology
+        assert m._atom_contacts == m2._atom_contacts
+        assert m._residue_contacts == m2._residue_contacts
+        assert m == m2
+
+    def test_json_serialization_cycle(self, idx):
+        m = self.maps[idx]
+        json = m.to_json()
+        m2 = ContactMap.from_json(json)
+        assert m.cutoff == m2.cutoff
+        assert m.query == m2.query
+        assert m.haystack == m2.haystack
+        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
+        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
+        assert m.topology == m2.topology
+        assert m == m2
 
     def test_with_ignores(self, idx):
         m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1)
@@ -201,6 +274,12 @@ class TestContactFrequency(object):
             for (k, v) in self.expected_residue_contact_count.items()
         }
         assert residue_contacts.counter == expected_residue_contacts
+
+    def test_dct_cycle(self):
+        pytest.skip()
+
+    def test_json_cycle(self):
+        pytest.skip()
 
     def test_frames_parameter(self):
         # test that the frames parameter in initialization works
