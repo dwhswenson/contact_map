@@ -269,6 +269,11 @@ class ContactObject(object):
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
 
+    def __hash__(self):
+        return hash((self.cutoff, self.n_neighbors_ignored,
+                     frozenset(self._query), frozenset(self._haystack),
+                     self.topology))
+
     def __eq__(self, other):
         is_equal = (self.cutoff == other.cutoff
                     and self.n_neighbors_ignored == other.n_neighbors_ignored
@@ -615,6 +620,11 @@ class ContactMap(ContactObject):
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
         (self._atom_contacts, self._residue_contacts) = contact_maps
+
+    def __hash__(self):
+        return hash((super(ContactMap, self).__hash__(),
+                     tuple(self._atom_contacts.items()),
+                     tuple(self._residue_contacts.items())))
 
     def __eq__(self, other):
         is_equal = (super(ContactMap, self).__eq__(other)
