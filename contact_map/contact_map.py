@@ -287,11 +287,12 @@ class ContactObject(object):
 
         Keys should be strings; values should be (JSON-) serializable.
         """
+        # need to explicitly convert possible np.int64 to int in several
         dct = {
             'topology': self._serialize_topology(self.topology),
             'cutoff': self._cutoff,
-            'query': list(self._query),
-            'haystack': list(self._haystack),
+            'query': list([int(val) for val in self._query]),
+            'haystack': list([int(val) for val in self._haystack]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
         }
@@ -339,7 +340,9 @@ class ContactObject(object):
     # useful for many things, and this serialization should be moved there
     @staticmethod
     def _serialize_contact_counter(counter):
-        serializable = {json.dumps(list(key)): counter[key]
+        # have to explicitly convert to int because json doesn't know how to
+        # serialize np.int64 objects, which we get in Python 3
+        serializable = {json.dumps([int(val) for val in key]): counter[key]
                         for key in counter}
         return json.dumps(serializable)
 
@@ -353,7 +356,11 @@ class ContactObject(object):
 
     def to_json(self):
         dct = self.to_dict()
-        return json.dumps(self.to_dict())
+        for k, v in dct.items():
+            print(k)
+            print(json.dumps(k))
+            print(json.dumps(v))
+        return json.dumps(dct)
 
     @classmethod
     def from_json(cls, json_string):

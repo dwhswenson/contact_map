@@ -117,7 +117,7 @@ class TestContactMap(object):
 
     def test_to_dict(self, idx):
         m = self.maps[idx]
-        json_topol = json.dumps(pdb_topology_dict(), [])
+        json_topol = json.dumps(pdb_topology_dict())
         dct = m.to_dict()
         # NOTE: topology only tested in a cycle; JSON order not guaranteed
         assert dct['cutoff'] == 0.075
