@@ -300,18 +300,19 @@ class ContactObject(object):
 
     @classmethod
     def from_dict(cls, dct):
-        if 'topology' in dct:
-            dct['topology'] = cls._deserialize_topology(dct['topology'])
-        for key in ['atom_contacts', 'residue_contacts']:
+        deserialize_set = lambda k: set(k)
+        deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
+        deserialization_helpers = {
+            'topology': cls._deserialize_topology,
+            'atom_contacts': cls._deserialize_contact_counter,
+            'residue_contacts': cls._deserialize_contact_counter,
+            'query': deserialize_set,
+            'haystack': deserialize_set,
+            'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
+        }
+        for key in deserialization_helpers:
             if key in dct:
-                dct[key] = cls._deserialize_contact_counter(dct[key])
-        for key in ['query', 'haystack']:
-            if key in dct:
-                dct[key] = set(dct[key])
-        for key in ['atom_idx_to_residue_idx']:
-            if key in dct:
-                val_dct = dct[key]
-                dct[key] = {int(k): val_dct[k] for k in val_dct}
+                dct[key] = deserialization_helpers[key](dct[key])
 
         kwarg_keys = inspect_method_arguments(cls.__init__)
         set_keys = set(dct.keys())
@@ -356,10 +357,6 @@ class ContactObject(object):
 
     def to_json(self):
         dct = self.to_dict()
-        for k, v in dct.items():
-            print(k)
-            print(json.dumps(k))
-            print(json.dumps(v))
         return json.dumps(dct)
 
     @classmethod
