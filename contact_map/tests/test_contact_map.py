@@ -64,6 +64,20 @@ def check_most_common_order(most_common):
     for i in range(len(most_common) - 1):
         assert most_common[i][1] >= most_common[i+1][1]
 
+def _contact_object_compare(m, m2):
+    """Compare two contact objects (with asserts).
+
+    May later become pytest fanciness (pytest_assertrepr_compare)
+    """
+    assert m.cutoff == m2.cutoff
+    assert m.query == m2.query
+    assert m.haystack == m2.haystack
+    assert m.n_neighbors_ignored == m2.n_neighbors_ignored
+    assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
+    assert m.topology == m2.topology
+    assert m._atom_contacts == m2._atom_contacts
+    assert m._residue_contacts == m2._residue_contacts
+
 def test_residue_neighborhood():
     top = traj.topology
     residues = list(top.residues)
@@ -148,28 +162,14 @@ class TestContactMap(object):
         m = self.maps[idx]
         dct = m.to_dict()
         m2 = ContactMap.from_dict(dct)
-        assert m.cutoff == m2.cutoff
-        assert m.query == m2.query
-        assert m.haystack == m2.haystack
-        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
-        assert m.topology == m2.topology
-        assert m._atom_contacts == m2._atom_contacts
-        assert m._residue_contacts == m2._residue_contacts
+        _contact_object_compare(m, m2)
         assert m == m2
 
     def test_json_serialization_cycle(self, idx):
         m = self.maps[idx]
         json = m.to_json()
         m2 = ContactMap.from_json(json)
-        assert m.cutoff == m2.cutoff
-        assert m.query == m2.query
-        assert m.haystack == m2.haystack
-        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
-        assert m.topology == m2.topology
-        assert m._atom_contacts == m2._atom_contacts
-        assert m._residue_contacts == m2._residue_contacts
+        _contact_object_compare(m, m2)
         assert m == m2
 
     def test_with_ignores(self, idx):
@@ -281,28 +281,14 @@ class TestContactFrequency(object):
         m = self.map
         dct = self.map.to_dict()
         m2 = ContactFrequency.from_dict(dct)
-        assert m.cutoff == m2.cutoff
-        assert m.query == m2.query
-        assert m.haystack == m2.haystack
-        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
-        assert m.topology == m2.topology
-        assert m._atom_contacts == m2._atom_contacts
-        assert m._residue_contacts == m2._residue_contacts
+        _contact_object_compare(m, m2)
         assert m == m2
 
-    def test_json_cycle(self):
+    def test_json_serialization_cycle(self):
         m = self.map
         json = self.map.to_json()
         m2 = ContactFrequency.from_json(json)
-        assert m.cutoff == m2.cutoff
-        assert m.query == m2.query
-        assert m.haystack == m2.haystack
-        assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-        assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
-        assert m.topology == m2.topology
-        assert m._atom_contacts == m2._atom_contacts
-        assert m._residue_contacts == m2._residue_contacts
+        _contact_object_compare(m, m2)
         assert m == m2
 
     def test_frames_parameter(self):
@@ -602,10 +588,10 @@ class TestContactDifference(object):
         assert diff_2.residue_contacts.counter == \
                 {k: -v for (k, v) in expected_residue_count.items()}
 
-    def test_dct_cycle(self):
+    def test_dict_serialization_cycle(self):
         pytest.skip()
 
-    def test_json_cycle(self):
+    def test_json_serialization_cycle(self):
         pytest.skip()
 
     def test_diff_frame_frame(self):
