@@ -295,6 +295,10 @@ class ContactObject(object):
             'haystack': list([int(val) for val in self._haystack]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
+            'atom_contacts': \
+                self._serialize_contact_counter(self._atom_contacts),
+            'residue_contacts': \
+                self._serialize_contact_counter(self._residue_contacts)
         }
         return dct
 
@@ -636,15 +640,15 @@ class ContactMap(ContactObject):
                     and self._residue_contacts == other._residue_contacts)
         return is_equal
 
-    def to_dict(self):
-        dct = super(ContactMap, self).to_dict()
-        atom_cntcts = self._serialize_contact_counter(self._atom_contacts)
-        res_cntcts = self._serialize_contact_counter(self._residue_contacts)
-        dct.update({
-            'atom_contacts': atom_cntcts,
-            'residue_contacts': res_cntcts
-        })
-        return dct
+    #def to_dict(self):
+        #dct = super(ContactMap, self).to_dict()
+        #atom_cntcts = self._serialize_contact_counter(self._atom_contacts)
+        #res_cntcts = self._serialize_contact_counter(self._residue_contacts)
+        #dct.update({
+            #'atom_contacts': atom_cntcts,
+            #'residue_contacts': res_cntcts
+        #})
+        #return dct
 
 
 class ContactFrequency(ContactObject):
@@ -681,7 +685,9 @@ class ContactFrequency(ContactObject):
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
-        self._build_contact_map(trajectory)
+        contacts = self._build_contact_map(trajectory)
+        (self._atom_contacts, self._residue_contacts) = contacts
+
 
     def _build_contact_map(self, trajectory):
         # We actually build the contact map on a per-residue basis, although
@@ -690,8 +696,8 @@ class ContactFrequency(ContactObject):
         # TODO: this whole thing should be cleaned up and should replace
         # MDTraj's really slow old compute_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
-        self._atom_contacts_count = collections.Counter([])
-        self._residue_contacts_count = collections.Counter([])
+        atom_contacts_count = collections.Counter([])
+        residue_contacts_count = collections.Counter([])
 
         # cache things that can be calculated once based on the topology
         # (namely, which atom indices matter for each residue)
@@ -704,8 +710,10 @@ class ContactFrequency(ContactObject):
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
             # self._atom_contacts_count += frame_atom_contacts
-            self._atom_contacts_count.update(frame_atom_contacts)
-            self._residue_contacts_count += frame_residue_contacts
+            atom_contacts_count.update(frame_atom_contacts)
+            residue_contacts_count += frame_residue_contacts
+
+        return (atom_contacts_count, residue_contacts_count)
 
     @property
     def n_frames(self):
@@ -722,8 +730,8 @@ class ContactFrequency(ContactObject):
             contact frequency
         """
         self._check_compatibility(other)
-        self._atom_contacts_count += other._atom_contacts_count
-        self._residue_contacts_count += other._residue_contacts_count
+        self._atom_contacts += other._atom_contacts
+        self._residue_contacts += other._residue_contacts
         self._n_frames += other._n_frames
 
 
@@ -742,8 +750,8 @@ class ContactFrequency(ContactObject):
             contact frequency
         """
         self._check_compatibility(other)
-        self._atom_contacts_count -= other._atom_contacts_count
-        self._residue_contacts_count -= other._residue_contacts_count
+        self._atom_contacts -= other._atom_contacts
+        self._residue_contacts -= other._residue_contacts
         self._n_frames -= other._n_frames
 
     @property
@@ -753,7 +761,7 @@ class ContactFrequency(ContactObject):
         n_y = self.topology.n_atoms
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
-            for item in self._atom_contacts_count.items()
+            for item in self._atom_contacts.items()
         }), self.topology.atom, n_x, n_y)
 
     @property
@@ -763,7 +771,7 @@ class ContactFrequency(ContactObject):
         n_y = self.topology.n_residues
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
-            for item in self._residue_contacts_count.items()
+            for item in self._residue_contacts.items()
         }), self.topology.residue, n_x, n_y)
 
 
