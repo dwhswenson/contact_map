@@ -13,7 +13,7 @@ Contact maps
 .. autosummary:: 
     :toctree: api/generated/
 
-    contact_map.ContactCount
+    ContactCount
     ContactMap
     ContactFrequency
     ContactDifference
@@ -21,7 +21,7 @@ Contact maps
 Minimum Distance (and related)
 ------------------------------
 
-.. currentmodule:: min_dist
+.. .. currentmodule:: min_dist
 
 .. autosummary::
     :toctree: api/generated/

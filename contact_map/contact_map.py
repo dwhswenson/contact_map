@@ -310,6 +310,11 @@ class ContactObject(object):
     def from_dict(cls, dct):
         """Create object from dict.
 
+        Parameters
+        ----------
+        dct : dict
+            dict-formatted serialization (see to_dict for details)
+
         See also
         --------
         to_dict
@@ -826,6 +831,14 @@ class ContactDifference(ContactObject):
                                                 positive.n_neighbors_ignored)
 
     def to_dict(self):
+        """Convert object to a dict.
+
+        Keys should be strings; values should be (JSON-) serializable.
+
+        See also
+        --------
+        from_dict
+        """
         return {
             'positive': self.positive.to_json(),
             'negative': self.negative.to_json(),
@@ -835,6 +848,17 @@ class ContactDifference(ContactObject):
 
     @classmethod
     def from_dict(cls, dct):
+        """Create object from dict.
+
+        Parameters
+        ----------
+        dct : dict
+            dict-formatted serialization (see to_dict for details)
+
+        See also
+        --------
+        to_dict
+        """
         # TODO: add searching for subclasses (http://code.activestate.com/recipes/576949-find-all-subclasses-of-a-given-class/)
         supported_classes = [ContactMap, ContactFrequency]
         supported_classes_dict = {class_.__name__: class_
