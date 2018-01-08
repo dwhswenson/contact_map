@@ -794,6 +794,34 @@ class ContactDifference(ContactObject):
                                                 positive.cutoff,
                                                 positive.n_neighbors_ignored)
 
+    def to_dict(self):
+        return {
+            'positive': self.positive.to_json(),
+            'negative': self.negative.to_json(),
+            'positive_cls': self.positive.__class__.__name__,
+            'negative_cls': self.negative.__class__.__name__
+        }
+
+    @classmethod
+    def from_dict(cls, dct):
+        # TODO: add searching for subclasses (http://code.activestate.com/recipes/576949-find-all-subclasses-of-a-given-class/)
+        supported_classes = [ContactMap, ContactFrequency]
+        supported_classes_dict = {class_.__name__: class_
+                                  for class_ in supported_classes}
+
+        def rebuild(pos_neg):
+            class_name = dct[pos_neg + "_cls"]
+            try:
+                cls_ = supported_classes_dict[class_name]
+            except KeyError:  # pragma: no cover
+                raise RuntimeError("Can't rebuild class " + class_name)
+            obj = cls_.from_json(dct[pos_neg])
+            return obj
+
+        positive = rebuild('positive')
+        negative = rebuild('negative')
+        return cls(positive, negative)
+
     def __sub__(self, other):
         raise NotImplementedError
 

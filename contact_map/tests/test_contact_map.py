@@ -75,8 +75,10 @@ def _contact_object_compare(m, m2):
     assert m.n_neighbors_ignored == m2.n_neighbors_ignored
     assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
     assert m.topology == m2.topology
-    assert m._atom_contacts == m2._atom_contacts
-    assert m._residue_contacts == m2._residue_contacts
+    if hasattr(m, '_atom_contacts') or hasattr(m2, '_atom_contacts'):
+        assert m._atom_contacts == m2._atom_contacts
+    if hasattr(m, '_residue_contacts') or hasattr(m2, '_residue_contacts'):
+        assert m._residue_contacts == m2._residue_contacts
 
 def test_residue_neighborhood():
     top = traj.topology
@@ -277,19 +279,17 @@ class TestContactFrequency(object):
         }
         assert residue_contacts.counter == expected_residue_contacts
 
-    def test_dict_serialization_cycle(self):
-        m = self.map
-        dct = self.map.to_dict()
-        m2 = ContactFrequency.from_dict(dct)
-        _contact_object_compare(m, m2)
-        assert m == m2
+    @pytest.mark.parametrize("intermediate", ["dict", "json"])
+    def test_serialization_cycle(self, intermediate):
+        serializer, deserializer = {
+            'json': (self.map.to_json, ContactFrequency.from_json),
+            'dict': (self.map.to_dict, ContactFrequency.from_dict)
+        }[intermediate]
 
-    def test_json_serialization_cycle(self):
-        m = self.map
-        json = self.map.to_json()
-        m2 = ContactFrequency.from_json(json)
-        _contact_object_compare(m, m2)
-        assert m == m2
+        serialized = serializer()
+        reloaded = deserializer(serialized)
+        _contact_object_compare(self.map, reloaded)
+        assert self.map == reloaded
 
     def test_frames_parameter(self):
         # test that the frames parameter in initialization works
@@ -588,11 +588,22 @@ class TestContactDifference(object):
         assert diff_2.residue_contacts.counter == \
                 {k: -v for (k, v) in expected_residue_count.items()}
 
-    def test_dict_serialization_cycle(self):
-        pytest.skip()
+    @pytest.mark.parametrize("intermediate", ["dict", "json"])
+    def test_serialization_cycle(self, intermediate):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        diff = ttraj - frame
 
-    def test_json_serialization_cycle(self):
-        pytest.skip()
+        serializer, deserializer = {
+            'json': (diff.to_json, ContactDifference.from_json),
+            'dict': (diff.to_dict, ContactDifference.from_dict)
+        }[intermediate]
+
+        serialized = serializer()
+        reloaded = deserializer(serialized)
+        _contact_object_compare(diff, reloaded)
+        assert diff == reloaded
 
     def test_diff_frame_frame(self):
         m0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
