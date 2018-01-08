@@ -286,6 +286,10 @@ class ContactObject(object):
         """Convert object to a dict.
 
         Keys should be strings; values should be (JSON-) serializable.
+
+        See also
+        --------
+        from_dict
         """
         # need to explicitly convert possible np.int64 to int in several
         dct = {
@@ -304,6 +308,12 @@ class ContactObject(object):
 
     @classmethod
     def from_dict(cls, dct):
+        """Create object from dict.
+
+        See also
+        --------
+        to_dict
+        """
         deserialize_set = lambda k: set(k)
         deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
         deserialization_helpers = {
@@ -329,6 +339,7 @@ class ContactObject(object):
 
     @staticmethod
     def _deserialize_topology(topology_json):
+        """Create MDTraj topology from JSON-serialized version"""
         table, bonds = json.loads(topology_json)
         topology_df = pd.read_json(table)
         topology = md.Topology.from_dataframe(topology_df,
@@ -337,6 +348,7 @@ class ContactObject(object):
 
     @staticmethod
     def _serialize_topology(topology):
+        """Serialize MDTraj topology (to JSON)"""
         table, bonds = topology.to_dataframe()
         json_tuples = (table.to_json(), bonds.tolist())
         return json.dumps(json_tuples)
@@ -345,6 +357,7 @@ class ContactObject(object):
     # useful for many things, and this serialization should be moved there
     @staticmethod
     def _serialize_contact_counter(counter):
+        """JSON string from contact counter"""
         # have to explicitly convert to int because json doesn't know how to
         # serialize np.int64 objects, which we get in Python 3
         serializable = {json.dumps([int(val) for val in key]): counter[key]
@@ -353,6 +366,7 @@ class ContactObject(object):
 
     @staticmethod
     def _deserialize_contact_counter(json_string):
+        """Contact counted from JSON string"""
         dct = json.loads(json_string)
         counter = collections.Counter({
             frozenset(json.loads(key)): dct[key] for key in dct
@@ -360,11 +374,28 @@ class ContactObject(object):
         return counter
 
     def to_json(self):
+        """JSON-serialized version of this object.
+
+        See also
+        --------
+        from_json
+        """
         dct = self.to_dict()
         return json.dumps(dct)
 
     @classmethod
     def from_json(cls, json_string):
+        """Create object from JSON string
+
+        Parameters
+        ----------
+        json_string : str
+            JSON-serialized version of the object
+
+        See also
+        --------
+        to_json
+        """
         dct = json.loads(json_string)
         return cls.from_dict(dct)
 
