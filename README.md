@@ -5,7 +5,6 @@
 [![PyPI](https://img.shields.io/pypi/v/contact-map.svg)](https://pypi.python.org/pypi/contact-map/)
 [![conda-forge](https://img.shields.io/conda/v/conda-forge/contact_map.svg)](https://github.com/conda-forge/contact_map-feedstock)
 
-[![codebeat badge](https://codebeat.co/badges/c7fb604a-35a8-4ccf-afea-18d6bd494726)](https://codebeat.co/projects/github-com-dwhswenson-contact_map-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f7f3cf53698e4655ac8895f13fa5dea6)](https://www.codacy.com/app/dwhswenson/contact_map?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dwhswenson/contact_map&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/84768756d594176d8da6/maintainability)](https://codeclimate.com/github/dwhswenson/contact_map/maintainability)
 
