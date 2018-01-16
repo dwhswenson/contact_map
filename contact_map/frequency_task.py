@@ -1,18 +1,15 @@
-import mdtraj as md
-from contact_map import ContactFrequency
-
 """
 Task-based implementation of :class:`.ContactFrequency`.
 
 The overall algorithm is:
 
 1. Identify how we're going to slice up the trajectory into task-based
-   chunks (:meth:`.block_slices`, :meth:`.default_slices`)
-2. On each node:
-    a. Load the trajectory segment (:meth:`.load_trajectory_task`)
-    b. Run the analysis on the segment (:meth:`.map_task`)
+   chunks (:meth:`block_slices`, :meth:`default_slices`)
+2. On each node
+    a. Load the trajectory segment (:meth:`load_trajectory_task`)
+    b. Run the analysis on the segment (:meth:`map_task`)
 3. Once all the results have been collected, combine them
-   (:meth:`.reduce_all_results`)
+   (:meth:`reduce_all_results`)
 
 Notes
 -----
@@ -22,6 +19,9 @@ have a solution for JSON serialization of MDTraj objects, so if JSON
 serialization is the communication method, the loading of the trajectory and
 the calculation of the contacts must be combined into a single task.
 """
+
+import mdtraj as md
+from contact_map import ContactFrequency
 
 def block_slices(n_total, n_per_block):
     """Determine slices for splitting the input array.
@@ -67,12 +67,55 @@ def default_slices(n_total, n_workers):
 
 
 def load_trajectory_task(subslice, file_name, **kwargs):
+    """
+    Task for loading file. Reordered for to take per-task variable first.
+
+    Parameters
+    ----------
+    subslice : slice
+        the slice of the trajectory to use
+    file_name : str
+        trajectory file name
+    kwargs :
+        other parameters to mdtraj.load
+
+    Returns
+    -------
+    md.Trajectory :
+        subtrajectory for this slice
+    """
     return md.load(file_name, **kwargs)[subslice]
 
 def map_task(subtrajectory, parameters):
+    """Task to be mapped to all subtrajectories. Run ContactFrequency
+
+    Parameters
+    ----------
+    subtrajectory : mdtraj.Trajectory
+        single trajectory segment to calculate ContactFrequency for
+    parameters : dict
+        kwargs-style dict for the :class:`.ContactFrequency` object
+
+    Returns
+    -------
+    :class:`.ContactFrequency` :
+        contact frequency for the subtrajectory
+    """
     return ContactFrequency(subtrajectory, **parameters)
 
 def reduce_all_results(contacts):
+    """Combine multiple :class:`.ContactFrequency` objects into one
+
+    Parameters
+    ----------
+    contacts : iterable of :class:`.ContactFrequency`
+        the individual (partial) contact frequencies
+
+    Returns
+    -------
+    :class:`.ContactFrequency` :
+        total of all input contact frequencies (summing them)
+    """
     accumulator = contacts[0]
     for contact in contacts[1:]:
         accumulator.add_contact_frequency(contact)
@@ -80,8 +123,10 @@ def reduce_all_results(contacts):
 
 
 def map_task_json(subtrajectory, parameters):
+    """JSON-serialized version of :meth:`map_task`"""
     return map_task(subtrajectory, parameters).to_json()
 
 def reduce_all_results_json(results_of_map):
+    """JSON-serialized version of :meth:`reduce_all_results`"""
     contacts = [ContactFrequency.from_json(res) for res in results_of_map]
     return reduce_all_results(contacts)

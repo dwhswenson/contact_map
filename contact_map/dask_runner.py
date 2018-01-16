@@ -1,22 +1,29 @@
-from dask.distributed import Client
-
-from . import frequency_task
-
 """
 Implementation of ContactFrequency parallelization using dask.distributed
 """
 
+from . import frequency_task
+
+
 def dask_run(trajectory, client, run_info):
     """
+    Runs dask version of ContactFrequency. Note that this API on this will
+    definitely change before the release.
+
     Parameters
     ----------
     trajectory : mdtraj.trajectory
-    scheduler_file : str
+    client : dask.distributed.Client
         path to dask scheduler file
     run_info : dict
         keys are 'trajectory_file' (trajectory filename), 'load_kwargs'
         (additional kwargs passed to md.load), and 'parameters' (dict of
         kwargs for the ContactFrequency object)
+
+    Returns
+    -------
+    :class:`.ContactFrequency` :
+        total contact frequency for the trajectory
     """
     slices = frequency_task.default_slices(n_total=len(trajectory),
                                            n_workers=len(client.ncores()))
