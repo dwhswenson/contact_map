@@ -49,7 +49,7 @@ class TestTasks(object):
 
     def test_map_task(self):
         trajectory = traj[:4]
-        mapped = map_task(traj, parameters=self.parameters)
+        mapped = map_task(trajectory, parameters=self.parameters)
         assert mapped == self.contact_freq_0_4
 
     def test_reduce_task(self):
@@ -60,11 +60,10 @@ class TestTasks(object):
     def test_map_task_json(self):
         # check the json objects by converting them back to full objects
         trajectory = traj[:4]
-        mapped = map_task_json(traj, parameters=self.parameters)
+        mapped = map_task_json(trajectory, parameters=self.parameters)
         assert ContactFrequency.from_json(mapped) == self.contact_freq_0_4
 
     def test_reduce_all_results_json(self):
-        pytest.skip()
         reduced = reduce_all_results_json([self.contact_freq_0_4.to_json(),
                                            self.contact_freq_4.to_json()])
         assert reduced == self.total_contact_freq
@@ -87,7 +86,6 @@ class TestTasks(object):
                  for sl in slices]
         mapped = [map_task_json(subtraj, self.parameters)
                   for subtraj in trajs]
-        pytest.skip()
         result = reduce_all_results_json(mapped)
         assert result == self.total_contact_freq
 
