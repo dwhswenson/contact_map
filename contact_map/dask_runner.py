@@ -3,6 +3,8 @@ Implementation of ContactFrequency parallelization using dask.distributed
 """
 
 from . import frequency_task
+from contact_map import ContactFrequency, ContactObject
+import mdtraj as md
 
 
 def dask_run(trajectory, client, run_info):
@@ -36,3 +38,36 @@ def dask_run(trajectory, client, run_info):
     freq = client.submit(frequency_task.reduce_all_results, maps)
 
     return freq.result()
+
+class DaskContactFrequency(ContactFrequency):
+    def __init__(self, client, filename, query=None, haystack=None,
+                 cutoff=0.45, n_neighbors_ignored=2, **kwargs):
+        self.client = client
+        self.filename = filename
+        trajectory = md.load(filename, **kwargs)
+
+        self.frames = range(len(trajectory))
+        self.kwargs = kwargs
+
+        ContactObject.__init__(self, trajectory.topology, query, haystack,
+                               cutoff, n_neighbors_ignored)
+
+        freq = dask_run(trajectory, client, self.run_info)
+        self._n_frames = freq.n_frames
+        self._atom_contacts = freq._atom_contacts
+        self._residue_contacts = freq._residue_contacts
+
+    @property
+    def parameters(self):
+        return {'query': self.query,
+                'haystack': self.haystack,
+                'cutoff': self.cutoff,
+                'n_neighbors_ignored': self.n_neighbors_ignored}
+
+    @property
+    def run_info(self):
+        return {'parameters': self.parameters,
+                'trajectory_file': self.filename,
+                'load_kwargs': self.kwargs}
+
+
