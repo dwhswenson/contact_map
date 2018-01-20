@@ -28,3 +28,12 @@ Minimum Distance (and related)
 
     MinimumDistanceCounter
     NearestAtoms
+
+Parallelization of ``ContactFrequency``
+---------------------------------------
+
+.. autosummary::
+    :toctree: api/generated/
+    
+    frequency_task
+    dask_runner

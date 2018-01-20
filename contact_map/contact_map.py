@@ -724,6 +724,23 @@ class ContactFrequency(ContactObject):
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
 
+    def __hash__(self):
+        return hash((super(ContactFrequency, self).__hash__(),
+                     tuple(self._atom_contacts.items()),
+                     tuple(self._residue_contacts.items()),
+                     self.n_frames))
+
+    def __eq__(self, other):
+        is_equal = (super(ContactFrequency, self).__eq__(other)
+                    and self._atom_contacts == other._atom_contacts
+                    and self._residue_contacts == other._residue_contacts
+                    and self.n_frames == other.n_frames)
+        return is_equal
+
+    def to_dict(self):
+        dct = super(ContactFrequency, self).to_dict()
+        dct.update({'n_frames': self.n_frames})
+        return dct
 
     def _build_contact_map(self, trajectory):
         # We actually build the contact map on a per-residue basis, although
