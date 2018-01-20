@@ -329,6 +329,17 @@ class TestContactFrequency(object):
         }
         assert contacts.residue_contacts.counter == expected_residue_count
 
+    def test_hash(self):
+        map2 = ContactFrequency(trajectory=traj,
+                                cutoff=0.075,
+                                n_neighbors_ignored=0)
+        map3 = ContactFrequency(trajectory=traj[:2],
+                                cutoff=0.075,
+                                n_neighbors_ignored=0)
+
+        assert hash(self.map) == hash(map2)
+        assert hash(self.map) != hash(map3)
+
     def test_saving(self):
         m = self.map
         m.save_to_file(test_file)
