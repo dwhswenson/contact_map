@@ -5,40 +5,97 @@ from .utils import *
 from .test_contact_map import traj
 
 from contact_map.frequency_task import *
-
+from contact_map import ContactFrequency
 
 class TestSlicing(object):
     # tests for block_slices and default_slices
     def test_block_slices_even_split(self):
-        pytest.skip()
+        n_total = 100
+        n_per_block = 25
+        results = [slice(0, 25), slice(25, 50), slice(50, 75),
+                   slice(75, 100)]
+        assert block_slices(n_total, n_per_block) == results
 
     def test_block_slices_remainder(self):
-        pytest.skip()
+        n_total = 85
+        n_per_block = 25
+        results = [slice(0, 25), slice(25, 50), slice(50, 75),
+                   slice(75, 85)]
+        assert block_slices(n_total, n_per_block) == results
 
     def test_default_slice_even_split(self):
-        pytest.skip()
+        n_total = 100
+        n_workers = 4
+        results = [slice(0, 25), slice(25, 50), slice(50, 75),
+                   slice(75, 100)]
+        assert default_slices(n_total, n_workers) == results
 
     def test_default_slice_remainder(self):
-        pytest.skip()
+        n_total = 102
+        n_workers = 4
+        results = [slice(0, 25), slice(25, 50), slice(50, 75),
+                   slice(75, 100), slice(100, 102)]
+        assert default_slices(n_total, n_workers) == results
 
 class TestTasks(object):
+    def setup(self):
+        self.contact_freq_0_4 = ContactFrequency(traj, cutoff=0.075,
+                                                 n_neighbors_ignored=0,
+                                                 frames=range(4))
+        self.contact_freq_4 = ContactFrequency(traj, cutoff=0.075,
+                                               n_neighbors_ignored=0,
+                                               frames=[4])
+        self.total_contact_freq = ContactFrequency(traj, cutoff=0.075,
+                                                   n_neighbors_ignored=0)
+        self.parameters = {'cutoff': 0.075, 'n_neighbors_ignored': 0}
+
     def test_load_trajectory_task(self):
-        pytest.skip()
+        subslice = slice(0, 4)
+        file_name = find_testfile("trajectory.pdb")
+        trajectory = load_trajectory_task(subslice, file_name)
+        assert trajectory.xyz.shape == (4, 10, 3)
 
     def test_map_task(self):
-        pytest.skip()
+        trajectory = traj[:4]
+        mapped = map_task(traj, parameters=self.parameters)
+        assert mapped == self.contact_freq_0_4
 
     def test_reduce_task(self):
-        pytest.skip()
+        reduced = reduce_all_results([self.contact_freq_0_4,
+                                      self.contact_freq_4])
+        assert reduced == self.total_contact_freq
 
     def test_map_task_json(self):
-        pytest.skip()
+        # check the json objects by converting them back to full objects
+        trajectory = traj[:4]
+        mapped = map_task_json(traj, parameters=self.parameters)
+        assert ContactFrequency.from_json(mapped) == self.contact_freq_0_4
 
     def test_reduce_all_results_json(self):
         pytest.skip()
+        reduced = reduce_all_results_json([self.contact_freq_0_4.to_json(),
+                                           self.contact_freq_4.to_json()])
+        assert reduced == self.total_contact_freq
 
     def test_integration_object_based(self):
-        pytest.skip()
+        file_name = find_testfile("trajectory.pdb")
+        slices = default_slices(len(traj), n_workers=3)
+        trajs = [load_trajectory_task(subslice=sl,
+                                      file_name=file_name)
+                 for sl in slices]
+        mapped = [map_task(subtraj, self.parameters) for subtraj in trajs]
+        result = reduce_all_results(mapped)
+        assert result == self.total_contact_freq
 
-    def test_intergration_json_based(self):
+    def test_integration_json_based(self):
+        file_name = find_testfile("trajectory.pdb")
+        slices = default_slices(len(traj), n_workers=3)
+        trajs = [load_trajectory_task(subslice=sl,
+                                      file_name=file_name)
+                 for sl in slices]
+        mapped = [map_task_json(subtraj, self.parameters)
+                  for subtraj in trajs]
         pytest.skip()
+        result = reduce_all_results_json(mapped)
+        assert result == self.total_contact_freq
+
