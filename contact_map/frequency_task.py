@@ -62,7 +62,7 @@ def default_slices(n_total, n_workers):
     list of slice
         slices to be applied to the array
     """
-    n_frames_per_task = n_total // n_workers
+    n_frames_per_task = max(1, n_total // n_workers)
     return block_slices(n_total, n_frames_per_task)
 
 

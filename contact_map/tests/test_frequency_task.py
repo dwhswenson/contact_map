@@ -23,7 +23,9 @@ class TestSlicing(object):
         ((100, 4),
          [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 100)]),
         ((77, 3),
-         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 77)])
+         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 77)]),
+        ((2, 20),
+         [slice(0, 1), slice(1, 2)])
     ])
     def test_default_slice_even_split(self, inputs, results):
         n_total, n_workers = inputs

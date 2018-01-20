@@ -3,7 +3,7 @@ Implementation of ContactFrequency parallelization using dask.distributed
 """
 
 from . import frequency_task
-from contact_map import ContactFrequency, ContactObject
+from .contact_map import ContactFrequency, ContactObject
 import mdtraj as md
 
 
