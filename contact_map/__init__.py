@@ -11,4 +11,6 @@ from .contact_map import (
 
 from .min_dist import NearestAtoms, MinimumDistanceCounter
 
+from .dask_runner import DaskContactFrequency
+
 # import concurrence
