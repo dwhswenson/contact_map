@@ -38,7 +38,7 @@ def block_slices(n_total, n_per_block):
     list of slice
         slices to be applied to the array
     """
-    n_full_blocks = n_total / n_per_block
+    n_full_blocks = n_total // n_per_block
     slices = [slice(i*n_per_block, (i+1)*n_per_block)
               for i in range(n_full_blocks)]
     if n_total % n_per_block:

@@ -9,32 +9,24 @@ from contact_map import ContactFrequency
 
 class TestSlicing(object):
     # tests for block_slices and default_slices
-    def test_block_slices_even_split(self):
-        n_total = 100
-        n_per_block = 25
-        results = [slice(0, 25), slice(25, 50), slice(50, 75),
-                   slice(75, 100)]
+    @pytest.mark.parametrize("inputs, results", [
+        ((100, 25),
+         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 100)]),
+        ((85, 25),
+         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 85)])
+    ])
+    def test_block_slices(self, inputs, results):
+        n_total, n_per_block = inputs
         assert block_slices(n_total, n_per_block) == results
 
-    def test_block_slices_remainder(self):
-        n_total = 85
-        n_per_block = 25
-        results = [slice(0, 25), slice(25, 50), slice(50, 75),
-                   slice(75, 85)]
-        assert block_slices(n_total, n_per_block) == results
-
-    def test_default_slice_even_split(self):
-        n_total = 100
-        n_workers = 4
-        results = [slice(0, 25), slice(25, 50), slice(50, 75),
-                   slice(75, 100)]
-        assert default_slices(n_total, n_workers) == results
-
-    def test_default_slice_remainder(self):
-        n_total = 102
-        n_workers = 4
-        results = [slice(0, 25), slice(25, 50), slice(50, 75),
-                   slice(75, 100), slice(100, 102)]
+    @pytest.mark.parametrize("inputs, results", [
+        ((100, 4),
+         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 100)]),
+        ((77, 3),
+         [slice(0, 25), slice(25, 50), slice(50, 75), slice(75, 77)])
+    ])
+    def test_default_slice_even_split(self, inputs, results):
+        n_total, n_workers = inputs
         assert default_slices(n_total, n_workers) == results
 
 class TestTasks(object):
