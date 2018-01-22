@@ -30,8 +30,6 @@ else:
 #   build a voxel list for the haystack, and then checks the voxel for each
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
-# * (dream) parallelization: map-reduce like himach should work great for
-#   this
 
 def residue_neighborhood(residue, n=1):
     """Find n nearest neighbor residues
@@ -72,8 +70,6 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val):
         cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
     # leave open other inputs to be parsed later (like tuples)
     return cb
-
-
 
 
 class ContactCount(object):
@@ -693,16 +689,6 @@ class ContactMap(ContactObject):
                     and self._atom_contacts == other._atom_contacts
                     and self._residue_contacts == other._residue_contacts)
         return is_equal
-
-    #def to_dict(self):
-        #dct = super(ContactMap, self).to_dict()
-        #atom_cntcts = self._serialize_contact_counter(self._atom_contacts)
-        #res_cntcts = self._serialize_contact_counter(self._residue_contacts)
-        #dct.update({
-            #'atom_contacts': atom_cntcts,
-            #'residue_contacts': res_cntcts
-        #})
-        #return dct
 
 
 class ContactFrequency(ContactObject):

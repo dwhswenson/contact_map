@@ -698,3 +698,11 @@ class TestContactDifference(object):
         assert diff.atom_contacts.counter == reloaded.atom_contacts.counter
         os.remove(test_file)
 
+    def test_plot(self):
+        # smoke test; checks that we cover negative counts in plotting
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        diff = ttraj - frame
+        diff.residue_contacts.plot()
+
