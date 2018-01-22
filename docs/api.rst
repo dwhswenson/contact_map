@@ -37,7 +37,7 @@ Parallelization of ``ContactFrequency``
     :toctree: api/generated/
 
     frequency_task
-    dask_runner
+    DaskContactFrequency
 
 -----
 
@@ -81,7 +81,7 @@ Most common
 ~~~~~~~~~~~
 
 Several methods begin with ``most_common``. The behavior for this is
-inspired by the behavior of :method:`collections.Counter.most_common`, which
+inspired by the behavior of :meth:`collections.Counter.most_common`, which
 returns elements and there counts ordered from most to least. Note that,
 unlike the original, we usually do not implement a way to only return the
 first ``n`` results (although this may be added later).

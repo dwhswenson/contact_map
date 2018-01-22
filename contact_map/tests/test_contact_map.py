@@ -1,8 +1,7 @@
 import os
 import collections
-import numpy as np
-import mdtraj as md
 import json
+import mdtraj as md
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
@@ -13,6 +12,7 @@ from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
+from contact_map.contact_count import ContactCount, HAS_MATPLOTLIB
 
 traj = md.load(find_testfile("trajectory.pdb"))
 
@@ -169,8 +169,8 @@ class TestContactMap(object):
 
     def test_json_serialization_cycle(self, idx):
         m = self.maps[idx]
-        json = m.to_json()
-        m2 = ContactMap.from_json(json)
+        json_str = m.to_json()
+        m2 = ContactMap.from_json(json_str)
         _contact_object_compare(m, m2)
         assert m == m2
 
@@ -436,134 +436,6 @@ class TestContactFrequency(object):
                 last_frame.residue_contacts.counter
 
 
-class TestContactCount(object):
-    def setup(self):
-        self.map = ContactFrequency(traj, cutoff=0.075,
-                                    n_neighbors_ignored=0)
-        self.topology = self.map.topology
-        self.atom_contacts = self.map.atom_contacts
-        self.residue_contacts = self.map.residue_contacts
-
-        self.atom_matrix = np.array([
-            #  0    1    2    3    4    5    6    7    8    9
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2], # 0
-            [0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.0, 0.0, 0.2, 0.2], # 1
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # 2
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], # 3
-            [0.0, 0.8, 0.0, 0.0, 0.0, 0.0, 1.0, 0.4, 0.2, 0.0], # 4
-            [0.0, 0.2, 0.0, 0.0, 0.0, 0.0, 1.0, 0.4, 0.2, 0.0], # 5
-            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0], # 6
-            [0.0, 0.0, 0.0, 0.0, 0.4, 0.4, 0.0, 0.0, 0.0, 0.0], # 7
-            [0.2, 0.2, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0], # 8
-            [0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 9
-        ])
-        self.residue_matrix = np.array([
-            #  0    1    2    3    4
-            [0.0, 0.0, 1.0, 0.0, 0.2], # 0
-            [0.0, 0.0, 0.0, 0.0, 0.0], # 1
-            [1.0, 0.0, 0.0, 1.0, 0.2], # 2
-            [0.0, 0.0, 1.0, 0.0, 0.0], # 3
-            [0.2, 0.0, 0.2, 0.0, 0.0]  # 4
-        ])
-
-    # HAS_MATPLOTLIB imported by contact_map wildcard
-    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
-    def test_plot(self):
-        # purely smoke tests
-        self.residue_contacts.plot()
-        self.atom_contacts.plot()
-        self.residue_contacts.plot(with_colorbar=False)
-
-    def test_initialization(self):
-        assert self.atom_contacts._object_f == self.topology.atom
-        assert self.atom_contacts.n_x == self.topology.n_atoms
-        assert self.atom_contacts.n_y == self.topology.n_atoms
-        assert self.residue_contacts._object_f == self.topology.residue
-        assert self.residue_contacts.n_x == self.topology.n_residues
-        assert self.residue_contacts.n_y == self.topology.n_residues
-
-    def test_sparse_matrix(self):
-        assert_array_equal(self.map.atom_contacts.sparse_matrix.todense(),
-                           self.atom_matrix)
-        assert_array_equal(self.map.residue_contacts.sparse_matrix.todense(),
-                           self.residue_matrix)
-
-    def test_df(self):
-        atom_df = self.map.atom_contacts.df
-        residue_df = self.map.residue_contacts.df
-        assert isinstance(atom_df, pd.SparseDataFrame)
-        assert isinstance(residue_df, pd.SparseDataFrame)
-
-        assert_array_equal(atom_df.to_dense().as_matrix(),
-                           zero_to_nan(self.atom_matrix))
-        assert_array_equal(residue_df.to_dense().as_matrix(),
-                           zero_to_nan(self.residue_matrix))
-
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    def test_most_common(self, obj_type):
-        if obj_type == 'atom':
-            source_expected = traj_atom_contact_count
-            contacts = self.map.atom_contacts
-            obj_func = self.topology.atom
-        elif obj_type == 'res':
-            source_expected = traj_residue_contact_count
-            contacts = self.map.residue_contacts
-            obj_func = self.topology.residue
-        else:
-            raise RuntimeError("This shouldn't happen")
-
-        expected = [
-            (frozenset([obj_func(idx) for idx in ll[0]]), float(ll[1]) / 5.0)
-            for ll in source_expected.items()
-        ]
-
-        most_common = contacts.most_common()
-        cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
-
-        check_most_common_order(most_common)
-        assert set(cleaned) == set(expected)
-
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    def test_most_common_with_object(self, obj_type):
-        top = self.topology
-        if obj_type == 'atom':
-            contacts = self.map.atom_contacts
-            obj = top.atom(4)
-            expected = [(frozenset([obj, top.atom(6)]), 1.0),
-                        (frozenset([obj, top.atom(1)]), 0.8),
-                        (frozenset([obj, top.atom(7)]), 0.4),
-                        (frozenset([obj, top.atom(8)]), 0.2)]
-        elif obj_type == 'res':
-            contacts = self.map.residue_contacts
-            obj = self.topology.residue(2)
-            expected = [(frozenset([obj, top.residue(0)]), 1.0),
-                        (frozenset([obj, top.residue(3)]), 1.0),
-                        (frozenset([obj, top.residue(4)]), 0.2)]
-        else:
-            raise RuntimeError("This shouldn't happen")
-
-        most_common = contacts.most_common(obj)
-        cleaned = [(frozenset(ll[0]), ll[1]) for ll in most_common]
-
-        check_most_common_order(most_common)
-        assert set(cleaned) == set(expected)
-
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    def test_most_common_idx(self, obj_type):
-        if obj_type == 'atom':
-            source_expected = traj_atom_contact_count
-            contacts = self.map.atom_contacts
-        elif obj_type == 'res':
-            source_expected = traj_residue_contact_count
-            contacts = self.map.residue_contacts
-        else:
-            raise RuntimeError("This shouldn't happen")
-
-        expected_count = [(ll[0], float(ll[1]) / 5.0)
-                          for ll in source_expected.items()]
-        assert set(contacts.most_common_idx()) == set(expected_count)
-
-
 class TestContactDifference(object):
     def test_diff_traj_frame(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
@@ -706,4 +578,3 @@ class TestContactDifference(object):
         frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
         diff = ttraj - frame
         diff.residue_contacts.plot()
-
