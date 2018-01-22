@@ -18,6 +18,7 @@ from .py_2_3 import inspect_method_arguments
 try:
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
 except ImportError:
     HAS_MATPLOTLIB = False
 else:
@@ -139,7 +140,7 @@ class ContactCount(object):
         columns = list(range(self.n_y))
         return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0):
+    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True):
         """
         Plot contact matrix (requires matplotlib)
 
@@ -168,7 +169,11 @@ class ContactCount(object):
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
+        min_val = 0.0
+
         for (pair, value) in self.counter.items():
+            if value < min_val:
+                min_val = value
             pair_list = list(pair)
             patch_0 = matplotlib.patches.Rectangle(
                 pair_list, 1, 1,
@@ -182,6 +187,24 @@ class ContactCount(object):
             )
             ax.add_patch(patch_0)
             ax.add_patch(patch_1)
+
+        if with_colorbar:
+            # identify minimum color
+            cmin = 0.0 if min_val == 0.0 else -1.0
+            cmax = 1.0  # may change this later (allow arbitrary)
+            # all of this is to set up a custom color bar
+            # see https://stackoverflow.com/questions/24746231
+            cmin_normed = float(cmin - norm.vmin) / (norm.vmax - norm.vmin)
+            cmax_normed = float(cmax - norm.vmin) / (norm.vmax - norm.vmin)
+            n_colors = int(round((cmax_normed - cmin_normed) * cmap_f.N))
+            colors = cmap_f(np.linspace(cmin_normed, cmax_normed, n_colors))
+            new_cmap = LinearSegmentedColormap.from_list(name="Partial Map",
+                                                         colors=colors)
+            new_norm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
+            sm = plt.cm.ScalarMappable(cmap=new_cmap, norm=new_norm)
+            sm._A = []
+            cb = plt.colorbar(sm)
+
 
         return (fig, ax)
 
