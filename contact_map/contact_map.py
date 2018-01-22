@@ -12,13 +12,13 @@ import numpy as np
 import pandas as pd
 import mdtraj as md
 
+from .plot_utils import ranged_colorbar
 from .py_2_3 import inspect_method_arguments
 
 # matplotlib is technically optional, but required for plotting
 try:
     import matplotlib
     import matplotlib.pyplot as plt
-    from matplotlib.colors import LinearSegmentedColormap
 except ImportError:
     HAS_MATPLOTLIB = False
 else:
@@ -62,6 +62,17 @@ def _residue_and_index(residue, topology):
         res_idx = residue
         res = topology.residue(res_idx)
     return (res, res_idx)
+
+def _colorbar(with_colorbar, cmap_f, norm, min_val):
+    if with_colorbar is False:
+        return None
+    elif with_colorbar is True:
+        cbmin = np.floor(min_val)  # [-1.0..0.0] => -1; [0.0..1.0] => 0
+        cbmax = 1.0
+        cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
+    # leave open other inputs to be parsed later (like tuples)
+    return cb
+
 
 
 
@@ -188,23 +199,7 @@ class ContactCount(object):
             ax.add_patch(patch_0)
             ax.add_patch(patch_1)
 
-        if with_colorbar:
-            # identify minimum color
-            cmin = 0.0 if min_val == 0.0 else -1.0
-            cmax = 1.0  # may change this later (allow arbitrary)
-            # all of this is to set up a custom color bar
-            # see https://stackoverflow.com/questions/24746231
-            cmin_normed = float(cmin - norm.vmin) / (norm.vmax - norm.vmin)
-            cmax_normed = float(cmax - norm.vmin) / (norm.vmax - norm.vmin)
-            n_colors = int(round((cmax_normed - cmin_normed) * cmap_f.N))
-            colors = cmap_f(np.linspace(cmin_normed, cmax_normed, n_colors))
-            new_cmap = LinearSegmentedColormap.from_list(name="Partial Map",
-                                                         colors=colors)
-            new_norm = matplotlib.colors.Normalize(vmin=cmin, vmax=cmax)
-            sm = plt.cm.ScalarMappable(cmap=new_cmap, norm=new_norm)
-            sm._A = []
-            cb = plt.colorbar(sm)
-
+        _colorbar(with_colorbar, cmap_f, norm, min_val)
 
         return (fig, ax)
 

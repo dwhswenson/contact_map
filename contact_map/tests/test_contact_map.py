@@ -469,9 +469,10 @@ class TestContactCount(object):
     # HAS_MATPLOTLIB imported by contact_map wildcard
     @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
     def test_plot(self):
-        # purely smoke test
+        # purely smoke tests
         self.residue_contacts.plot()
         self.atom_contacts.plot()
+        self.residue_contacts.plot(with_colorbar=False)
 
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom

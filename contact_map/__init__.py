@@ -13,4 +13,6 @@ from .min_dist import NearestAtoms, MinimumDistanceCounter
 
 from .dask_runner import DaskContactFrequency
 
+from . import plot_utils
+
 # import concurrence
