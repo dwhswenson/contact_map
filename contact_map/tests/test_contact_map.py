@@ -698,6 +698,7 @@ class TestContactDifference(object):
         assert diff.atom_contacts.counter == reloaded.atom_contacts.counter
         os.remove(test_file)
 
+    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
     def test_plot(self):
         # smoke test; checks that we cover negative counts in plotting
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
