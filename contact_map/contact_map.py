@@ -221,10 +221,12 @@ class ContactObject(object):
                 failed_attr.update({attr: (self_val, other_val)})
         msg = "Incompatible ContactObjects:\n"
         for (attr, vals) in failed_attr.items():
-            msg += "        %s: %s != %s".format(attr, str(vals[0]),
-                                                 str(vals[1]))
+            msg += "        {attr}: {self} != {other}\n".format(
+                attr=attr, self=str(vals[0]), other=str(vals[1])
+            )
         if failed_attr:
             raise err(msg)
+        return True
 
     def save_to_file(self, filename, mode="w"):
         """Save this object to the given file.

@@ -87,6 +87,8 @@ class DaskContactFrequency(ContactFrequency):
         self.frames = range(len(trajectory))
         self.kwargs = kwargs
 
+        # TODO: this can be fixed (use proper super) by overriding this
+        # class's _build_contact_map method to run the dask_run function
         ContactObject.__init__(self, trajectory.topology, query, haystack,
                                cutoff, n_neighbors_ignored)
 
