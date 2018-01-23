@@ -12,7 +12,6 @@ import pandas as pd
 import mdtraj as md
 
 from .contact_count import ContactCount
-from .plot_utils import ranged_colorbar
 from .py_2_3 import inspect_method_arguments
 
 # TODO:
@@ -126,7 +125,7 @@ class ContactObject(object):
         --------
         to_dict
         """
-        deserialize_set = lambda k: set(k)
+        deserialize_set = set
         deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
         deserialization_helpers = {
             'topology': cls._deserialize_topology,
