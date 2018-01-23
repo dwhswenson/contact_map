@@ -1,5 +1,6 @@
-import os
-import collections
+# pylint: disable=wildcard-import, missing-docstring, protected-access
+# pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
+# pylint: disable=wrong-import-order, unused-wildcard-import
 
 from .utils import *
 from .test_contact_map import traj
