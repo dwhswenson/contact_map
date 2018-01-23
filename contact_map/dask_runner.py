@@ -84,18 +84,16 @@ class DaskContactFrequency(ContactFrequency):
         self.filename = filename
         trajectory = md.load(filename, **kwargs)
 
-        self.frames = range(len(trajectory))
         self.kwargs = kwargs
 
-        # TODO: this can be fixed (use proper super) by overriding this
-        # class's _build_contact_map method to run the dask_run function
-        ContactObject.__init__(self, trajectory.topology, query, haystack,
-                               cutoff, n_neighbors_ignored)
+        super(DaskContactFrequency, self).__init__(
+            trajectory, query, haystack, cutoff, n_neighbors_ignored
+        )
 
-        freq = dask_run(trajectory, client, self.run_info)
-        self._n_frames = freq.n_frames
-        self._atom_contacts = freq._atom_contacts
-        self._residue_contacts = freq._residue_contacts
+    def _build_contact_map(self, trajectory):
+        freq = dask_run(trajectory, self.client, self.run_info)
+        self._frames = freq.n_frames
+        return (freq._atom_contacts, freq._residue_contacts)
 
     @property
     def parameters(self):
