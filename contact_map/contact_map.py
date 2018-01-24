@@ -6,18 +6,14 @@ Contact map analysis.
 import collections
 import itertools
 import pickle
-import scipy
+import json
+import numpy as np
 import pandas as pd
 import mdtraj as md
 
-# matplotlib is technically optional, but required for plotting
-try:
-    import matplotlib
-    import matplotlib.pyplot as plt
-except ImportError:
-    HAS_MATPLOTLIB = False
-else:
-    HAS_MATPLOTLIB = True
+from .contact_count import ContactCount
+from .plot_utils import ranged_colorbar
+from .py_2_3 import inspect_method_arguments
 
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
@@ -25,8 +21,6 @@ else:
 #   build a voxel list for the haystack, and then checks the voxel for each
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
-# * (dream) parallelization: map-reduce like himach should work great for
-#   this
 
 def residue_neighborhood(residue, n=1):
     """Find n nearest neighbor residues
@@ -59,188 +53,6 @@ def _residue_and_index(residue, topology):
     return (res, res_idx)
 
 
-class ContactCount(object):
-    """Return object when dealing with contacts (residue or atom).
-
-    This contains all the information about the contacts of a given type.
-    This information can be represented several ways. One is as a list of
-    contact pairs, each associated with the fraction of time the contact
-    occurs. Another is as a matrix, where the rows and columns label the
-    pair number, and the value is the fraction of time. This class provides
-    several methods to get different representations of this data for
-    further analysis.
-
-    In general, instances of this class shouldn't be created by a user using
-    ``__init__``; instead, they will be returned by other methods. So users
-    will often need to use this object for analysis.
-
-    Parameters
-    ----------
-    counter : :class:`collections.Counter`
-        the counter describing the count of how often the contact occurred;
-        key is a frozenset of a pair of numbers (identifying the
-        atoms/residues); value is the raw count of the number of times it
-        occurred
-    object_f : callable
-        method to obtain the object associated with the number used in
-        ``counter``; typically :meth:`mdtraj.Topology.residue` or
-        :meth:`mdtraj.Topology.atom`.
-    n_x : int
-        number of objects in the x direction (used in plotting)
-    n_y : int
-        number of objects in the y direction (used in plotting)
-    """
-    def __init__(self, counter, object_f, n_x, n_y):
-        self._counter = counter
-        self._object_f = object_f
-        self.n_x = n_x
-        self.n_y = n_y
-
-    @property
-    def counter(self):
-        """
-        :class:`collections.Counter` :
-            keys use index number; count is contact occurrences
-        """
-        return self._counter
-
-    @property
-    def sparse_matrix(self):
-        """
-        :class:`scipy.sparse.dok.dok_matrix` :
-            sparse matrix representation of contacts
-
-            Rows/columns correspond to indices and the values correspond to
-            the count
-        """
-        mtx = scipy.sparse.dok_matrix((self.n_x, self.n_y))
-        for (k, v) in self._counter.items():
-            key = list(k)
-            mtx[key[0], key[1]] = v
-            mtx[key[1], key[0]] = v
-        return mtx
-
-    @property
-    def df(self):
-        """
-        :class:`pandas.SparseDataFrame` :
-            DataFrame representation of the contact matrix
-
-            Rows/columns correspond to indices and the values correspond to
-            the count
-        """
-        mtx = self.sparse_matrix.tocoo()
-        index = list(range(self.n_x))
-        columns = list(range(self.n_y))
-        return pd.SparseDataFrame(mtx, index=index, columns=columns)
-
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0):
-        """
-        Plot contact matrix (requires matplotlib)
-
-        Parameters
-        ----------
-        cmap : str
-            color map name, default 'seismic'
-        vmin : float
-            minimum value for color map interpolation; default -1.0
-        vmax : float
-            maximum value for color map interpolation; default 1.0
-
-        Returns
-        -------
-        fig : :class:`matplotlib.Figure`
-            matplotlib figure object for this plot
-        ax : :class:`matplotlib.Axes`
-            matplotlib axes object for this plot
-        """
-        if not HAS_MATPLOTLIB:  # pragma: no cover
-            raise RuntimeError("Error importing matplotlib")
-        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap_f = plt.get_cmap(cmap)
-
-        fig, ax = plt.subplots()
-        ax.axis([0, self.n_x, 0, self.n_y])
-        ax.set_facecolor(cmap_f(norm(0.0)))
-
-        for (pair, value) in self.counter.items():
-            pair_list = list(pair)
-            patch_0 = matplotlib.patches.Rectangle(
-                pair_list, 1, 1,
-                facecolor=cmap_f(norm(value)),
-                linewidth=0
-            )
-            patch_1 = matplotlib.patches.Rectangle(
-                (pair_list[1], pair_list[0]), 1, 1,
-                facecolor=cmap_f(norm(value)),
-                linewidth=0
-            )
-            ax.add_patch(patch_0)
-            ax.add_patch(patch_1)
-
-        return (fig, ax)
-
-    def most_common(self, obj=None):
-        """
-        Most common values (ordered) with object as keys.
-
-        This uses the objects for the contact pair (typically MDTraj
-        ``Atom`` or ``Residue`` objects), instead of numeric indices. This
-        is more readable and can be easily used for further manipulation.
-
-        Parameters
-        ----------
-        obj : MDTraj Atom or Residue
-            if given, the return value only has entries including this
-            object (allowing one to, for example, get the most common
-            contacts with a specific residue)
-
-        Returns
-        -------
-        list :
-            the most common contacts in order. If the list is ``l``, then
-            each element ``l[e]`` is a tuple with two parts: ``l[e][0]`` is
-            the key, which is a pair of Atom or Residue objects, and
-            ``l[e][1]`` is the count of how often that contact occurred.
-
-        See also
-        --------
-        most_common_idx : same thing, using index numbers as key
-        """
-        if obj is None:
-            result = [
-                ([self._object_f(idx) for idx in common[0]], common[1])
-                for common in self.most_common_idx()
-            ]
-        else:
-            obj_idx = obj.index
-            result = [
-                ([self._object_f(idx) for idx in common[0]], common[1])
-                for common in self.most_common_idx()
-                if obj_idx in common[0]
-            ]
-        return result
-
-    def most_common_idx(self):
-        """
-        Most common values (ordered) with indices as keys.
-
-        Returns
-        -------
-        list :
-            the most common contacts in order. The if the list is ``l``,
-            then each element ``l[e]`` consists of two parts: ``l[e][0]`` is
-            a pair of integers, representing the indices of the objects
-            associated with the contact, and ``l[e][1]`` is the count of how
-            often that contact occurred
-
-        See also
-        --------
-        most_common : same thing, using objects as key
-        """
-        return self._counter.most_common()
-
-
 class ContactObject(object):
     """
     Generic object for contact map related analysis. Effectively abstract.
@@ -263,6 +75,141 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
+
+    def __hash__(self):
+        return hash((self.cutoff, self.n_neighbors_ignored,
+                     frozenset(self._query), frozenset(self._haystack),
+                     self.topology))
+
+    def __eq__(self, other):
+        is_equal = (self.cutoff == other.cutoff
+                    and self.n_neighbors_ignored == other.n_neighbors_ignored
+                    and self.query == other.query
+                    and self.haystack == other.haystack
+                    and self.topology == other.topology)
+        return is_equal
+
+    def to_dict(self):
+        """Convert object to a dict.
+
+        Keys should be strings; values should be (JSON-) serializable.
+
+        See also
+        --------
+        from_dict
+        """
+        # need to explicitly convert possible np.int64 to int in several
+        dct = {
+            'topology': self._serialize_topology(self.topology),
+            'cutoff': self._cutoff,
+            'query': list([int(val) for val in self._query]),
+            'haystack': list([int(val) for val in self._haystack]),
+            'n_neighbors_ignored': self._n_neighbors_ignored,
+            'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
+            'atom_contacts': \
+                self._serialize_contact_counter(self._atom_contacts),
+            'residue_contacts': \
+                self._serialize_contact_counter(self._residue_contacts)
+        }
+        return dct
+
+    @classmethod
+    def from_dict(cls, dct):
+        """Create object from dict.
+
+        Parameters
+        ----------
+        dct : dict
+            dict-formatted serialization (see to_dict for details)
+
+        See also
+        --------
+        to_dict
+        """
+        deserialize_set = lambda k: set(k)
+        deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
+        deserialization_helpers = {
+            'topology': cls._deserialize_topology,
+            'atom_contacts': cls._deserialize_contact_counter,
+            'residue_contacts': cls._deserialize_contact_counter,
+            'query': deserialize_set,
+            'haystack': deserialize_set,
+            'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
+        }
+        for key in deserialization_helpers:
+            if key in dct:
+                dct[key] = deserialization_helpers[key](dct[key])
+
+        kwarg_keys = inspect_method_arguments(cls.__init__)
+        set_keys = set(dct.keys())
+        missing = set(kwarg_keys) - set_keys
+        dct.update({k: None for k in missing})
+        instance = cls.__new__(cls)
+        for k in dct:
+            setattr(instance, "_" + k, dct[k])
+        return instance
+
+    @staticmethod
+    def _deserialize_topology(topology_json):
+        """Create MDTraj topology from JSON-serialized version"""
+        table, bonds = json.loads(topology_json)
+        topology_df = pd.read_json(table)
+        topology = md.Topology.from_dataframe(topology_df,
+                                              np.array(bonds))
+        return topology
+
+    @staticmethod
+    def _serialize_topology(topology):
+        """Serialize MDTraj topology (to JSON)"""
+        table, bonds = topology.to_dataframe()
+        json_tuples = (table.to_json(), bonds.tolist())
+        return json.dumps(json_tuples)
+
+    # TODO: adding a separate object for these frozenset counters will be
+    # useful for many things, and this serialization should be moved there
+    @staticmethod
+    def _serialize_contact_counter(counter):
+        """JSON string from contact counter"""
+        # have to explicitly convert to int because json doesn't know how to
+        # serialize np.int64 objects, which we get in Python 3
+        serializable = {json.dumps([int(val) for val in key]): counter[key]
+                        for key in counter}
+        return json.dumps(serializable)
+
+    @staticmethod
+    def _deserialize_contact_counter(json_string):
+        """Contact counted from JSON string"""
+        dct = json.loads(json_string)
+        counter = collections.Counter({
+            frozenset(json.loads(key)): dct[key] for key in dct
+        })
+        return counter
+
+    def to_json(self):
+        """JSON-serialized version of this object.
+
+        See also
+        --------
+        from_json
+        """
+        dct = self.to_dict()
+        return json.dumps(dct)
+
+    @classmethod
+    def from_json(cls, json_string):
+        """Create object from JSON string
+
+        Parameters
+        ----------
+        json_string : str
+            JSON-serialized version of the object
+
+        See also
+        --------
+        to_json
+        """
+        dct = json.loads(json_string)
+        return cls.from_dict(dct)
 
     def _check_compatibility(self, other):
         assert self.cutoff == other.cutoff
@@ -517,13 +464,24 @@ class ContactMap(ContactObject):
     """
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
-        self._frame = frame
+        self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
                                          cutoff, n_neighbors_ignored)
         contact_maps = self.contact_map(frame, 0,
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
         (self._atom_contacts, self._residue_contacts) = contact_maps
+
+    def __hash__(self):
+        return hash((super(ContactMap, self).__hash__(),
+                     tuple(self._atom_contacts.items()),
+                     tuple(self._residue_contacts.items())))
+
+    def __eq__(self, other):
+        is_equal = (super(ContactMap, self).__eq__(other)
+                    and self._atom_contacts == other._atom_contacts
+                    and self._residue_contacts == other._residue_contacts)
+        return is_equal
 
 
 class ContactFrequency(ContactObject):
@@ -560,7 +518,26 @@ class ContactFrequency(ContactObject):
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
-        self._build_contact_map(trajectory)
+        contacts = self._build_contact_map(trajectory)
+        (self._atom_contacts, self._residue_contacts) = contacts
+
+    def __hash__(self):
+        return hash((super(ContactFrequency, self).__hash__(),
+                     tuple(self._atom_contacts.items()),
+                     tuple(self._residue_contacts.items()),
+                     self.n_frames))
+
+    def __eq__(self, other):
+        is_equal = (super(ContactFrequency, self).__eq__(other)
+                    and self._atom_contacts == other._atom_contacts
+                    and self._residue_contacts == other._residue_contacts
+                    and self.n_frames == other.n_frames)
+        return is_equal
+
+    def to_dict(self):
+        dct = super(ContactFrequency, self).to_dict()
+        dct.update({'n_frames': self.n_frames})
+        return dct
 
     def _build_contact_map(self, trajectory):
         # We actually build the contact map on a per-residue basis, although
@@ -569,8 +546,8 @@ class ContactFrequency(ContactObject):
         # TODO: this whole thing should be cleaned up and should replace
         # MDTraj's really slow old compute_contacts by using MDTraj's new
         # neighborlists (unless the MDTraj people do that first).
-        self._atom_contacts_count = collections.Counter([])
-        self._residue_contacts_count = collections.Counter([])
+        atom_contacts_count = collections.Counter([])
+        residue_contacts_count = collections.Counter([])
 
         # cache things that can be calculated once based on the topology
         # (namely, which atom indices matter for each residue)
@@ -583,8 +560,10 @@ class ContactFrequency(ContactObject):
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
             # self._atom_contacts_count += frame_atom_contacts
-            self._atom_contacts_count.update(frame_atom_contacts)
-            self._residue_contacts_count += frame_residue_contacts
+            atom_contacts_count.update(frame_atom_contacts)
+            residue_contacts_count += frame_residue_contacts
+
+        return (atom_contacts_count, residue_contacts_count)
 
     @property
     def n_frames(self):
@@ -601,8 +580,8 @@ class ContactFrequency(ContactObject):
             contact frequency
         """
         self._check_compatibility(other)
-        self._atom_contacts_count += other._atom_contacts_count
-        self._residue_contacts_count += other._residue_contacts_count
+        self._atom_contacts += other._atom_contacts
+        self._residue_contacts += other._residue_contacts
         self._n_frames += other._n_frames
 
 
@@ -621,8 +600,8 @@ class ContactFrequency(ContactObject):
             contact frequency
         """
         self._check_compatibility(other)
-        self._atom_contacts_count -= other._atom_contacts_count
-        self._residue_contacts_count -= other._residue_contacts_count
+        self._atom_contacts -= other._atom_contacts
+        self._residue_contacts -= other._residue_contacts
         self._n_frames -= other._n_frames
 
     @property
@@ -632,7 +611,7 @@ class ContactFrequency(ContactObject):
         n_y = self.topology.n_atoms
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
-            for item in self._atom_contacts_count.items()
+            for item in self._atom_contacts.items()
         }), self.topology.atom, n_x, n_y)
 
     @property
@@ -642,7 +621,7 @@ class ContactFrequency(ContactObject):
         n_y = self.topology.n_residues
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
-            for item in self._residue_contacts_count.items()
+            for item in self._residue_contacts.items()
         }), self.topology.residue, n_x, n_y)
 
 
@@ -664,6 +643,53 @@ class ContactDifference(ContactObject):
                                                 positive.haystack,
                                                 positive.cutoff,
                                                 positive.n_neighbors_ignored)
+
+    def to_dict(self):
+        """Convert object to a dict.
+
+        Keys should be strings; values should be (JSON-) serializable.
+
+        See also
+        --------
+        from_dict
+        """
+        return {
+            'positive': self.positive.to_json(),
+            'negative': self.negative.to_json(),
+            'positive_cls': self.positive.__class__.__name__,
+            'negative_cls': self.negative.__class__.__name__
+        }
+
+    @classmethod
+    def from_dict(cls, dct):
+        """Create object from dict.
+
+        Parameters
+        ----------
+        dct : dict
+            dict-formatted serialization (see to_dict for details)
+
+        See also
+        --------
+        to_dict
+        """
+        # TODO: add searching for subclasses (http://code.activestate.com/recipes/576949-find-all-subclasses-of-a-given-class/)
+        supported_classes = [ContactMap, ContactFrequency]
+        supported_classes_dict = {class_.__name__: class_
+                                  for class_ in supported_classes}
+
+        def rebuild(pos_neg):
+            class_name = dct[pos_neg + "_cls"]
+            try:
+                cls_ = supported_classes_dict[class_name]
+            except KeyError:  # pragma: no cover
+                raise RuntimeError("Can't rebuild class " + class_name)
+            obj = cls_.from_json(dct[pos_neg])
+            return obj
+
+        positive = rebuild('positive')
+        negative = rebuild('negative')
+        return cls(positive, negative)
 
     def __sub__(self, other):
         raise NotImplementedError

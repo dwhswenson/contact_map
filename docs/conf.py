@@ -23,7 +23,7 @@ import sphinx_rtd_theme
 import pkg_resources
 import packaging.version
 # sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../contact_map/'))
+#sys.path.insert(0, os.path.abspath('../contact_map/'))
 sys.path.append(os.path.abspath('_themes'))
 
 # -- General configuration ------------------------------------------------
