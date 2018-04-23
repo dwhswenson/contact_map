@@ -9,7 +9,7 @@ from contact_map.dask_runner import *
 class TestDaskContactFrequency(object):
     def test_dask_integration(self):
         # this is an integration test to check that dask works
-        dask = pytest.importorskip('dask')
+        dask = pytest.importorskip('dask')  # pylint: disable=W0612
         distributed = pytest.importorskip('dask.distributed')
 
         client = distributed.Client()

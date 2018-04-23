@@ -1,6 +1,5 @@
 import os
 import collections
-import json
 import mdtraj as md
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
@@ -133,7 +132,6 @@ class TestContactMap(object):
 
     def test_to_dict(self, idx):
         m = self.maps[idx]
-        json_topol = json.dumps(pdb_topology_dict())
         dct = m.to_dict()
         # NOTE: topology only tested in a cycle; JSON order not guaranteed
         assert dct['cutoff'] == 0.075
@@ -278,6 +276,35 @@ class TestContactFrequency(object):
             for (k, v) in self.expected_residue_contact_count.items()
         }
         assert residue_contacts.counter == expected_residue_contacts
+
+    def test_check_compatibility_true(self):
+        map2 = ContactFrequency(trajectory=traj[0:2],
+                                cutoff=0.075,
+                                n_neighbors_ignored=0)
+        assert self.map._check_compatibility(map2) == True
+
+    @pytest.mark.parametrize("diff", [
+        {'trajectory': traj.atom_slice([0, 1, 2, 3])},
+        {'cutoff': 0.45},
+        {'n_neighbors_ignored': 2},
+        {'query': [1, 2, 3, 4]},
+        {'haystack': [1, 2, 3, 4]}
+    ])
+    def test_check_compatibility_assertion_error(self, diff):
+        params = {'trajectory': traj[0:2],
+                  'cutoff': 0.075,
+                  'n_neighbors_ignored': 0}
+        params.update(diff)
+        map2 = ContactFrequency(**params)
+        with pytest.raises(AssertionError):
+            self.map._check_compatibility(map2)
+
+    def test_check_compatibility_runtime_error(self):
+        map2 = ContactFrequency(trajectory=traj,
+                                cutoff=0.45,
+                                n_neighbors_ignored=2)
+        with pytest.raises(RuntimeError):
+            self.map._check_compatibility(map2, err=RuntimeError)
 
     @pytest.mark.parametrize("intermediate", ["dict", "json"])
     def test_serialization_cycle(self, intermediate):
