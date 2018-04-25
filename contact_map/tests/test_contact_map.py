@@ -114,6 +114,7 @@ class TestContactMap(object):
         m = self.maps[idx]
         assert set(m.query) == set(range(10))
         assert set(m.haystack) == set(range(10))
+        assert set(m.all_atoms) == set(range(10))
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:
@@ -137,6 +138,7 @@ class TestContactMap(object):
         assert dct['cutoff'] == 0.075
         assert dct['query'] == list(range(10))
         assert dct['haystack'] == list(range(10))
+        assert dct['all_atoms'] == list(range(10))
         assert dct['n_neighbors_ignored'] == 0
         assert dct['atom_idx_to_residue_idx'] == {i: i // 2
                                                   for i in range(10)}
@@ -172,8 +174,10 @@ class TestContactMap(object):
         _contact_object_compare(m, m2)
         assert m == m2
 
-    def test_with_ignores(self, idx):
-        m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1)
+    @pytest.mark.parametrize("use_atom_slice",[True, False, None])
+    def test_with_ignores(self, idx, use_atom_slice):
+        m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1,
+                       use_atom_slice=use_atom_slice)
         expected_atom_contacts = {
             0: [[1, 4]],
             4: [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4], [8, 5]]
