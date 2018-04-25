@@ -59,8 +59,16 @@ class ContactObject(object):
     Much of what we need to do the contact map analysis is the same for all
     analyses. It's in here.
     """
-    def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored):
+    def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored,
+                 use_atom_slice):
         # all inits required: no defaults for abstract class!
+        if use_atom_slice is not None:
+            self._use_atom_slice = use_atom_slice
+        elif use_atom_slice is None and (query is None or haystack is None):
+            self._use_atom_slice = False
+        else:
+            self._use_atom_slice = True
+
         self._topology = topology
         if query is None:
             query = topology.select("not water and symbol != 'H'")
@@ -71,6 +79,7 @@ class ContactObject(object):
         self._cutoff = cutoff
         self._query = set(query)
         self._haystack = set(haystack)
+        self._all_atoms = set(query).union(set(haystack))
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
@@ -103,13 +112,14 @@ class ContactObject(object):
             'cutoff': self._cutoff,
             'query': list([int(val) for val in self._query]),
             'haystack': list([int(val) for val in self._haystack]),
+            'all_atoms': list([int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
                 self._serialize_contact_counter(self._atom_contacts),
             'residue_contacts': \
-                self._serialize_contact_counter(self._residue_contacts)
-        }
+                self._serialize_contact_counter(self._residue_contacts),
+            'use_atom_slice': self._use_atom_slice}
         return dct
 
     @classmethod
@@ -133,6 +143,7 @@ class ContactObject(object):
             'residue_contacts': cls._deserialize_contact_counter,
             'query': deserialize_set,
             'haystack': deserialize_set,
+            'all_atoms':deserialize_set,
             'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
         }
         for key in deserialization_helpers:
@@ -292,6 +303,11 @@ class ContactObject(object):
         return list(self._haystack)
 
     @property
+    def all_atoms(self):
+        #TODO:add docstring
+        return list(self._all_atoms)
+
+    @property
     def topology(self):
         """
         :class:`mdtraj.Topology` :
@@ -302,6 +318,11 @@ class ContactObject(object):
             chains.
         """
         return self._topology
+
+    @property
+    def use_atom_slice(self):
+        #TODO: Add docstring
+        return self._use_atom_slice
 
     @property
     def residue_query_atom_idxs(self):
@@ -334,6 +355,7 @@ class ContactObject(object):
             ignore_atom_idxs = set([atom.index for atom in ignore_atoms])
             result[residue_idx] = ignore_atom_idxs
         return result
+
 
     def most_common_atoms_for_residue(self, residue):
         """
@@ -416,8 +438,20 @@ class ContactObject(object):
         atom_contacts : collections.Counter
         residue_contact : collections.Counter
         """
-        neighborlist = md.compute_neighborlist(trajectory, self.cutoff,
+        if self.use_atom_slice:
+            used_trajectory = trajectory.atom_slice(self.all_atoms)
+        else:
+            used_trajectory = trajectory
+
+        neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
+        if self.use_atom_slice:
+            neighbordict = {self.all_atoms[i]: neighbors
+                            for i, neighbors in enumerate(neighborlist)}
+        else:
+            #Misuse ducktyping as we know the call
+            neighbordict = neighborlist
+
         contact_pairs = set([])
         residue_pairs = set([])
         for residue_idx in residue_query_atom_idxs:
@@ -426,7 +460,7 @@ class ContactObject(object):
             for atom_idx in query_idxs:
                 # sets should make this fast, esp since neighbor_idxs
                 # should be small and s-t is avg cost len(s)
-                neighbor_idxs = set(neighborlist[atom_idx])
+                neighbor_idxs = set(neighbordict[atom_idx])
                 contact_neighbors = neighbor_idxs - ignore_atom_idxs
                 contact_neighbors = contact_neighbors & self._haystack
                 # frozenset is unique key independent of order
@@ -473,10 +507,14 @@ class ContactMap(ContactObject):
     Contact map (atomic and residue) for a single frame.
     """
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2):
+                 n_neighbors_ignored=2, use_atom_slice=None):
+
+        #Don't use atom_slice if either query or haystack include all atoms
+        #Do use atom_slice otherwise
         self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
-                                         cutoff, n_neighbors_ignored)
+                                         cutoff, n_neighbors_ignored,
+                                         use_atom_slice)
         contact_maps = self.contact_map(frame, 0,
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
@@ -520,14 +558,14 @@ class ContactFrequency(ContactObject):
         Default 2.
     """
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2, frames=None):
+                 n_neighbors_ignored=2, frames=None, use_atom_slice=None):
         if frames is None:
             frames = range(len(trajectory))
         self.frames = frames
         self._n_frames = len(frames)
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
-                                               n_neighbors_ignored)
+                                               n_neighbors_ignored, use_atom_slice)
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
 
@@ -652,7 +690,8 @@ class ContactDifference(ContactObject):
                                                 positive.query,
                                                 positive.haystack,
                                                 positive.cutoff,
-                                                positive.n_neighbors_ignored)
+                                                positive.n_neighbors_ignored,
+                                                positive.use_atom_slice)
 
     def to_dict(self):
         """Convert object to a dict.
