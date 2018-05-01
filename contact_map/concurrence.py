@@ -52,7 +52,7 @@ class AtomContactConcurrence(Concurrence):
 
 class ResidueContactConcurrence(Concurrence):
     def __init__(self, trajectory, residue_contacts, cutoff=0.45,
-                 select="and not symbol == 'H'"):
+                 select="and symbol != 'H'"):
         residue_pairs = [[contact[0][0], contact[0][1]]
                          for contact in residue_contacts]
         labels = [str(contact[0]) for contact in residue_contacts]
