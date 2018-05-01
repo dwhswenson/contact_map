@@ -2,7 +2,6 @@ language: python
 python:
   - '3.6'
   - '2.7'
-  - '3.4'
   - '3.5'
 
 branches:
@@ -27,8 +26,6 @@ env:
 
 matrix:
   exclude:
-    - env: MDTRAJ="dev"
-      python: "3.4"
     - env: MDTRAJ="dev"
       python: "3.5"
 
