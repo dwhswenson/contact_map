@@ -10,7 +10,7 @@ from setuptools import setup
 # * VERSION: base version (do not include .dev0, etc -- that's automatic)
 # * IS_RELEASE: whether this is a release
 VERSION = "0.3.1"
-IS_RELEASE = False
+IS_RELEASE = True
 
 DEV_NUM = 0  # always 0: we don't do public (pypi) .dev releases
 PRE_TYPE = ""  # a, b, or rc (although we rarely release such versions)
