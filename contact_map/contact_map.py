@@ -446,7 +446,8 @@ class ContactObject(object):
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
         if self.use_atom_slice:
-            neighbordict = {self.all_atoms[i]: neighbors
+            neighbordict = {self.all_atoms[i]: [self.all_atoms[j]
+                                                for j in neighbors]
                             for i, neighbors in enumerate(neighborlist)}
         else:
             #Misuse ducktyping as we know the call
