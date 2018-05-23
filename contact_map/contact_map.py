@@ -64,12 +64,6 @@ class ContactObject(object):
     def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored,
                  use_atom_slice):
         # all inits required: no defaults for abstract class!
-        if use_atom_slice is not None:
-            self._use_atom_slice = use_atom_slice
-        elif use_atom_slice is None and (query is None or haystack is None):
-            self._use_atom_slice = False
-        else:
-            self._use_atom_slice = True
 
         self._topology = topology
         if query is None:
@@ -86,6 +80,17 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
+
+        if use_atom_slice is not None:
+            # Use input
+            self._use_atom_slice = use_atom_slice
+        elif (use_atom_slice is None and
+              not len(self._all_atoms_tuple) < self._topology.n_atoms):
+            # Don't use if there are no atoms to be sliced
+            self._use_atom_slice = False
+        else:
+            # Use if there are atms to be sliced
+            self._use_atom_slice = True
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
@@ -307,7 +312,7 @@ class ContactObject(object):
 
     @property
     def all_atoms(self):
-        # TODO:add docstring
+        """list of int: all atom indices used in the contact map"""
         return list(self._all_atoms)
 
     @property
@@ -439,6 +444,8 @@ class ContactObject(object):
         residue_contact : collections.Counter
         """
         # Prevent (memory) expensive atom slicing if not needed.
+        # This check is also needed here because ContactFrequency slices the
+        # whole trajectory before calling this function.
         if self.use_atom_slice and (len(self._all_atoms) <
                                     trajectory.topology.n_atoms):
             used_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
@@ -448,6 +455,8 @@ class ContactObject(object):
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
         if self.use_atom_slice:
+            # Maps neighborlist indices back to the original indices in a
+            # DOK-matrix.
             neighbordict = {self._all_atoms_tuple[i]: [self._all_atoms_tuple[j]
                                                        for j in neighbors]
                             for i, neighbors in enumerate(neighborlist)}
@@ -512,8 +521,6 @@ class ContactMap(ContactObject):
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2, use_atom_slice=None):
 
-        # Don't use atom_slice if either query or haystack include all atoms
-        # Do use atom_slice otherwise
         self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
                                          cutoff, n_neighbors_ignored,
@@ -559,6 +566,13 @@ class ContactFrequency(ContactObject):
     n_neighbors_ignored : int
         Number of neighboring residues (in the same chain) to ignore.
         Default 2.
+    frames : list of int
+        The indices of the frames to use from the trajectory. Default all
+    use_atom_slice : bool
+        Wether to use mdtraj.atoms_slice to making a reduced copy of the
+        trajectory before calculating the contact map.
+        Default True if any atoms would be sliced,
+                False if no atom would be sliced.
     """
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2, frames=None, use_atom_slice=None):
@@ -607,6 +621,7 @@ class ContactFrequency(ContactObject):
         residue_query_atom_idxs = self.residue_query_atom_idxs
 
         # Prevent relative (memory) expensive slice if not needed
+        # Slice the trajectory once before calling contact_map
         if self.use_atom_slice and (len(self._all_atoms) <
                                     self.topology.n_atoms):
             used_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
