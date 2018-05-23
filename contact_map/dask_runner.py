@@ -39,6 +39,7 @@ def dask_run(trajectory, client, run_info):
 
     return freq.result()
 
+
 class DaskContactFrequency(ContactFrequency):
     """Dask-based parallelization of contact frequency.
 
@@ -77,9 +78,15 @@ class DaskContactFrequency(ContactFrequency):
     n_neighbors_ignored : int
         Number of neighboring residues (in the same chain) to ignore.
         Default 2.
+    use_atom_slice : bool
+        Wether to use mdtraj.atoms_slice to making a reduced copy of the
+        trajectory before calculating the contact map.
+        Default True if any atoms would be sliced,
+                False if no atom would be sliced.
     """
     def __init__(self, client, filename, query=None, haystack=None,
-                 cutoff=0.45, n_neighbors_ignored=2, **kwargs):
+                 cutoff=0.45, n_neighbors_ignored=2, use_atom_slice=None,
+                 **kwargs):
         self.client = client
         self.filename = filename
         trajectory = md.load(filename, **kwargs)
@@ -87,7 +94,8 @@ class DaskContactFrequency(ContactFrequency):
         self.kwargs = kwargs
 
         super(DaskContactFrequency, self).__init__(
-            trajectory, query, haystack, cutoff, n_neighbors_ignored
+            trajectory, query, haystack, cutoff, n_neighbors_ignored,
+            use_atom_slice
         )
 
     def _build_contact_map(self, trajectory):
@@ -100,12 +108,11 @@ class DaskContactFrequency(ContactFrequency):
         return {'query': self.query,
                 'haystack': self.haystack,
                 'cutoff': self.cutoff,
-                'n_neighbors_ignored': self.n_neighbors_ignored}
+                'n_neighbors_ignored': self.n_neighbors_ignored,
+                'use_atom_slice': self._use_atom_slice}
 
     @property
     def run_info(self):
         return {'parameters': self.parameters,
                 'trajectory_file': self.filename,
                 'load_kwargs': self.kwargs}
-
-
