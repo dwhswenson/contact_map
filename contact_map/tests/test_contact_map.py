@@ -174,10 +174,8 @@ class TestContactMap(object):
         _contact_object_compare(m, m2)
         assert m == m2
 
-    @pytest.mark.parametrize("use_atom_slice",[True, False, None])
-    def test_with_ignores(self, idx, use_atom_slice):
-        m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1,
-                       use_atom_slice=use_atom_slice)
+    def test_with_ignores(self, idx):
+        m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1)
         expected_atom_contacts = {
             0: [[1, 4]],
             4: [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4], [8, 5]]
@@ -242,11 +240,50 @@ class TestContactMap(object):
         assert m.atom_contacts.counter == m2.atom_contacts.counter
         os.remove(test_file)
 
-    # TODO: add tests for ContactObject._check_consistency
+    @pytest.mark.parametrize("use_atom_slice", [True, False, None])
+    def test_atom_slice(self, idx, use_atom_slice):
+        map0q = ContactMap(traj[0], query=[1, 4, 5, 6],  cutoff=0.075,
+                           n_neighbors_ignored=0,
+                           use_atom_slice=use_atom_slice)
+        map0h = ContactMap(traj[0], haystack=[1, 4, 5, 6],
+                           cutoff=0.075, n_neighbors_ignored=0,
+                           use_atom_slice=use_atom_slice)
+        map0b = ContactMap(traj[0], query=[1, 4, 5, 6], haystack=[1,4,5,6],
+                           cutoff=0.075, n_neighbors_ignored=0,
+                           use_atom_slice=use_atom_slice)
+        maps = [map0q, map0h, map0b]
+        atoms = {map0q: list(range(10)),
+                 map0h: list(range(10)),
+                 map0b: [1, 4, 5, 6]}
+        expected_atom_slice = {map0q: False,
+                               map0h: False,
+                               map0b: True}
+        # Only test for map 0 for now
+        m0 = self.maps[0]
 
+        # Test init
+        for m in maps:
+            assert m.all_atoms == atoms[m]
+            if use_atom_slice is not None:
+                assert m._use_atom_slice == use_atom_slice
+            else:
+                assert m._use_atom_slice == expected_atom_slice[m]
+
+            # Test results compared to m0
+            expected = counter_of_inner_list(self.expected_atom_contacts[m0])
+            assert m._atom_contacts == expected
+            assert m.atom_contacts.counter == expected
+            expected_residue_contacts = self.expected_residue_contacts[m0]
+            expected = counter_of_inner_list(expected_residue_contacts)
+            assert m._residue_contacts == expected
+            assert m.residue_contacts.counter == expected
+
+
+    # TODO: add tests for ContactObject._check_consistency
 
 class TestContactFrequency(object):
     def setup(self):
+        self.atoms = [0, 1, 4, 5, 6, 7, 8, 9]
         self.map = ContactFrequency(trajectory=traj,
                                     cutoff=0.075,
                                     n_neighbors_ignored=0)
@@ -259,6 +296,7 @@ class TestContactFrequency(object):
         assert self.map.topology == traj.topology
         assert set(self.map.query) == set(range(10))
         assert set(self.map.haystack) == set(range(10))
+        assert set(self.map.all_atoms) == set(range(10))
         assert self.map.n_neighbors_ignored == 0
         for res in self.map.topology.residues:
             ignored_atoms = self.map.residue_ignore_atom_idxs[res.index]
@@ -465,6 +503,57 @@ class TestContactFrequency(object):
 
         assert test_subject.residue_contacts.counter == \
                 last_frame.residue_contacts.counter
+
+    @pytest.mark.parametrize("use_atom_slice", [True, False, None])
+    def test_use_atom_slice(self, use_atom_slice):
+        mapq = ContactFrequency(trajectory=traj,
+                                cutoff=0.075,
+                                n_neighbors_ignored=0,
+                                query=self.atoms,
+                                use_atom_slice=use_atom_slice)
+        maph = ContactFrequency(trajectory=traj,
+                                cutoff=0.075,
+                                n_neighbors_ignored=0,
+                                haystack=self.atoms,
+                                use_atom_slice=use_atom_slice)
+
+        mapb = ContactFrequency(trajectory=traj,
+                                cutoff=0.075,
+                                n_neighbors_ignored=0,
+                                query=self.atoms,
+                                haystack=self.atoms,
+                                use_atom_slice=use_atom_slice)
+
+        maps = [mapq, maph, mapb]
+        atoms = {mapq: list(range(10)),
+                 maph: list(range(10)),
+                 mapb: self.atoms}
+        expected_atom_slice = {mapq: False,
+                               maph: False,
+                               mapb: True}
+        # Test init
+        for m in maps:
+            assert m.all_atoms == atoms[m]
+            if use_atom_slice is not None:
+                assert m._use_atom_slice == use_atom_slice
+            else:
+                assert m._use_atom_slice == expected_atom_slice[m]
+            # Test counters
+            assert m.n_frames == self.expected_n_frames
+
+            atom_contacts = m.atom_contacts
+            expected_atom_contacts = {
+                k: float(v) / self.expected_n_frames
+                for (k, v) in self.expected_atom_contact_count.items()
+            }
+            assert atom_contacts.counter == expected_atom_contacts
+
+            residue_contacts = m.residue_contacts
+            expected_residue_contacts = {
+                k: float(v) / self.expected_n_frames
+                for (k, v) in self.expected_residue_contact_count.items()
+            }
+            assert residue_contacts.counter == expected_residue_contacts
 
 
 class TestContactDifference(object):
