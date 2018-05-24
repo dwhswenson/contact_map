@@ -329,7 +329,8 @@ class ContactObject(object):
 
     @property
     def use_atom_slice(self):
-        # TODO: Add docstring
+        """bool : Indicates if `mdtraj.atom_slice()` is used before calculating
+        the contact map"""
         return self._use_atom_slice
 
     @property
@@ -426,6 +427,17 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
+    def slice_trajectory(self, trajectory):
+        # Prevent (memory) expensive atom slicing if not needed.
+        # This check is also needed here because ContactFrequency slices the
+        # whole trajectory before calling this function.
+        if self.use_atom_slice and (len(self._all_atoms) <
+                                    trajectory.topology.n_atoms):
+            sliced_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
+        else:
+            sliced_trajectory = trajectory
+        return sliced_trajectory
+
     def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
                     residue_ignore_atom_idxs):
         """
@@ -443,14 +455,7 @@ class ContactObject(object):
         atom_contacts : collections.Counter
         residue_contact : collections.Counter
         """
-        # Prevent (memory) expensive atom slicing if not needed.
-        # This check is also needed here because ContactFrequency slices the
-        # whole trajectory before calling this function.
-        if self.use_atom_slice and (len(self._all_atoms) <
-                                    trajectory.topology.n_atoms):
-            used_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
-        else:
-            used_trajectory = trajectory
+        used_trajectory = self.slice_trajectory(trajectory)
 
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
@@ -620,13 +625,7 @@ class ContactFrequency(ContactObject):
         residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
         residue_query_atom_idxs = self.residue_query_atom_idxs
 
-        # Prevent relative (memory) expensive slice if not needed
-        # Slice the trajectory once before calling contact_map
-        if self.use_atom_slice and (len(self._all_atoms) <
-                                    self.topology.n_atoms):
-            used_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
-        else:
-            used_trajectory = trajectory
+        used_trajectory = self.slice_trajectory(trajectory)
 
         for frame_num in self.frames:
             frame_contacts = self.contact_map(used_trajectory, frame_num,
