@@ -61,8 +61,11 @@ class ContactObject(object):
     Much of what we need to do the contact map analysis is the same for all
     analyses. It's in here.
     """
-    def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored,
-                 use_atom_slice):
+
+    # Class default for use atom slice, None tries to be smart
+    _use_atom_slice = None
+
+    def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored):
         # all inits required: no defaults for abstract class!
 
         self._topology = topology
@@ -81,16 +84,16 @@ class ContactObject(object):
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
 
-        if use_atom_slice is not None:
-            # Use input
-            self._use_atom_slice = use_atom_slice
-        elif (use_atom_slice is None and
+        if (self._use_atom_slice is None and
               not len(self._all_atoms_tuple) < self._topology.n_atoms):
             # Don't use if there are no atoms to be sliced
             self._use_atom_slice = False
-        else:
+        elif self._use_atom_slice is None:
             # Use if there are atms to be sliced
             self._use_atom_slice = True
+        else:
+            #Use class default
+            pass
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
@@ -523,13 +526,16 @@ class ContactMap(ContactObject):
     """
     Contact map (atomic and residue) for a single frame.
     """
+    # Default for use_atom_slice, None tries to be smart
+    _use_atom_slice = None
+
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2, use_atom_slice=None):
+                 n_neighbors_ignored=2):
 
         self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
-                                         cutoff, n_neighbors_ignored,
-                                         use_atom_slice)
+                                         cutoff, n_neighbors_ignored)
+
         contact_maps = self.contact_map(frame, 0,
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
@@ -573,22 +579,19 @@ class ContactFrequency(ContactObject):
         Default 2.
     frames : list of int
         The indices of the frames to use from the trajectory. Default all
-    use_atom_slice : bool
-        Wether to use mdtraj.atoms_slice to making a reduced copy of the
-        trajectory before calculating the contact map.
-        Default True if any atoms would be sliced,
-                False if no atom would be sliced.
     """
+    # Default for use_atom_slice, None tries to be smart
+    _use_atom_slice = None
+
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2, frames=None, use_atom_slice=None):
+                 n_neighbors_ignored=2, frames=None):
         if frames is None:
             frames = range(len(trajectory))
         self.frames = frames
         self._n_frames = len(frames)
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
-                                               n_neighbors_ignored,
-                                               use_atom_slice)
+                                               n_neighbors_ignored)
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
 
@@ -715,8 +718,7 @@ class ContactDifference(ContactObject):
                                                 positive.query,
                                                 positive.haystack,
                                                 positive.cutoff,
-                                                positive.n_neighbors_ignored,
-                                                positive.use_atom_slice)
+                                                positive.n_neighbors_ignored)
 
     def to_dict(self):
         """Convert object to a dict.
