@@ -62,7 +62,7 @@ class ResidueContactConcurrence(Concurrence):
         )
         for res_A, res_B in residue_pairs:
             atoms_A = select_residue(res_A.index)
-            atoms_A = select_residue(res_B.index)
+            atoms_B = select_residue(res_B.index)
             atom_pairs = itertools.product(atoms_A, atoms_B)
             distances = md.compute_distances(trajectory,
                                              atom_pairs=atom_pairs)
