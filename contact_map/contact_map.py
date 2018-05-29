@@ -12,7 +12,6 @@ import pandas as pd
 import mdtraj as md
 
 from .contact_count import ContactCount
-from .plot_utils import ranged_colorbar
 from .py_2_3 import inspect_method_arguments
 
 # TODO:
@@ -126,7 +125,7 @@ class ContactObject(object):
         --------
         to_dict
         """
-        deserialize_set = lambda k: set(k)
+        deserialize_set = set
         deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
         deserialization_helpers = {
             'topology': cls._deserialize_topology,
@@ -211,12 +210,23 @@ class ContactObject(object):
         dct = json.loads(json_string)
         return cls.from_dict(dct)
 
-    def _check_compatibility(self, other):
-        assert self.cutoff == other.cutoff
-        assert self.topology == other.topology
-        assert self.query == other.query
-        assert self.haystack == other.haystack
-        assert self.n_neighbors_ignored == other.n_neighbors_ignored
+    def _check_compatibility(self, other, err=AssertionError):
+        compatibility_attrs = ['cutoff', 'topology', 'query', 'haystack',
+                               'n_neighbors_ignored']
+        failed_attr = {}
+        for attr in compatibility_attrs:
+            self_val = getattr(self, attr)
+            other_val = getattr(other, attr)
+            if self_val != other_val:
+                failed_attr.update({attr: (self_val, other_val)})
+        msg = "Incompatible ContactObjects:\n"
+        for (attr, vals) in failed_attr.items():
+            msg += "        {attr}: {self} != {other}\n".format(
+                attr=attr, self=str(vals[0]), other=str(vals[1])
+            )
+        if failed_attr:
+            raise err(msg)
+        return True
 
     def save_to_file(self, filename, mode="w"):
         """Save this object to the given file.
