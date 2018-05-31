@@ -81,20 +81,58 @@ class ContactObject(object):
         self._all_atoms = set(query).union(set(haystack))
         self._all_atoms_list = list(self._all_atoms)
         self._all_atoms_list.sort()
-        self._n_neighbors_ignored = n_neighbors_ignored
-        self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
-                                         for atom in self.topology.atoms}
+        self._use_atom_slice = self.set_atom_slice()
 
+        self._s_haystack = set([self.idx_to_s_idx(i) for i in self._haystack])
+        self._u_haystack = self.set_used_haystack()
+        self._n_neighbors_ignored = n_neighbors_ignored
+        self._r_atom_idx_to_residue_idx = {atom.index: atom.residue.index
+                                           for atom in self.topology.atoms}
+        self._s_atom_idx_to_residue_idx = {
+            i: self._r_atom_idx_to_residue_idx[e] for
+            i,e in enumerate(self._all_atoms_list)
+                                       }
+        self._atom_idx_to_residue_idx =self.set_atom_idx_to_residue_idx()
+
+    def set_atom_slice(self):
+        ''' Set atom slice logic '''
         if (self._class_use_atom_slice is None and
-              not len(self._all_atoms) < self._topology.n_atoms):
+            not len(self._all_atoms) < self._topology.n_atoms):
             # Don't use if there are no atoms to be sliced
-            self._use_atom_slice = False
+            return False
         elif self._class_use_atom_slice is None:
             # Use if there are atms to be sliced
-            self._use_atom_slice = True
+            return True
         else:
             #Use class default
-            self._use_atom_slice = self._class_use_atom_slice
+            return self._class_use_atom_slice
+
+    def set_used_haystack(self):
+        '''set which haystack to use in contact map'''
+        if self._use_atom_slice:
+            return self._s_haystack
+        else:
+            return self._haystack
+
+    def set_atom_idx_to_residue_idx(self):
+        if self._use_atom_slice:
+            return self._s_atom_idx_to_residue_idx
+        else:
+            return self._r_atom_idx_to_residue_idx
+
+    def s_idx_to_idx(self, idx):
+        '''function to convert a sliced atom index back to real index'''
+        if self._use_atom_slice:
+            return(self._all_atoms_list[idx])
+        else:
+            return idx
+
+    def idx_to_s_idx(self, idx):
+        '''function to convert a real atom index to a sliced one'''
+        if self._use_atom_slice:
+            return self._all_atoms_list.index(idx)
+        else:
+            return idx
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
@@ -341,8 +379,9 @@ class ContactObject(object):
     def residue_query_atom_idxs(self):
         """dict : maps query residue index to atom indices in query"""
         result = {}
-        for atom_idx in self._query:
-            residue_idx = self.topology.atom(atom_idx).residue.index
+        for idx in self._query:
+            atom_idx = self.idx_to_s_idx(idx)
+            residue_idx = self._atom_idx_to_residue_idx[atom_idx]
             try:
                 result[residue_idx] += [atom_idx]
             except KeyError:
@@ -364,9 +403,18 @@ class ContactObject(object):
                                for idx in ignore_residue_idxs]
             ignore_atoms = sum([list(res.atoms)
                                 for res in ignore_residues], [])
-            ignore_atom_idxs = set([atom.index for atom in ignore_atoms])
+            ignore_atom_idxs = self._ignore_atom_idx(ignore_atoms)
             result[residue_idx] = ignore_atom_idxs
         return result
+
+    def _ignore_atom_idx(self, atoms):
+        result =  set([atom.index for atom in atoms])
+        if not self._use_atom_slice:
+            return result
+        else:
+            result &= self._all_atoms
+            result = set([self.idx_to_s_idx(i) for i in result])
+            return result
 
     def most_common_atoms_for_residue(self, residue):
         """
@@ -463,15 +511,6 @@ class ContactObject(object):
 
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
-        if self.use_atom_slice:
-            # Maps neighborlist indices back to the original indices in a
-            # DOK-matrix.
-            neighbordict = {self._all_atoms_list[i]: [self._all_atoms_list[j]
-                                                       for j in neighbors]
-                            for i, neighbors in enumerate(neighborlist)}
-        else:
-            # Misuse ducktyping as we know the call
-            neighbordict = neighborlist
 
         contact_pairs = set([])
         residue_pairs = set([])
@@ -481,9 +520,9 @@ class ContactObject(object):
             for atom_idx in query_idxs:
                 # sets should make this fast, esp since neighbor_idxs
                 # should be small and s-t is avg cost len(s)
-                neighbor_idxs = set(neighbordict[atom_idx])
+                neighbor_idxs = set(neighborlist[atom_idx])
                 contact_neighbors = neighbor_idxs - ignore_atom_idxs
-                contact_neighbors = contact_neighbors & self._haystack
+                contact_neighbors = contact_neighbors & self._u_haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
                 #                   for neighb in contact_neighbors)
@@ -509,6 +548,19 @@ class ContactObject(object):
         # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
+
+    def convert_atom_contacts(self, atom_contacts):
+        print(self._use_atom_slice)
+        print(atom_contacts)
+        if self._use_atom_slice:
+            result = collections.Counter()
+            for (a1,a2),value in atom_contacts.items():
+                a1 = self.s_idx_to_idx(a1)
+                a2 = self.s_idx_to_idx(a2)
+                result[frozenset((a1,a2))] = value
+            return result
+        else:
+            return atom_contacts
 
     @property
     def atom_contacts(self):
@@ -540,7 +592,8 @@ class ContactMap(ContactObject):
         contact_maps = self.contact_map(frame, 0,
                                         self.residue_query_atom_idxs,
                                         self.residue_ignore_atom_idxs)
-        (self._atom_contacts, self._residue_contacts) = contact_maps
+        (atom_contacts, self._residue_contacts) = contact_maps
+        self._atom_contacts = self.convert_atom_contacts(atom_contacts)
 
     def __hash__(self):
         return hash((super(ContactMap, self).__hash__(),
@@ -594,7 +647,8 @@ class ContactFrequency(ContactObject):
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
         contacts = self._build_contact_map(trajectory)
-        (self._atom_contacts, self._residue_contacts) = contacts
+        (atom_contacts, self._residue_contacts) = contacts
+        self._atom_contacts = self.convert_atom_contacts(atom_contacts)
 
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
