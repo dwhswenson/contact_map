@@ -81,9 +81,11 @@ class ContactObject(object):
         self._all_atoms = set(query).union(set(haystack))
         self._all_atoms_list = list(self._all_atoms)
         self._all_atoms_list.sort()
+        self._idx_to_s_idx_dict = {e: i for
+                                   i,e in enumerate(self._all_atoms_list)}
         self._use_atom_slice = self.set_atom_slice()
 
-        self._s_haystack = set([self.idx_to_s_idx(i) for i in self._haystack])
+        self._s_haystack = set(map(self.idx_to_s_idx, self._haystack))
         self._u_haystack = self.set_used_haystack()
         self._n_neighbors_ignored = n_neighbors_ignored
         self._r_atom_idx_to_residue_idx = {atom.index: atom.residue.index
@@ -130,7 +132,7 @@ class ContactObject(object):
     def idx_to_s_idx(self, idx):
         '''function to convert a real atom index to a sliced one'''
         if self._use_atom_slice:
-            return self._all_atoms_list.index(idx)
+            return self._idx_to_s_idx_dict[idx]
         else:
             return idx
 
@@ -413,7 +415,7 @@ class ContactObject(object):
             return result
         else:
             result &= self._all_atoms
-            result = set([self.idx_to_s_idx(i) for i in result])
+            result = set(map(self.idx_to_s_idx, result))
             return result
 
     def most_common_atoms_for_residue(self, residue):
@@ -550,14 +552,12 @@ class ContactObject(object):
         return (atom_contacts, residue_contacts)
 
     def convert_atom_contacts(self, atom_contacts):
-        print(self._use_atom_slice)
-        print(atom_contacts)
         if self._use_atom_slice:
             result = collections.Counter()
-            for (a1,a2),value in atom_contacts.items():
-                a1 = self.s_idx_to_idx(a1)
-                a2 = self.s_idx_to_idx(a2)
-                result[frozenset((a1,a2))] = value
+            for key, value in atom_contacts.items():
+                a = tuple(map(self.s_idx_to_idx,key))
+                # pop to prevent doubeling memory
+                result[frozenset(a)] = value
             return result
         else:
             return atom_contacts
