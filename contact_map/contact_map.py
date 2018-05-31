@@ -53,6 +53,23 @@ def _residue_and_index(residue, topology):
         res = topology.residue(res_idx)
     return (res, res_idx)
 
+def atom_slice(traj, indices):
+    '''Mock MDTraj.atom_slice without rebuilding topology'''
+    xyz = np.array(traj.xyz[:, indices], order='C')
+    topology = traj.topology.copy()
+    if traj._have_unitcell:
+        unitcell_lengths = traj._unitcell_lengths.copy()
+        unitcell_angles = traj._unitcell_angles.copy()
+    time = traj._time.copy()
+
+    # Hackish to make the smart slicing work
+    topology._atoms = indices
+    topology._numAtoms = len(indices)
+    return md.Trajectory(xyz=xyz, topology=topology, time=time,
+                         unitcell_lengths=unitcell_lengths,
+                         unitcell_angles=unitcell_angles)
+
+
 
 class ContactObject(object):
     """
@@ -487,7 +504,7 @@ class ContactObject(object):
         # whole trajectory before calling this function.
         if self.use_atom_slice and (len(self._all_atoms) <
                                     trajectory.topology.n_atoms):
-            sliced_trajectory = trajectory.atom_slice(list(self._all_atoms))
+            sliced_trajectory = atom_slice(trajectory, self._all_atoms_list)
         else:
             sliced_trajectory = trajectory
         return sliced_trajectory
@@ -553,12 +570,9 @@ class ContactObject(object):
 
     def convert_atom_contacts(self, atom_contacts):
         if self._use_atom_slice:
-            result = collections.Counter()
-            for key, value in atom_contacts.items():
-                a = tuple(map(self.s_idx_to_idx,key))
-                # pop to prevent doubeling memory
-                result[frozenset(a)] = value
-            return result
+            result = {frozenset(tuple(map(self.s_idx_to_idx, key))): value
+                      for key, value in atom_contacts.items()}
+            return collections.Counter(result)
         else:
             return atom_contacts
 
