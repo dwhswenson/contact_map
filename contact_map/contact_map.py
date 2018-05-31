@@ -63,7 +63,7 @@ class ContactObject(object):
     """
 
     # Class default for use atom slice, None tries to be smart
-    _use_atom_slice = None
+    _class_use_atom_slice = None
 
     def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored):
         # all inits required: no defaults for abstract class!
@@ -79,21 +79,22 @@ class ContactObject(object):
         self._query = set(query)
         self._haystack = set(haystack)
         self._all_atoms = set(query).union(set(haystack))
-        self._all_atoms_tuple = tuple(self._all_atoms)
+        self._all_atoms_list = list(self._all_atoms)
+        self._all_atoms_list.sort()
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
 
-        if (self._use_atom_slice is None and
-              not len(self._all_atoms_tuple) < self._topology.n_atoms):
+        if (self._class_use_atom_slice is None and
+              not len(self._all_atoms) < self._topology.n_atoms):
             # Don't use if there are no atoms to be sliced
             self._use_atom_slice = False
-        elif self._use_atom_slice is None:
+        elif self._class_use_atom_slice is None:
             # Use if there are atms to be sliced
             self._use_atom_slice = True
         else:
             #Use class default
-            pass
+            self._use_atom_slice = self._class_use_atom_slice
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
@@ -436,7 +437,7 @@ class ContactObject(object):
         # whole trajectory before calling this function.
         if self.use_atom_slice and (len(self._all_atoms) <
                                     trajectory.topology.n_atoms):
-            sliced_trajectory = trajectory.atom_slice(self._all_atoms_tuple)
+            sliced_trajectory = trajectory.atom_slice(list(self._all_atoms))
         else:
             sliced_trajectory = trajectory
         return sliced_trajectory
@@ -465,7 +466,7 @@ class ContactObject(object):
         if self.use_atom_slice:
             # Maps neighborlist indices back to the original indices in a
             # DOK-matrix.
-            neighbordict = {self._all_atoms_tuple[i]: [self._all_atoms_tuple[j]
+            neighbordict = {self._all_atoms_list[i]: [self._all_atoms_list[j]
                                                        for j in neighbors]
                             for i, neighbors in enumerate(neighborlist)}
         else:
@@ -527,7 +528,7 @@ class ContactMap(ContactObject):
     Contact map (atomic and residue) for a single frame.
     """
     # Default for use_atom_slice, None tries to be smart
-    _use_atom_slice = None
+    _class_use_atom_slice = None
 
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
@@ -581,7 +582,7 @@ class ContactFrequency(ContactObject):
         The indices of the frames to use from the trajectory. Default all
     """
     # Default for use_atom_slice, None tries to be smart
-    _use_atom_slice = None
+    _class_use_atom_slice = None
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2, frames=None):

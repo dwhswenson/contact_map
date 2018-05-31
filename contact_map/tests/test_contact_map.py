@@ -249,8 +249,8 @@ class TestContactMap(object):
     @pytest.mark.parametrize("use_atom_slice", [True, False, None])
     def test_atom_slice(self, idx, use_atom_slice):
         #Set class variable before init
-        class_default = ContactMap._use_atom_slice
-        ContactMap._use_atom_slice = use_atom_slice
+        class_default = ContactMap._class_use_atom_slice
+        ContactMap._class_use_atom_slice = use_atom_slice
         map0q = ContactMap(traj[0], query=[1, 4, 5, 6],  cutoff=0.075,
                            n_neighbors_ignored=0)
         map0h = ContactMap(traj[0], haystack=[1, 4, 5, 6],
@@ -283,7 +283,7 @@ class TestContactMap(object):
 
         # Reset class variable (as imports are not redone between function
         # calls)
-        ContactMap._use_atom_slice = class_default
+        ContactMap._class_use_atom_slice = class_default
 
     # TODO: add tests for ContactObject._check_consistency
 
@@ -513,8 +513,8 @@ class TestContactFrequency(object):
     @pytest.mark.parametrize("use_atom_slice", [True, False, None])
     def test_use_atom_slice(self, use_atom_slice):
         #Set class default before init
-        class_default = ContactFrequency._use_atom_slice
-        ContactFrequency._use_atom_slice = use_atom_slice
+        class_default = ContactFrequency._class_use_atom_slice
+        ContactFrequency._class_use_atom_slice = use_atom_slice
         mapq = ContactFrequency(trajectory=traj, cutoff=0.075,
                                 n_neighbors_ignored=0, query=self.atoms)
 
@@ -547,7 +547,7 @@ class TestContactFrequency(object):
             # Test counters
             self.test_counters()
         # Reset class default as pytest does not re-import
-        ContactFrequency._use_atom_slice = class_default
+        ContactFrequency._class_use_atom_slice = class_default
 
 class TestContactDifference(object):
     def test_diff_traj_frame(self):
