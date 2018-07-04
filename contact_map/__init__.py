@@ -13,7 +13,10 @@ from .contact_count import ContactCount
 
 from .min_dist import NearestAtoms, MinimumDistanceCounter
 
-from . import concurrence
+from .concurrence import (
+    Concurrence, AtomContactConcurrence, ResidueContactConcurrence,
+    ConcurrencePlotter, plot_concurrence
+)
 
 from .dask_runner import DaskContactFrequency
 
