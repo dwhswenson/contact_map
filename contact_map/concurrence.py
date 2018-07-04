@@ -77,6 +77,7 @@ class AtomContactConcurrence(Concurrence):
         cutoff, in nm. Should be the same as used in the contact map.
     """
     def __init__(self, trajectory, atom_contacts, cutoff=0.45):
+        # TODO: the use of atom_contacts as input from most_common is weird
         atom_pairs = [[contact[0][0].index, contact[0][1].index]
                       for contact in atom_contacts]
         labels = [str(contact[0]) for contact in atom_contacts]
@@ -104,6 +105,7 @@ class ResidueContactConcurrence(Concurrence):
     """
     def __init__(self, trajectory, residue_contacts, cutoff=0.45,
                  select="and symbol != 'H'"):
+        # TODO: the use of residue_contacts as input from most_common is weird
         residue_pairs = [[contact[0][0], contact[0][1]]
                          for contact in residue_contacts]
         labels = [str(contact[0]) for contact in residue_contacts]
