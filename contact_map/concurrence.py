@@ -69,7 +69,7 @@ class ResidueContactConcurrence(Concurrence):
             distances = md.compute_distances(trajectory,
                                              atom_pairs=atom_pairs)
             min_dists = [min(dists) for dists in distances]
-            values.append(map(lambda d: d < cutoff, min_dists))
+            values.append(list(map(lambda d: d < cutoff, min_dists)))
 
         super(ResidueContactConcurrence, self).__init__(values=values,
                                                         labels=labels)

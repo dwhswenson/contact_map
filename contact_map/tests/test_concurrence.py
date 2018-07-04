@@ -1,8 +1,15 @@
+# pylint: disable=wildcard-import, missing-docstring, protected-access
+# pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
+# pylint: disable=wrong-import-order, unused-wildcard-import
+
 from .utils import *
 
 from contact_map.concurrence import *
 from contact_map import ContactFrequency
 
+# pylint: disable=wildcard-import, missing-docstring, protected-access
+# pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
+# pylint: disable=wrong-import-order, unused-wildcard-import
 def setup_module():
     global traj, contacts
     traj = md.load(find_testfile("concurrence.pdb"))
@@ -12,6 +19,7 @@ def setup_module():
     contacts = ContactFrequency(traj, query, haystack, cutoff=0.051,
                                 n_neighbors_ignored=0)
 
+
 class ContactConcurrenceTester(object):
     def _test_default_labels(self, concurrence):
         assert len(concurrence.labels) == len(self.labels) / 2
@@ -19,7 +27,7 @@ class ContactConcurrenceTester(object):
             assert label in self.labels
 
     def _test_set_labels(self, concurrence, expected):
-        new_labels = [self.label_to_pair[label] 
+        new_labels = [self.label_to_pair[label]
                       for label in concurrence.labels]
         concurrence.set_labels(new_labels)
         for label in new_labels:
@@ -32,6 +40,7 @@ class ContactConcurrenceTester(object):
             expected_values = pair_to_expected[pair]
             assert values == expected_values
 
+
 class TestAtomContactConcurrence(ContactConcurrenceTester):
     def setup(self):
         self.concurrence = AtomContactConcurrence(
@@ -40,7 +49,7 @@ class TestAtomContactConcurrence(ContactConcurrenceTester):
             cutoff=0.051
         )
         # dupes each direction until we have better way to handle frozensets
-        self.label_to_pair = {'[AAA1-H, LLL3-H]': 'AH-LH', 
+        self.label_to_pair = {'[AAA1-H, LLL3-H]': 'AH-LH',
                               '[LLL3-H, AAA1-H]': 'AH-LH',
                               '[AAA1-C1, LLL3-C1]': 'AC1-LC1',
                               '[LLL3-C1, AAA1-C1]': 'AC1-LC1',
@@ -144,7 +153,7 @@ class TestConcurrencePlotter(object):
         labels = self.plotter.get_concurrence_labels(self.concurrence,
                                                      labels=alpha_labels)
         assert labels == alpha_labels
-        
+
     def test_get_concurrence_labels_default(self):
         labels = self.plotter.get_concurrence_labels(self.concurrence)
         assert labels == self.concurrence.labels
@@ -157,4 +166,5 @@ class TestConcurrencePlotter(object):
 
     def test_plot(self):
         # SMOKE TEST ONLY
+        pytest.importorskip('matplotlib.pyplot')
         self.plotter.plot()
