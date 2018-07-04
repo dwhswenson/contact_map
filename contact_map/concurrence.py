@@ -27,7 +27,7 @@ class Concurrence(object):
         return self.values[idx]
 
     # temporarily removed until we find a good metric here; this metric did
-    # not seem optimzal and I stopped using it, so remove from code before
+    # not seem optimal and I stopped using it, so remove from code before
     # release (can add back in later)
     # def coincidence(self, label_list):
         # this_list = np.asarray(self[label_list[0]])
@@ -48,7 +48,7 @@ class AtomContactConcurrence(Concurrence):
         labels = [str(contact[0]) for contact in atom_contacts]
         distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
         vector_f = np.vectorize(lambda d: d < cutoff)
-        values = zip(*vector_f(distances))
+        values = list(map(list, zip(*vector_f(distances))))
         super(AtomContactConcurrence, self).__init__(values=values,
                                                      labels=labels)
 

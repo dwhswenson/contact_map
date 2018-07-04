@@ -12,57 +12,85 @@ def setup_module():
     contacts = ContactFrequency(traj, query, haystack, cutoff=0.051,
                                 n_neighbors_ignored=0)
 
-class TestAtomContactConcurrence(object):
+class ContactConcurrenceTester(object):
+    def _test_default_labels(self, concurrence):
+        assert len(concurrence.labels) == len(self.labels) / 2
+        for label in concurrence.labels:
+            assert label in self.labels
+
+    def _test_set_labels(self, concurrence, expected):
+        new_labels = [self.label_to_pair[label] 
+                      for label in concurrence.labels]
+        concurrence.set_labels(new_labels)
+        for label in new_labels:
+            assert concurrence[label] == expected[label]
+
+    def _test_getitem(self, concurrence, pair_to_expected):
+        for label in concurrence.labels:
+            values = concurrence[label]
+            pair = self.label_to_pair[label]
+            expected_values = pair_to_expected[pair]
+            assert values == expected_values
+
+class TestAtomContactConcurrence(ContactConcurrenceTester):
     def setup(self):
-        pass
+        self.concurrence = AtomContactConcurrence(
+            trajectory=traj,
+            atom_contacts=contacts.atom_contacts.most_common(),
+            cutoff=0.051
+        )
+        # dupes each direction until we have better way to handle frozensets
+        self.label_to_pair = {'[AAA1-H, LLL3-H]': 'AH-LH', 
+                              '[LLL3-H, AAA1-H]': 'AH-LH',
+                              '[AAA1-C1, LLL3-C1]': 'AC1-LC1',
+                              '[LLL3-C1, AAA1-C1]': 'AC1-LC1',
+                              '[BBB2-H, LLL3-C2]': 'BH-LC2',
+                              '[LLL3-C2, BBB2-H]': 'BH-LC2',
+                              '[AAA1-C2, LLL3-C2]': 'AC2-LC2',
+                              '[LLL3-C2, AAA1-C2]': 'AC2-LC2',
+                              '[AAA1-C2, LLL3-C1]': 'AC2-LC1',
+                              '[LLL3-C1, AAA1-C2]': 'AC2-LC1',
+                              '[BBB2-C2, LLL3-C2]': 'BC2-LC2',
+                              '[LLL3-C2, BBB2-C2]': 'BC2-LC2'}
+        self.labels = list(self.label_to_pair.keys())
+        self.pair_to_expected = {
+            'AH-LH': [False, False, True, True, False],
+            'AC1-LC1': [False, True, False, False, False],
+            'BH-LC2': [False, False, False, True, False],
+            'AC2-LC2': [False, True, False, False, False],
+            'AC2-LC1': [True, False, False, False, False],
+            'BC2-LC2': [True, False, False, False, False]
+        }
 
     def test_default_labels(self):
-        pass
+        self._test_default_labels(self.concurrence)
 
-    def test_get_items(self):
-        pass
+    def test_getitem(self):
+        self._test_getitem(self.concurrence, self.pair_to_expected)
 
-    def test_values(self):
-        pass
+    def test_set_labels(self):
+        self._test_set_labels(self.concurrence, self.pair_to_expected)
 
-class TestResidueContactConcurrence(object):
+
+class TestResidueContactConcurrence(ContactConcurrenceTester):
     def setup(self):
         self.heavy_contact_concurrence = ResidueContactConcurrence(
             trajectory=traj,
             residue_contacts=contacts.residue_contacts.most_common(),
             cutoff=0.051
         )
-
         self.all_contact_concurrence = ResidueContactConcurrence(
             trajectory=traj,
             residue_contacts=contacts.residue_contacts.most_common(),
             cutoff=0.051,
             select=""
         )
-
-    @pytest.mark.parametrize('conc_type', ('heavy', 'all'))
-    def test_default_labels(self, conc_type):
-        concurrence = {'heavy': self.heavy_contact_concurrence,
-                       'all': self.all_contact_concurrence}[conc_type]
-        residue_labels = ['[AAA1, LLL3]', '[BBB2, LLL3]',
-                          '[LLL3, AAA1]', '[LLL3, BBB2]']
-
-        assert len(concurrence.labels) == 2
-        for label in concurrence.labels:
-            assert label in residue_labels
-
-    def test_get_items(self):
-        pass
-
-    @pytest.mark.parametrize('conc_type', ('heavy', 'all'))
-    def test_getitem(self, conc_type):
-        concurrence = {'heavy': self.heavy_contact_concurrence,
-                       'all': self.all_contact_concurrence}[conc_type]
-        label_to_pair = {'[AAA1, LLL3]': 'AL',
-                         '[LLL3, AAA1]': 'AL',
-                         '[BBB2, LLL3]': 'BL',
-                         '[LLL3, BBB2]': 'BL'}
-        pair_to_expected = {
+        self.label_to_pair = {'[AAA1, LLL3]': 'AL',
+                              '[LLL3, AAA1]': 'AL',
+                              '[BBB2, LLL3]': 'BL',
+                              '[LLL3, BBB2]': 'BL'}
+        self.labels = list(self.label_to_pair.keys())
+        self.pair_to_expected = {
             'heavy': {
                 'AL': [True, True, False, False, False],
                 'BL': [True, False, False, False, False]
@@ -71,12 +99,29 @@ class TestResidueContactConcurrence(object):
                 'AL': [True, True, True, True, False],
                 'BL': [True, False, False, True, False]
             }
-        }[conc_type]
-        for label in concurrence.labels:
-            values = concurrence[label]
-            pair = label_to_pair[label]
-            expected_values = pair_to_expected[pair]
-            assert values == expected_values
+        }
+
+    def _get_concurrence(self, conc_type):
+        return {'heavy': self.heavy_contact_concurrence,
+                'all': self.all_contact_concurrence}[conc_type]
+
+
+    @pytest.mark.parametrize('conc_type', ('heavy', 'all'))
+    def test_default_labels(self, conc_type):
+        concurrence = self._get_concurrence(conc_type)
+        self._test_default_labels(concurrence)
+
+    def test_set_labels(self):
+        # only run this for the heavy atom concurrence
+        concurrence = self.heavy_contact_concurrence
+        expected = self.pair_to_expected['heavy']
+        self._test_set_labels(concurrence, expected)
+
+    @pytest.mark.parametrize('conc_type', ('heavy', 'all'))
+    def test_getitem(self, conc_type):
+        concurrence = self._get_concurrence(conc_type)
+        pair_to_expected = self.pair_to_expected[conc_type]
+        self._test_getitem(concurrence, pair_to_expected)
 
 
 class TestConcurrencePlotter(object):
