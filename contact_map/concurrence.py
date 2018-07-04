@@ -87,14 +87,14 @@ class ConcurrencePlotter(object):
             if concurrence and concurrence.labels is not None:
                 labels = concurrence.labels
             else:
-                labels = [str(i) for i in range(len(values))]
+                labels = [str(i) for i in range(len(concurrence.values))]
         return labels
 
     @property
     def x_values(self):
         x_values = self._x_values
         if x_values is None:
-            x_values = range(len(self.concurrence.values[0]))
+            x_values = list(range(len(self.concurrence.values[0])))
         return x_values
 
     @x_values.setter
@@ -125,7 +125,7 @@ class ConcurrencePlotter(object):
         return (fig, ax, lgd)
 
 
-def plot_concurrence(concurrence, labels=None, x_values=None):
+def plot_concurrence(concurrence, labels=None, x_values=None):  # -no-cov-
     """
     Convenience function for concurrence plots.
     """

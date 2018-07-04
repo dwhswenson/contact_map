@@ -126,11 +126,35 @@ class TestResidueContactConcurrence(ContactConcurrenceTester):
 
 class TestConcurrencePlotter(object):
     def setup(self):
-        pass
+        self.concurrence = ResidueContactConcurrence(
+            trajectory=traj,
+            residue_contacts=contacts.residue_contacts.most_common(),
+            cutoff=0.051
+        )
+        self.plotter = ConcurrencePlotter(self.concurrence)
 
     def test_x_values(self):
-        pass
+        time_values = [0.3, 0.4, 0.5, 0.6, 0.7]
+        assert self.plotter.x_values == [0, 1, 2, 3, 4]
+        self.plotter.x_values = time_values
+        assert self.plotter.x_values == time_values
+
+    def test_get_concurrence_labels_given(self):
+        alpha_labels = ['a', 'b']
+        labels = self.plotter.get_concurrence_labels(self.concurrence,
+                                                     labels=alpha_labels)
+        assert labels == alpha_labels
+        
+    def test_get_concurrence_labels_default(self):
+        labels = self.plotter.get_concurrence_labels(self.concurrence)
+        assert labels == self.concurrence.labels
+
+    def test_get_concurrence_label_none_in_concurrence(self):
+        numeric_labels = ['0', '1']
+        self.concurrence.labels = None
+        labels = self.plotter.get_concurrence_labels(self.concurrence)
+        assert labels == numeric_labels
 
     def test_plot(self):
-        # SMOKE TEST
-        pass
+        # SMOKE TEST ONLY
+        self.plotter.plot()
