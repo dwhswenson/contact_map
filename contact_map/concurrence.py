@@ -15,9 +15,9 @@ class Concurrence(object):
         self.values = values
         self.labels = labels
 
-    @property
-    def lifetimes(self):
-        pass
+    # @property
+    # def lifetimes(self):
+        # pass
 
     def set_labels(self, labels):
         self.labels = labels
@@ -26,17 +26,19 @@ class Concurrence(object):
         idx = self.labels.index(label)
         return self.values[idx]
 
-    def coincidence(self, label_list):
-        this_list = np.asarray(self[label_list[0]])
-        coincidence_list = this_list
-        norm_sq = sum(this_list)
-        for label in label_list[1:]:
-            this_list = np.asarray(self[label])
-            coincidence_list &= this_list
-            norm_sq *= sum(this_list)
+    # temporarily removed until we find a good metric here; this metric did
+    # not seem optimzal and I stopped using it, so remove from code before
+    # release (can add back in later)
+    # def coincidence(self, label_list):
+        # this_list = np.asarray(self[label_list[0]])
+        # coincidence_list = this_list
+        # norm_sq = sum(this_list)
+        # for label in label_list[1:]:
+            # this_list = np.asarray(self[label])
+            # coincidence_list &= this_list
+            # norm_sq *= sum(this_list)
 
-        return sum(coincidence_list) / np.sqrt(norm_sq)
-
+        # return sum(coincidence_list) / np.sqrt(norm_sq)
 
 
 class AtomContactConcurrence(Concurrence):
@@ -100,7 +102,7 @@ class ConcurrencePlotter(object):
         self._x_values = x_values
 
     def plot(self, concurrence=None):
-        if not HAS_MATPLOTLIB:
+        if not HAS_MATPLOTLIB:  # pragma: no cover
             raise ImportError("matplotlib not installed")
         if concurrence is None:
             concurrence = self.concurrence
