@@ -281,6 +281,13 @@ class TestContactMap(object):
             assert m._residue_contacts == expected
             assert m.residue_contacts.counter == expected
 
+        # Test sliced indices
+        sliced_idx = [0, 1, 2, 3]
+        real_idx = [map0b.s_idx_to_idx(i) for i in sliced_idx]
+        if map0b._use_atom_slice:
+            assert real_idx == [1, 4, 5, 6]
+        else:
+            assert real_idx == sliced_idx
         # Reset class variable (as imports are not redone between function
         # calls)
         ContactMap._class_use_atom_slice = class_default
