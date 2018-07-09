@@ -53,8 +53,9 @@ def _residue_and_index(residue, topology):
         res = topology.residue(res_idx)
     return (res, res_idx)
 
+
 def atom_slice(traj, indices):
-    '''Mock MDTraj.atom_slice without rebuilding topology'''
+    """Mock MDTraj.atom_slice without rebuilding topology"""
     xyz = np.array(traj.xyz[:, indices], order='C')
     topology = traj.topology.copy()
     if traj._have_unitcell:
@@ -68,7 +69,6 @@ def atom_slice(traj, indices):
     return md.Trajectory(xyz=xyz, topology=topology, time=time,
                          unitcell_lengths=unitcell_lengths,
                          unitcell_angles=unitcell_angles)
-
 
 
 class ContactObject(object):
@@ -98,8 +98,10 @@ class ContactObject(object):
         self._all_atoms = set(query).union(set(haystack))
         self._all_atoms_list = list(self._all_atoms)
         self._all_atoms_list.sort()
+        # Make tuple for efficient lookupt
+        self._all_atoms_tuple = tuple(self._all_atoms_list)
         self._idx_to_s_idx_dict = {e: i for
-                                   i,e in enumerate(self._all_atoms_list)}
+                                   i, e in enumerate(self._all_atoms_list)}
         self._use_atom_slice = self.set_atom_slice()
 
         self._s_haystack = set(map(self.idx_to_s_idx, self._haystack))
@@ -109,9 +111,9 @@ class ContactObject(object):
                                            for atom in self.topology.atoms}
         self._s_atom_idx_to_residue_idx = {
             i: self._r_atom_idx_to_residue_idx[e] for
-            i,e in enumerate(self._all_atoms_list)
+            i, e in enumerate(self._all_atoms_list)
                                        }
-        self._atom_idx_to_residue_idx =self.set_atom_idx_to_residue_idx()
+        self._atom_idx_to_residue_idx = self.set_atom_idx_to_residue_idx()
 
     def set_atom_slice(self):
         ''' Set atom slice logic '''
@@ -123,11 +125,11 @@ class ContactObject(object):
             # Use if there are atms to be sliced
             return True
         else:
-            #Use class default
+            # Use class default
             return self._class_use_atom_slice
 
     def set_used_haystack(self):
-        '''set which haystack to use in contact map'''
+        """set which haystack to use in contact map"""
         if self._use_atom_slice:
             return self._s_haystack
         else:
@@ -140,14 +142,14 @@ class ContactObject(object):
             return self._r_atom_idx_to_residue_idx
 
     def s_idx_to_idx(self, idx):
-        '''function to convert a sliced atom index back to real index'''
+        """function to convert a sliced atom index back to real index"""
         if self._use_atom_slice:
-            return(self._all_atoms_list[idx])
+            return(self._all_atoms_tuple[idx])
         else:
             return idx
 
     def idx_to_s_idx(self, idx):
-        '''function to convert a real atom index to a sliced one'''
+        """function to convert a real atom index to a sliced one"""
         if self._use_atom_slice:
             return self._idx_to_s_idx_dict[idx]
         else:
@@ -182,6 +184,8 @@ class ContactObject(object):
             'query': list([int(val) for val in self._query]),
             'haystack': list([int(val) for val in self._haystack]),
             'all_atoms': list([int(val) for val in self._all_atoms]),
+            'all_atoms_tuple': tuple(
+                [int(val) for val in self._all_atoms_tuple]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
@@ -427,7 +431,7 @@ class ContactObject(object):
         return result
 
     def _ignore_atom_idx(self, atoms):
-        result =  set([atom.index for atom in atoms])
+        result = set([atom.index for atom in atoms])
         if not self._use_atom_slice:
             return result
         else:
