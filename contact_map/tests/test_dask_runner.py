@@ -11,8 +11,7 @@ class TestDaskContactFrequency(object):
         # this is an integration test to check that dask works
         dask = pytest.importorskip('dask')  # pylint: disable=W0612
         distributed = pytest.importorskip('dask.distributed')
-
-        client = distributed.Client()
+        client = distributed.Client(timeout=120)
         filename = find_testfile("trajectory.pdb")
 
         dask_freq = DaskContactFrequency(client, filename, cutoff=0.075,
