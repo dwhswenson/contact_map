@@ -22,7 +22,7 @@ class Concurrence(object):
     ----------
         values : list of list of bool
             the whether a contact is present for each contact pair at each
-            point in time; outer list is length number of frames, inner list
+            point in time; inner list is length number of frames, outer list
             in length number of (included) contacts
         labels : list of string
             labels for each contact pair
@@ -83,7 +83,10 @@ class AtomContactConcurrence(Concurrence):
         labels = [str(contact[0]) for contact in atom_contacts]
         distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
         vector_f = np.vectorize(lambda d: d < cutoff)
-        values = list(map(list, zip(*vector_f(distances))))
+        # distances is (ndarray) shape (n_frames, n_contacts);
+        # values should be list shape # (n_contacts, n_frames)
+        value_iter = zip(*vector_f(distances))  # make bool; transpose
+        values = list(map(list, value_iter))  # convert to list of list
         super(AtomContactConcurrence, self).__init__(values=values,
                                                      labels=labels)
 
@@ -120,7 +123,7 @@ class ResidueContactConcurrence(Concurrence):
             distances = md.compute_distances(trajectory,
                                              atom_pairs=atom_pairs)
             min_dists = [min(dists) for dists in distances]
-            values.append(list(map(lambda d: d < cutoff, min_dists)))
+            values.append([d < cutoff for d in min_dists])
 
         super(ResidueContactConcurrence, self).__init__(values=values,
                                                         labels=labels)
