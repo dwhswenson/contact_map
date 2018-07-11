@@ -88,9 +88,9 @@ def _regularize_contact_input(contact_input, atom_or_res):
         list in the format of ``ContactCount.most_common()``
     """
     if isinstance(contact_input, contact_map.ContactFrequency):
-        if atom_or_res == "atom":
+        if atom_or_res in ["atom", "atoms"]:
             contact_input = contact_input.atom_contacts.most_common()
-        elif atom_or_res == "residue" or atom_or_res == "res":
+        elif atom_or_res in ["residue", "residues", "res"]:
             contact_input = contact_input.residue_contacts.most_common()
         else:
             raise RuntimeError("Bad value for atom_or_res: " +
@@ -114,17 +114,15 @@ class AtomContactConcurrence(Concurrence):
         cutoff, in nm. Should be the same as used in the contact map.
     """
     def __init__(self, trajectory, atom_contacts, cutoff=0.45):
-        # TODO: the use of atom_contacts as input from most_common is weird
         atom_contacts = _regularize_contact_input(atom_contacts, "atom")
         atom_pairs = [[contact[0][0].index, contact[0][1].index]
                       for contact in atom_contacts]
         labels = [str(contact[0]) for contact in atom_contacts]
         distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
         vector_f = np.vectorize(lambda d: d < cutoff)
-        # distances is ndarray shape (n_frames, n_contacts); values should
-        # be list shape (n_contacts, n_frames)
-        value_iter = zip(*vector_f(distances))  # make bool; transpose
-        values = list(map(list, value_iter))  # convert to list of list
+        # transpose because distances is ndarray shape (n_frames,
+        # n_contacts); values should be list shape (n_contacts, n_frames)
+        values = vector_f(distances).T.tolist()
         super(AtomContactConcurrence, self).__init__(values=values,
                                                      labels=labels)
 
@@ -146,7 +144,6 @@ class ResidueContactConcurrence(Concurrence):
     """
     def __init__(self, trajectory, residue_contacts, cutoff=0.45,
                  select="and symbol != 'H'"):
-        # TODO: the use of residue_contacts as input from most_common is weird
         residue_contacts = _regularize_contact_input(residue_contacts,
                                                      "residue")
         residue_pairs = [[contact[0][0], contact[0][1]]

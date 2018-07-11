@@ -20,6 +20,29 @@ def setup_module():
                                 n_neighbors_ignored=0)
 
 
+@pytest.mark.parametrize("contact_type", ('atoms', 'residues'))
+def test_regularize_contact_input(contact_type):
+    from contact_map.concurrence import _regularize_contact_input \
+            as regularize
+    most_common = {
+        'atoms': contacts.atom_contacts.most_common(),
+        'residues': contacts.residue_contacts.most_common()
+    }[contact_type]
+    contact_count = {
+        'atoms': contacts.atom_contacts,
+        'residues': contacts.residue_contacts
+    }[contact_type]
+    assert regularize(most_common, contact_type) == most_common
+    assert regularize(contact_count, contact_type) == most_common
+    assert regularize(contacts, contact_type) == most_common
+
+def test_regularize_contact_input_bad_type():
+    from contact_map.concurrence import _regularize_contact_input \
+            as regularize
+    with pytest.raises(RuntimeError):
+        regularize(contacts, "foo")
+
+
 class ContactConcurrenceTester(object):
     def _test_default_labels(self, concurrence):
         assert len(concurrence.labels) == len(self.labels) / 2
