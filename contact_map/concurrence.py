@@ -2,6 +2,8 @@ import itertools
 import mdtraj as md
 import numpy as np
 
+import contact_map
+
 try:
     import matplotlib.pyplot as plt
 except ImportError:
@@ -63,6 +65,41 @@ class Concurrence(object):
 
         # return sum(coincidence_list) / np.sqrt(norm_sq)
 
+def _regularize_contact_input(contact_input, atom_or_res):
+    """Clean input for concurrence objects.
+
+    The allowed inputs are the :class:`.ContactFrequency`, or the
+    :class:`.ContactObject` coming from the ``.atom_contacts`` or
+    ``.residue_contacts`` attribute of the contact frequency, or the list
+    coming from the ``.most_common()`` method for the
+    :class:`.ContactObject`.
+
+    Parameters
+    ----------
+    contact_input : many possible types; see method description
+        input to the contact concurrences
+    atom_or_res : string
+        whether to treat this as an atom-based or residue-based contact;
+        allowed values are "atom", "res", and "residue"
+
+    Returns
+    -------
+    list :
+        list in the format of ``ContactCount.most_common()``
+    """
+    if isinstance(contact_input, contact_map.ContactFrequency):
+        if atom_or_res == "atom":
+            contact_input = contact_input.atom_contacts.most_common()
+        elif atom_or_res == "residue" or atom_or_res == "res":
+            contact_input = contact_input.residue_contacts.most_common()
+        else:
+            raise RuntimeError("Bad value for atom_or_res: " +
+                               str(atom_or_res))
+    elif isinstance(contact_input, contact_map.ContactCount):
+        contact_input = contact_input.most_common()
+
+    return contact_input
+
 
 class AtomContactConcurrence(Concurrence):
     """Contact concurrences for atom contacts.
@@ -78,13 +115,14 @@ class AtomContactConcurrence(Concurrence):
     """
     def __init__(self, trajectory, atom_contacts, cutoff=0.45):
         # TODO: the use of atom_contacts as input from most_common is weird
+        atom_contacts = _regularize_contact_input(atom_contacts, "atom")
         atom_pairs = [[contact[0][0].index, contact[0][1].index]
                       for contact in atom_contacts]
         labels = [str(contact[0]) for contact in atom_contacts]
         distances = md.compute_distances(trajectory, atom_pairs=atom_pairs)
         vector_f = np.vectorize(lambda d: d < cutoff)
-        # distances is (ndarray) shape (n_frames, n_contacts);
-        # values should be list shape # (n_contacts, n_frames)
+        # distances is ndarray shape (n_frames, n_contacts); values should
+        # be list shape (n_contacts, n_frames)
         value_iter = zip(*vector_f(distances))  # make bool; transpose
         values = list(map(list, value_iter))  # convert to list of list
         super(AtomContactConcurrence, self).__init__(values=values,
@@ -109,6 +147,8 @@ class ResidueContactConcurrence(Concurrence):
     def __init__(self, trajectory, residue_contacts, cutoff=0.45,
                  select="and symbol != 'H'"):
         # TODO: the use of residue_contacts as input from most_common is weird
+        residue_contacts = _regularize_contact_input(residue_contacts,
+                                                     "residue")
         residue_pairs = [[contact[0][0], contact[0][1]]
                          for contact in residue_contacts]
         labels = [str(contact[0]) for contact in residue_contacts]
@@ -147,7 +187,7 @@ class ConcurrencePlotter(object):
     def __init__(self, concurrence=None, labels=None, x_values=None):
         self.concurrence = concurrence
         self.labels = self.get_concurrence_labels(concurrence, labels)
-        self.x_values = x_values
+        self._x_values = x_values
 
     @staticmethod
     def get_concurrence_labels(concurrence, labels=None):
