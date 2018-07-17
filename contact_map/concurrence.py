@@ -3,6 +3,7 @@ import mdtraj as md
 import numpy as np
 
 import contact_map
+from .contact_map import ContactObject
 
 try:
     import matplotlib.pyplot as plt
@@ -87,7 +88,7 @@ def _regularize_contact_input(contact_input, atom_or_res):
     list :
         list in the format of ``ContactCount.most_common()``
     """
-    if isinstance(contact_input, contact_map.ContactObject):
+    if isinstance(contact_input, ContactObject):
         contact_input = contact_input.contacts[atom_or_res]
     if isinstance(contact_input, contact_map.ContactCount):
         contact_input = contact_input.most_common()
