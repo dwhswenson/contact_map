@@ -87,15 +87,9 @@ def _regularize_contact_input(contact_input, atom_or_res):
     list :
         list in the format of ``ContactCount.most_common()``
     """
-    if isinstance(contact_input, contact_map.ContactFrequency):
-        if atom_or_res in ["atom", "atoms"]:
-            contact_input = contact_input.atom_contacts.most_common()
-        elif atom_or_res in ["residue", "residues", "res"]:
-            contact_input = contact_input.residue_contacts.most_common()
-        else:
-            raise RuntimeError("Bad value for atom_or_res: " +
-                               str(atom_or_res))
-    elif isinstance(contact_input, contact_map.ContactCount):
+    if isinstance(contact_input, contact_map.ContactObject):
+        contact_input = contact_input.contacts[atom_or_res]
+    if isinstance(contact_input, contact_map.ContactCount):
         contact_input = contact_input.most_common()
 
     return contact_input

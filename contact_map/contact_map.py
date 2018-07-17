@@ -42,6 +42,7 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
+
 def _residue_and_index(residue, topology):
     res = residue
     try:
@@ -50,6 +51,39 @@ def _residue_and_index(residue, topology):
         res_idx = residue
         res = topology.residue(res_idx)
     return (res, res_idx)
+
+
+class ContactsDict(object):
+    """Dict-like object giving access to atom or residue contacts.
+
+    In some algorithmic situations, either the atom_contacts or the
+    residue_contacts might be used. Rather than use lots of if-statements,
+    or build an actual dictionary with the associated time cost of
+    generating both, this class provides an object that allows dict-like
+    access to either the atom or residue contacts.
+
+    Atom-based contacts (``contact.atom_contacts``) can be accessed with as
+    ``contact_dict['atom']`` or ``contact_dict['atoms']``. Residue-based
+    contacts can be accessed with the keys ``'residue'``, ``'residues'``, or
+    ``'res'``.
+
+    Parameters
+    ----------
+    contacts : :class:`.ContactObject`
+        contact object with fundamental data
+    """
+    def __init__(self, contacts):
+        self.contacts = contacts
+
+    def __getitem__(self, atom_or_res):
+        if atom_or_res in ["atom", "atoms"]:
+            contacts = self.contacts.atom_contacts
+        elif atom_or_res in ["residue", "residues", "res"]:
+            contacts = self.contacts.residue_contacts
+        else:
+            raise RuntimeError("Bad value for atom_or_res: " +
+                               str(atom_or_res))
+        return contacts
 
 
 class ContactObject(object):
@@ -74,6 +108,11 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
         self._atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                          for atom in self.topology.atoms}
+
+    @property
+    def contacts(self):
+        """:class:`.ContactsDict` : contact dict for these contacts"""
+        return ContactsDict(self)
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
