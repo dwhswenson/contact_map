@@ -90,6 +90,7 @@ def _regularize_contact_input(contact_input, atom_or_res):
     """
     if isinstance(contact_input, ContactObject):
         contact_input = contact_input.contacts[atom_or_res]
+
     if isinstance(contact_input, contact_map.ContactCount):
         contact_input = contact_input.most_common()
 
