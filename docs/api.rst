@@ -18,6 +18,18 @@ Contact maps
     ContactFrequency
     ContactDifference
 
+Contact Concurrences
+--------------------
+.. autosummary::
+    :toctree: api/generated/
+
+    Concurrence
+    AtomContactConcurrence
+    ResidueContactConcurrence
+    ConcurrencePlotter
+    plot_concurrence
+
+
 Minimum Distance (and related)
 ------------------------------
 
