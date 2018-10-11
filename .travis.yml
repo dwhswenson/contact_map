@@ -26,9 +26,10 @@ env:
 
 matrix:
   include:
-    - python: 3.7
+    - python: "3.7"
       dist: xenial
       sudo: true
+      env: MDTRAJ="release"
   exclude:
     - env: MDTRAJ="dev"
       python: "3.5"
