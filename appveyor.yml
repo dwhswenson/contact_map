@@ -20,10 +20,10 @@ environment:
     - PYTHON: "C:\\Miniconda-x64"
       CONDA_PY: "27"
       ARCH: '64'
-    - PYTHON: "C:\\Miniconda36"
+    - PYTHON: "C:\\Miniconda37"
       CONDA_PY: "37"
       ARCH: '32'
-    - PYTHON: "C:\\Miniconda36-x64"
+    - PYTHON: "C:\\Miniconda37-x64"
       CONDA_PY: "37"
       ARCH: '64'
 
