@@ -20,6 +20,7 @@ as keys in getting/setting items -- internally, they are converted to
 ``frozenset``.
 """
 
+
 class FrozenSetDict(abc.MutableMapping):
     """Dictionary-like object that uses frozensets internally.
 
@@ -29,6 +30,7 @@ class FrozenSetDict(abc.MutableMapping):
     ``dict([(key, value)])``, but not like ``dict(key=value)``, for the
     simple reason that in the last case, you can't use an iterable as key.
     """
+
     hash_map = frozenset
     def __init__(self, input_data=None):
         self.dct = {}
@@ -90,4 +92,3 @@ class FrozenSetCounter(FrozenSetDict):
 
     def __sub__(self, other):
         pass
-

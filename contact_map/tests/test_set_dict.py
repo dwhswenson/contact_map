@@ -1,4 +1,3 @@
-import numpy as np
 import itertools
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
@@ -13,6 +12,7 @@ from .test_contact_map import traj
 
 KEY_ITER_IDX = list(itertools.product(['list', 'tuple', 'fset'],
                                       ['idx', 'obj']))
+
 
 def make_key(obj_type, iter_type, idx_to_type, idx_pair):
     top = traj.topology
@@ -56,7 +56,7 @@ class TestFrozenSetDict(object):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
         for k in obj:
-            assert k in [frozenset([0,1]), frozenset([1,2])]
+            assert k in [frozenset([0, 1]), frozenset([1, 2])]
 
     @pytest.mark.parametrize("iter_type, idx_to_type", KEY_ITER_IDX)
     def test_get(self, obj_type, iter_type, idx_to_type):
@@ -64,7 +64,6 @@ class TestFrozenSetDict(object):
                'res': self.residue_fsdct}[obj_type]
         key = make_key(obj_type, iter_type, idx_to_type, [0, 1])
         assert obj[key] == 10
-
 
     @pytest.mark.parametrize("iter_type, idx_to_type", KEY_ITER_IDX)
     def test_set(self, obj_type, iter_type, idx_to_type):
@@ -81,7 +80,7 @@ class TestFrozenSetDict(object):
         key = make_key(obj_type, iter_type, idx_to_type, [0, 1])
         del obj[key]
         assert len(obj) == 1
-        assert list(obj.dct.keys()) == [frozenset([1,2])]
+        assert list(obj.dct.keys()) == [frozenset([1, 2])]
 
 
 class TestFrozenSetCounter(object):
