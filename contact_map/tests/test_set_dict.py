@@ -1,4 +1,5 @@
 import numpy as np
+import itertools
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
@@ -9,6 +10,9 @@ from .utils import *
 
 from contact_map.set_dict import *
 from .test_contact_map import traj
+
+KEY_ITER_IDX = list(itertools.product(['list', 'tuple', 'fset'],
+                                      ['idx', 'obj']))
 
 def make_key(obj_type, iter_type, idx_to_type, idx_pair):
     top = traj.topology
@@ -24,6 +28,7 @@ def make_key(obj_type, iter_type, idx_to_type, idx_pair):
     return key
 
 
+@pytest.mark.parametrize("obj_type", ['atom', 'res'])
 class TestFrozenSetDict(object):
     def setup(self):
         topology = traj.topology
@@ -31,37 +36,29 @@ class TestFrozenSetDict(object):
             frozenset([0, 1]): 10,
             frozenset([1, 2]): 5
         }
-        self.atom_fsdict = FrozenSetDict({
-            (topology.atom(0), topology.atom(1)): 10,
-            (topology.atom(1), topology.atom(2)): 5
-        })
-        self.residue_fsdct = FrozenSetDict({
-            (topology.residue(0), topology.residue(1)): 10,
-            (topology.residue(1), topology.residue(2)): 5
-        })
+        self.atom_fsdict, self.residue_fsdct = [
+            FrozenSetDict({(fcn(0), fcn(1)): 10,
+                           (fcn(1), fcn(2)): 5})
+            for fcn in [topology.atom, topology.residue]
+        ]
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_init(self, obj_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
         assert obj.dct == self.expected_dct
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_len(self, obj_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
         assert len(obj) == 2
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_iter(self, obj_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
         for k in obj:
             assert k in [frozenset([0,1]), frozenset([1,2])]
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    @pytest.mark.parametrize("iter_type", ['list', 'tuple', 'fset'])
-    @pytest.mark.parametrize("idx_to_type", ['idx', 'obj'])
+    @pytest.mark.parametrize("iter_type, idx_to_type", KEY_ITER_IDX)
     def test_get(self, obj_type, iter_type, idx_to_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
@@ -69,9 +66,7 @@ class TestFrozenSetDict(object):
         assert obj[key] == 10
 
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    @pytest.mark.parametrize("iter_type", ['list', 'tuple', 'fset'])
-    @pytest.mark.parametrize("idx_to_type", ['idx', 'obj'])
+    @pytest.mark.parametrize("iter_type, idx_to_type", KEY_ITER_IDX)
     def test_set(self, obj_type, iter_type, idx_to_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
@@ -79,9 +74,7 @@ class TestFrozenSetDict(object):
         obj[key] = 20
         assert obj.dct[frozenset([1, 3])] == 20
 
-    @pytest.mark.parametrize("obj_type", ['atom', 'res'])
-    @pytest.mark.parametrize("iter_type", ['list', 'tuple', 'fset'])
-    @pytest.mark.parametrize("idx_to_type", ['idx', 'obj'])
+    @pytest.mark.parametrize("iter_type, idx_to_type", KEY_ITER_IDX)
     def test_del(self, obj_type, iter_type, idx_to_type):
         obj = {'atom': self.atom_fsdict,
                'res': self.residue_fsdct}[obj_type]
