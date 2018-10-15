@@ -69,26 +69,56 @@ class FrozenSetDict(abc.MutableMapping):
         del self.dct[self._regularize_key(key)]
 
 
+def _make_frozen_set_counter(other):
+    if not isinstance(other, FrozenSetCounter):
+        other = FrozenSetCounter(other)
+    return other
+
+
 class FrozenSetCounter(FrozenSetDict):
     """Counter-like object that uses frozensets internally.
     """
     def __init__(self, input_data=None):
-        pass
+        if input_data is None:
+            input_data = []
 
-    def most_common(self):
-        pass
+        if not isinstance(input_data, collections.Mapping):
+            self.counter = collections.Counter([
+                self._regularize_key(inp)
+                for inp in input_data
+            ])
+        else:
+            self.counter = collections.Counter({
+                self._regularize_key(key): value
+                for key, value in input_data.items()
+            })
+
+    def most_common(self, n=None):
+        return self.counter.most_common(n)
 
     def elements(self):
-        pass
+        return self.counter.elements()
 
-    def subtract(self):
-        pass
+    def subtract(self, other):
+        other = _make_frozen_set_counter(other)
+        self.counter.subtract(other.counter)
 
-    def update(self):
-        pass
+    def update(self, other):
+        other = _make_frozen_set_counter(other)
+        self.counter.update(other.counter)
 
     def __add__(self, other):
-        pass
+        other = _make_frozen_set_counter(other)
+        counter = self.counter + other.counter
+        return FrozenSetCounter(counter)
 
     def __sub__(self, other):
+        other = _make_frozen_set_counter(other)
+        counter = self.counter - other.counter
+        return FrozenSetCounter(counter)
+
+    def __and__(self, other):
+        pass
+
+    def __or__(self, other):
         pass
