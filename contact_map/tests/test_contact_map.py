@@ -124,6 +124,8 @@ class TestContactMap(object):
         m = self.maps[idx]
         assert set(m.query) == set(range(10))
         assert set(m.haystack) == set(range(10))
+        assert set(m.query_residues) == set(range(5))
+        assert set(m.haystack_residues) == set(range(5))
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:

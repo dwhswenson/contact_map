@@ -53,6 +53,10 @@ def _residue_and_index(residue, topology):
     return (res, res_idx)
 
 
+def _residue_for_atom(topology, atom_list):
+    return set([topology.atom(a).residue.index for a in atom_list])
+
+
 class ContactsDict(object):
     """Dict-like object giving access to atom or residue contacts.
 
@@ -100,6 +104,9 @@ class ContactObject(object):
             query = topology.select("not water and symbol != 'H'")
         if haystack is None:
             haystack = topology.select("not water and symbol != 'H'")
+
+        self.haystack_residues = _residue_for_atom(topology, haystack)
+        self.query_residues = _residue_for_atom(topology, query)
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
