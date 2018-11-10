@@ -126,6 +126,8 @@ class TestContactMap(object):
         assert set(m.haystack) == set(range(10))
         assert set(m.query_residues) == set(range(5))
         assert set(m.haystack_residues) == set(range(5))
+        assert m.haystack_residue_range == (0, 5)
+        assert m.query_residue_range == (0, 5)
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:

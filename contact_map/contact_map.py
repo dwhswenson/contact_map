@@ -107,6 +107,10 @@ class ContactObject(object):
 
         self.haystack_residues = _residue_for_atom(topology, haystack)
         self.query_residues = _residue_for_atom(topology, query)
+        self.haystack_residue_range = (min(self.haystack_residues),
+                                       max(self.haystack_residues) + 1)
+        self.query_residue_range = (min(self.query_residues),
+                                    max(self.query_residues) + 1)
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
