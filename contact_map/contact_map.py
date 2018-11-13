@@ -54,7 +54,7 @@ def _residue_and_index(residue, topology):
 
 
 def _residue_for_atom(topology, atom_list):
-    return set([topology.atom(a).residue.index for a in atom_list])
+    return set([topology.atom(a).residue for a in atom_list])
 
 
 class ContactsDict(object):
@@ -105,12 +105,6 @@ class ContactObject(object):
         if haystack is None:
             haystack = topology.select("not water and symbol != 'H'")
 
-        self.haystack_residues = _residue_for_atom(topology, haystack)
-        self.query_residues = _residue_for_atom(topology, query)
-        self.haystack_residue_range = (min(self.haystack_residues),
-                                       max(self.haystack_residues) + 1)
-        self.query_residue_range = (min(self.query_residues),
-                                    max(self.query_residues) + 1)
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
@@ -357,12 +351,10 @@ class ContactObject(object):
     def residue_query_atom_idxs(self):
         """dict : maps query residue index to atom indices in query"""
         result = {}
+        result = collections.defaultdict(list)
         for atom_idx in self._query:
             residue_idx = self.topology.atom(atom_idx).residue.index
-            try:
-                result[residue_idx] += [atom_idx]
-            except KeyError:
-                result[residue_idx] = [atom_idx]
+            result[residue_idx].append(atom_idx)
         return result
 
 
@@ -384,6 +376,24 @@ class ContactObject(object):
             ignore_atom_idxs = set([atom.index for atom in ignore_atoms])
             result[residue_idx] = ignore_atom_idxs
         return result
+
+    @property
+    def haystack_residues(self):
+        return _residue_for_atom(self.topology, self.haystack)
+
+    @property
+    def query_residues(self):
+        return _residue_for_atom(self.topology, self.query)
+
+    @property
+    def haystack_residue_range(self):
+        haystack_res = [r.index for r in self.haystack_residues]
+        return (min(haystack_res), max(haystack_res) + 1)
+
+    @property
+    def query_residue_range(self):
+        query_res = [r.index for r in self.query_residues]
+        return (min(query_res), max(query_res) + 1)
 
     def most_common_atoms_for_residue(self, residue):
         """

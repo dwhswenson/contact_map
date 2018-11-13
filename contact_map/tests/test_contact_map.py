@@ -124,8 +124,8 @@ class TestContactMap(object):
         m = self.maps[idx]
         assert set(m.query) == set(range(10))
         assert set(m.haystack) == set(range(10))
-        assert set(m.query_residues) == set(range(5))
-        assert set(m.haystack_residues) == set(range(5))
+        assert set(r.index for r in m.query_residues) == set(range(5))
+        assert set(r.index for r in m.haystack_residues) == set(range(5))
         assert m.haystack_residue_range == (0, 5)
         assert m.query_residue_range == (0, 5)
         assert m.n_neighbors_ignored == 0
