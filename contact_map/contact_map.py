@@ -21,6 +21,7 @@ from .py_2_3 import inspect_method_arguments
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
 
+
 def residue_neighborhood(residue, n=1):
     """Find n nearest neighbor residues
 
@@ -51,6 +52,18 @@ def _residue_and_index(residue, topology):
         res_idx = residue
         res = topology.residue(res_idx)
     return (res, res_idx)
+
+
+def _residue_for_atom(topology, atom_list):
+    return set([topology.atom(a).residue for a in atom_list])
+
+
+def _range_from_object_list(object_list):
+    """
+    Objects must have .index attribute (e.g., MDTraj Residue/Atom)
+    """
+    idxs = [obj.index for obj in object_list]
+    return (min(idxs), max(idxs) + 1)
 
 
 class ContactsDict(object):
@@ -100,6 +113,7 @@ class ContactObject(object):
             query = topology.select("not water and symbol != 'H'")
         if haystack is None:
             haystack = topology.select("not water and symbol != 'H'")
+
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
@@ -346,14 +360,11 @@ class ContactObject(object):
     def residue_query_atom_idxs(self):
         """dict : maps query residue index to atom indices in query"""
         result = {}
+        result = collections.defaultdict(list)
         for atom_idx in self._query:
             residue_idx = self.topology.atom(atom_idx).residue.index
-            try:
-                result[residue_idx] += [atom_idx]
-            except KeyError:
-                result[residue_idx] = [atom_idx]
+            result[residue_idx].append(atom_idx)
         return result
-
 
     @property
     def residue_ignore_atom_idxs(self):
@@ -373,6 +384,26 @@ class ContactObject(object):
             ignore_atom_idxs = set([atom.index for atom in ignore_atoms])
             result[residue_idx] = ignore_atom_idxs
         return result
+
+    @property
+    def haystack_residues(self):
+        """list : residues for atoms in the haystack"""
+        return _residue_for_atom(self.topology, self.haystack)
+
+    @property
+    def query_residues(self):
+        """list : residues for atoms in the query"""
+        return _residue_for_atom(self.topology, self.query)
+
+    @property
+    def haystack_residue_range(self):
+        """(int, int): min and (max + 1) of haystack residue indices"""
+        return _range_from_object_list(self.haystack_residues)
+
+    @property
+    def query_residue_range(self):
+        """(int, int): min and (max + 1) of query residue indices"""
+        return _range_from_object_list(self.query_residues)
 
     def most_common_atoms_for_residue(self, residue):
         """
@@ -436,7 +467,6 @@ class ContactObject(object):
                   for contact in self.atom_contacts.most_common_idx()
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
-
 
     def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
                     residue_ignore_atom_idxs):
@@ -632,7 +662,6 @@ class ContactFrequency(ContactObject):
         self._atom_contacts += other._atom_contacts
         self._residue_contacts += other._residue_contacts
         self._n_frames += other._n_frames
-
 
     def subtract_contact_frequency(self, other):
         """Subtracts results from `other` from internal counter.
