@@ -14,6 +14,9 @@ def dask_setup_test_cluster(distributed, n_workers=4, n_attempts=3):
     for _ in range(n_attempts):
         try:
             cluster = distributed.LocalCluster(n_workers=n_workers)
+        except AttributeError:
+            # should never get here, because should have already skipped
+            pytest.skip("dask.distributed not installed")
         except distributed.TimeoutError:
             continue
         else:
@@ -29,7 +32,7 @@ class TestDaskContactFrequency(object):
         distributed = pytest.importorskip('dask.distributed')
         # Explicitly set only 4 workers on Travis instead of 31
         # Fix copied from https://github.com/spencerahill/aospy/pull/220/files
-        cluster = dask_setup_test_cluster(distributed)
+        cluster = dask_setup_test_cluster(distributed, n_workers=4)
         client = distributed.Client(cluster)
         filename = find_testfile("trajectory.pdb")
 
