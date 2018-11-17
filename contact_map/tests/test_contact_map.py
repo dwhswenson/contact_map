@@ -85,6 +85,16 @@ def _contact_object_compare(m, m2):
     if hasattr(m, '_residue_contacts') or hasattr(m2, '_residue_contacts'):
         assert m._residue_contacts == m2._residue_contacts
 
+
+def _check_contacts_dict_names(contact_object):
+    aliases = {
+        contact_object.residue_contacts: ['residue', 'residues', 'res'],
+        contact_object.atom_contacts: ['atom', 'atoms']
+    }
+    for (contacts, names) in aliases.items():
+        for name in names:
+            assert contacts.counter == contact_object.contacts[name].counter
+
 def test_residue_neighborhood():
     top = traj.topology
     residues = list(top.residues)
@@ -121,6 +131,10 @@ class TestContactMap(object):
         assert set(m.query) == set(range(10))
         assert set(m.haystack) == set(range(10))
         assert set(m.all_atoms) == set(range(10))
+        assert set(r.index for r in m.query_residues) == set(range(5))
+        assert set(r.index for r in m.haystack_residues) == set(range(5))
+        assert m.haystack_residue_range == (0, 5)
+        assert m.query_residue_range == (0, 5)
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:
@@ -291,6 +305,8 @@ class TestContactMap(object):
         # Reset class variable (as imports are not redone between function
         # calls)
         ContactMap._class_use_atom_slice = class_default
+    def test_contacts_dict(self, idx):
+        _check_contacts_dict_names(self.maps[idx])
 
     # TODO: add tests for ContactObject._check_consistency
 
@@ -331,6 +347,9 @@ class TestContactFrequency(object):
             for (k, v) in self.expected_residue_contact_count.items()
         }
         assert residue_contacts.counter == expected_residue_contacts
+
+    def test_contacts_dict(self):
+        _check_contacts_dict_names(self.map)
 
     def test_check_compatibility_true(self):
         map2 = ContactFrequency(trajectory=traj[0:2],
@@ -638,6 +657,12 @@ class TestContactDifference(object):
         expected_residues_2 = {k: -v
                                for (k, v) in expected_residues_1.items()}
         assert diff_2.residue_contacts.counter == expected_residues_2
+
+    def test_contacts_dict(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        _check_contacts_dict_names(ttraj - frame)
 
     def test_diff_traj_traj(self):
         traj_1 = ContactFrequency(trajectory=traj[0:2],

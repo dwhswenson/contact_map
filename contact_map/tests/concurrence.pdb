@@ -1,0 +1,67 @@
+REMARK 225 HAND-WRITTEN TEST TRAJECTORY
+REMARK 225 COMMENTS HERE COUNT FROM 1 (CODE COUNTS FROM 0, PDB FROM 1)
+REMARK 225 SYSTEM CONSISTS OF TWO CHAINS: A TWO-RESIDUE "PROTEIN" (CHAIN A)
+REMARK 225 AND A "LIGAND" (CHAIN B). 
+REMARK 225 IN FRAMES 1, 2 AND 5, THE PROTEIN IS IN THE SAME CONFIGURATION
+REMARK 225 * FRAME 1
+REMARK 225 * FRAME 2
+REMARK 225 * FRAME 3
+REMARK 225 * FRAME 4
+REMARK 225 * FRAME 5
+REMARK 225
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  AAA A   1       0.250   2.250   0.000  1.00  0.00           C
+HETATM    2  C2  AAA A   1       0.250   1.750   0.000  1.00  0.00           C
+HETATM    3   H  AAA A   1       0.250   2.750   0.000  1.00  0.00           H
+HETATM    4  C1  BBB A   2       0.250   0.750   0.000  1.00  0.00           C
+HETATM    5  C2  BBB A   2       0.250   1.250   0.000  1.00  0.00           C
+HETATM    6   H  BBB A   2       0.250   0.250   0.000  1.00  0.00           H
+HETATM    7  C1  LLL B   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    8  C2  LLL B   3       0.750   1.250   0.000  1.00  0.00           C
+HETATM    9   H  LLL B   3       1.250   1.750   0.000  1.00  0.00           H
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  AAA A   1       0.250   2.250   0.000  1.00  0.00           C
+HETATM    2  C2  AAA A   1       0.250   1.750   0.000  1.00  0.00           C
+HETATM    3   H  AAA A   1       0.250   2.750   0.000  1.00  0.00           H
+HETATM    4  C1  BBB A   2       0.250   0.750   0.000  1.00  0.00           C
+HETATM    5  C2  BBB A   2       0.250   1.250   0.000  1.00  0.00           C
+HETATM    6   H  BBB A   2       0.250   0.250   0.000  1.00  0.00           H
+HETATM    7  C1  LLL B   3       0.750   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  LLL B   3       0.750   1.750   0.000  1.00  0.00           C
+HETATM    9   H  LLL B   3       1.250   2.250   0.000  1.00  0.00           H
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  AAA A   1       0.250   2.250   0.000  1.00  0.00           C
+HETATM    2  C2  AAA A   1       0.250   1.750   0.000  1.00  0.00           C
+HETATM    3   H  AAA A   1       0.750   2.250   0.000  1.00  0.00           H
+HETATM    4  C1  BBB A   2       0.250   0.750   0.000  1.00  0.00           C
+HETATM    5  C2  BBB A   2       0.250   1.250   0.000  1.00  0.00           C
+HETATM    6   H  BBB A   2       0.250   0.250   0.000  1.00  0.00           H
+HETATM    7  C1  LLL B   3       1.750   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  LLL B   3       1.750   1.750   0.000  1.00  0.00           C
+HETATM    9   H  LLL B   3       1.250   2.250   0.000  1.00  0.00           H
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  AAA A   1       0.250   2.250   0.000  1.00  0.00           C
+HETATM    2  C2  AAA A   1       0.250   1.750   0.000  1.00  0.00           C
+HETATM    3   H  AAA A   1       0.750   2.250   0.000  1.00  0.00           H
+HETATM    4  C1  BBB A   2       1.250   1.250   0.000  1.00  0.00           C
+HETATM    5  C2  BBB A   2       0.750   1.250   0.000  1.00  0.00           C
+HETATM    6   H  BBB A   2       1.750   1.250   0.000  1.00  0.00           H
+HETATM    7  C1  LLL B   3       1.750   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  LLL B   3       1.750   1.750   0.000  1.00  0.00           C
+HETATM    9   H  LLL B   3       1.250   2.250   0.000  1.00  0.00           H
+ENDMDL
+CRYST1   25.000   25.000   25.000  90.00  90.00  90.00 P 1          1 
+HETATM    1  C1  AAA A   1       0.250   2.250   0.000  1.00  0.00           C
+HETATM    2  C2  AAA A   1       0.250   1.750   0.000  1.00  0.00           C
+HETATM    3   H  AAA A   1       0.250   2.750   0.000  1.00  0.00           H
+HETATM    4  C1  BBB A   2       0.250   0.750   0.000  1.00  0.00           C
+HETATM    5  C2  BBB A   2       0.250   1.250   0.000  1.00  0.00           C
+HETATM    6   H  BBB A   2       0.250   0.250   0.000  1.00  0.00           H
+HETATM    7  C1  LLL B   3       1.250   2.250   0.000  1.00  0.00           C
+HETATM    8  C2  LLL B   3       1.250   1.750   0.000  1.00  0.00           C
+HETATM    9   H  LLL B   3       1.250   2.750   0.000  1.00  0.00           H
+ENDMDL
+END

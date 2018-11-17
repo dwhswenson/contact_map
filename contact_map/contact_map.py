@@ -70,6 +70,50 @@ def atom_slice(traj, indices):
                          unitcell_lengths=unitcell_lengths,
                          unitcell_angles=unitcell_angles)
 
+def _residue_for_atom(topology, atom_list):
+    return set([topology.atom(a).residue for a in atom_list])
+
+
+def _range_from_object_list(object_list):
+    """
+    Objects must have .index attribute (e.g., MDTraj Residue/Atom)
+    """
+    idxs = [obj.index for obj in object_list]
+    return (min(idxs), max(idxs) + 1)
+
+
+class ContactsDict(object):
+    """Dict-like object giving access to atom or residue contacts.
+
+    In some algorithmic situations, either the atom_contacts or the
+    residue_contacts might be used. Rather than use lots of if-statements,
+    or build an actual dictionary with the associated time cost of
+    generating both, this class provides an object that allows dict-like
+    access to either the atom or residue contacts.
+
+    Atom-based contacts (``contact.atom_contacts``) can be accessed with as
+    ``contact_dict['atom']`` or ``contact_dict['atoms']``. Residue-based
+    contacts can be accessed with the keys ``'residue'``, ``'residues'``, or
+    ``'res'``.
+
+    Parameters
+    ----------
+    contacts : :class:`.ContactObject`
+        contact object with fundamental data
+    """
+    def __init__(self, contacts):
+        self.contacts = contacts
+
+    def __getitem__(self, atom_or_res):
+        if atom_or_res in ["atom", "atoms"]:
+            contacts = self.contacts.atom_contacts
+        elif atom_or_res in ["residue", "residues", "res"]:
+            contacts = self.contacts.residue_contacts
+        else:
+            raise RuntimeError("Bad value for atom_or_res: " +
+                               str(atom_or_res))
+        return contacts
+
 
 class ContactObject(object):
     """
@@ -90,6 +134,7 @@ class ContactObject(object):
             query = topology.select("not water and symbol != 'H'")
         if haystack is None:
             haystack = topology.select("not water and symbol != 'H'")
+
         # make things private and accessible through read-only properties so
         # they don't get accidentally changed after analysis
         self._cutoff = cutoff
@@ -154,6 +199,11 @@ class ContactObject(object):
             return self._idx_to_s_idx_dict[idx]
         else:
             return idx
+
+    @property
+    def contacts(self):
+        """:class:`.ContactsDict` : contact dict for these contacts"""
+        return ContactsDict(self)
 
     def __hash__(self):
         return hash((self.cutoff, self.n_neighbors_ignored,
@@ -401,14 +451,10 @@ class ContactObject(object):
     @property
     def residue_query_atom_idxs(self):
         """dict : maps query residue index to atom indices in query"""
-        result = {}
-        for idx in self._query:
-            atom_idx = self.idx_to_s_idx(idx)
+        result = collections.defaultdict(list)
+        for atom_idx in self._query:
             residue_idx = self._atom_idx_to_residue_idx[atom_idx]
-            try:
-                result[residue_idx] += [atom_idx]
-            except KeyError:
-                result[residue_idx] = [atom_idx]
+            result[residue_idx].append(atom_idx)
         return result
 
     @property
@@ -438,6 +484,26 @@ class ContactObject(object):
             result &= self._all_atoms
             result = set(map(self.idx_to_s_idx, result))
             return result
+
+    @property
+    def haystack_residues(self):
+        """list : residues for atoms in the haystack"""
+        return _residue_for_atom(self.topology, self.haystack)
+
+    @property
+    def query_residues(self):
+        """list : residues for atoms in the query"""
+        return _residue_for_atom(self.topology, self.query)
+
+    @property
+    def haystack_residue_range(self):
+        """(int, int): min and (max + 1) of haystack residue indices"""
+        return _range_from_object_list(self.haystack_residues)
+
+    @property
+    def query_residue_range(self):
+        """(int, int): min and (max + 1) of query residue indices"""
+        return _range_from_object_list(self.query_residues)
 
     def most_common_atoms_for_residue(self, residue):
         """

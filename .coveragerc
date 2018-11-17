@@ -8,5 +8,6 @@ omit =
     */_version.py
 exclude_lines = 
     pragma: no cover
+    -no-cov-
     def __repr__
     raise NotImplementedError
