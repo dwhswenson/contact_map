@@ -158,7 +158,7 @@ class TestContactMap(object):
         assert dct['cutoff'] == 0.075
         assert dct['query'] == list(range(10))
         assert dct['haystack'] == list(range(10))
-        assert dct['all_atoms'] == list(range(10))
+        assert dct['all_atoms'] == tuple(range(10))
         assert dct['n_neighbors_ignored'] == 0
         assert dct['atom_idx_to_residue_idx'] == {i: i // 2
                                                   for i in range(10)}

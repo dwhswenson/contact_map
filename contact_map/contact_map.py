@@ -54,7 +54,7 @@ def _residue_and_index(residue, topology):
     return (res, res_idx)
 
 
-def atom_slice(traj, indices):
+def _atom_slice(traj, indices):
     """Mock MDTraj.atom_slice without rebuilding topology"""
     xyz = np.array(traj.xyz[:, indices], order='C')
     topology = traj.topology.copy()
@@ -140,28 +140,35 @@ class ContactObject(object):
         self._cutoff = cutoff
         self._query = set(query)
         self._haystack = set(haystack)
-        self._all_atoms = set(query).union(set(haystack))
-        self._all_atoms_list = list(self._all_atoms)
-        self._all_atoms_list.sort()
-        # Make tuple for efficient lookupt
-        self._all_atoms_tuple = tuple(self._all_atoms_list)
-        self._idx_to_s_idx_dict = {e: i for
-                                   i, e in enumerate(self._all_atoms_list)}
-        self._use_atom_slice = self.set_atom_slice()
 
+        # Make tuple for efficient lookupt
+        all_atoms_set = set(query).union(set(haystack))
+        all_atoms_list = list(all_atoms_set)
+        all_atoms_list.sort()
+        self._all_atoms = tuple(all_atoms_list)
+
+        self._use_atom_slice = self._set_atom_slice()
+
+        # Set up the conversion dict to go from aton index to sliced indexes
+        self._idx_to_s_idx_dict = {e: i for
+                                   i, e in enumerate(self._all_atoms)}
+
+        # Get the sliced and used haystack indices
         self._s_haystack = set(map(self.idx_to_s_idx, self._haystack))
-        self._u_haystack = self.set_used_haystack()
+        self._u_haystack = self._set_used_haystack()
         self._n_neighbors_ignored = n_neighbors_ignored
+
+        # Conversion dicts between the real and sliced atoms and their residues
         self._r_atom_idx_to_residue_idx = {atom.index: atom.residue.index
                                            for atom in self.topology.atoms}
         self._s_atom_idx_to_residue_idx = {
             i: self._r_atom_idx_to_residue_idx[e] for
-            i, e in enumerate(self._all_atoms_list)
-                                       }
-        self._atom_idx_to_residue_idx = self.set_atom_idx_to_residue_idx()
+            i, e in enumerate(self._all_atoms)
+            }
+        self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
 
-    def set_atom_slice(self):
-        ''' Set atom slice logic '''
+    def _set_atom_slice(self):
+        """ Set atom slice logic """
         if (self._class_use_atom_slice is None and
             not len(self._all_atoms) < self._topology.n_atoms):
             # Don't use if there are no atoms to be sliced
@@ -173,14 +180,15 @@ class ContactObject(object):
             # Use class default
             return self._class_use_atom_slice
 
-    def set_used_haystack(self):
+    def _set_used_haystack(self):
         """set which haystack to use in contact map"""
         if self._use_atom_slice:
             return self._s_haystack
         else:
             return self._haystack
 
-    def set_atom_idx_to_residue_idx(self):
+    def _set_atom_idx_to_residue_idx(self):
+        """set which atom index to residue index is used"""
         if self._use_atom_slice:
             return self._s_atom_idx_to_residue_idx
         else:
@@ -189,7 +197,7 @@ class ContactObject(object):
     def s_idx_to_idx(self, idx):
         """function to convert a sliced atom index back to real index"""
         if self._use_atom_slice:
-            return(self._all_atoms_tuple[idx])
+            return(self._all_atoms[idx])
         else:
             return idx
 
@@ -233,9 +241,8 @@ class ContactObject(object):
             'cutoff': self._cutoff,
             'query': list([int(val) for val in self._query]),
             'haystack': list([int(val) for val in self._haystack]),
-            'all_atoms': list([int(val) for val in self._all_atoms]),
-            'all_atoms_tuple': tuple(
-                [int(val) for val in self._all_atoms_tuple]),
+            'all_atoms': tuple(
+                [int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
@@ -462,6 +469,7 @@ class ContactObject(object):
     @property
     def residue_ignore_atom_idxs(self):
         """dict : maps query residue index to atom indices to ignore"""
+        all_atoms_set = set(self._all_atoms)
         result = {}
         for residue_idx in self.residue_query_atom_idxs.keys():
             residue = self.topology.residue(residue_idx)
@@ -474,18 +482,17 @@ class ContactObject(object):
                                for idx in ignore_residue_idxs]
             ignore_atoms = sum([list(res.atoms)
                                 for res in ignore_residues], [])
-            ignore_atom_idxs = self._ignore_atom_idx(ignore_atoms)
+            ignore_atom_idxs = self._ignore_atom_idx(ignore_atoms,
+                                                     all_atoms_set)
             result[residue_idx] = ignore_atom_idxs
         return result
 
-    def _ignore_atom_idx(self, atoms):
+    def _ignore_atom_idx(self, atoms, all_atoms_set):
         result = set([atom.index for atom in atoms])
-        if not self._use_atom_slice:
-            return result
-        else:
-            result &= self._all_atoms
+        if self._use_atom_slice:
+            result &= all_atoms_set
             result = set(map(self.idx_to_s_idx, result))
-            return result
+        return result
 
     @property
     def haystack_residues(self):
@@ -576,7 +583,7 @@ class ContactObject(object):
         # whole trajectory before calling this function.
         if self.use_atom_slice and (len(self._all_atoms) <
                                     trajectory.topology.n_atoms):
-            sliced_trajectory = atom_slice(trajectory, self._all_atoms_list)
+            sliced_trajectory = _atom_slice(trajectory, self._all_atoms)
         else:
             sliced_trajectory = trajectory
         return sliced_trajectory
