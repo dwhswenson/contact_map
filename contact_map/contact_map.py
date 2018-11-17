@@ -453,7 +453,9 @@ class ContactObject(object):
         """dict : maps query residue index to atom indices in query"""
         result = collections.defaultdict(list)
         for atom_idx in self._query:
-            residue_idx = self._atom_idx_to_residue_idx[atom_idx]
+            residue_idx = self._r_atom_idx_to_residue_idx[atom_idx]
+            if self.use_atom_slice:
+                atom_idx = self._idx_to_s_idx_dict[atom_idx]
             result[residue_idx].append(atom_idx)
         return result
 
