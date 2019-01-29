@@ -1,6 +1,7 @@
 dask-worker-space
 # netcdf outputs
 *nc
+.pytest_cache
 
 contact_map/version.py
 cover

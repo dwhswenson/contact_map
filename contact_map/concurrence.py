@@ -258,6 +258,7 @@ class ConcurrencePlotter(object):
 
         ax.set_ylim(top=0.0)
         ax.set_xlim(left=min(x_values), right=max(x_values))
+        ax.set_yticks([])
         lgd = ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         return (fig, ax, lgd)
 
