@@ -223,8 +223,11 @@ class ConcurrencePlotter(object):
     def x_values(self, x_values):
         self._x_values = x_values
 
-    def plot(self, concurrence=None):
+    def plot(self, concurrence=None, **kwargs):
         """Contact concurrence plot based on matplotlib
+
+        Additional kwargs given here will be passed to the matplotlib
+        ``Axes.plot()`` method.
 
         Parameters
         ----------
@@ -249,11 +252,14 @@ class ConcurrencePlotter(object):
         fig = plt.figure(1)
         ax = fig.add_subplot(111)
 
+        plot_kwargs = {'markersize': 1}
+        plot_kwargs.update(kwargs)
+
         y_val = -1.0
         for label, val_set in zip(labels, concurrence.values):
             x_vals = [x for (x, y) in zip(x_values, val_set) if y]
-            ax.plot(x_vals, [y_val] * len(x_vals), '.', markersize=1,
-                    label=label)
+            ax.plot(x_vals, [y_val] * len(x_vals), '.', label=label,
+                    **plot_kwargs)
             y_val -= 1.0
 
         ax.set_ylim(top=0.0)
@@ -263,9 +269,12 @@ class ConcurrencePlotter(object):
         return (fig, ax, lgd)
 
 
-def plot_concurrence(concurrence, labels=None, x_values=None):  # -no-cov-
+def plot_concurrence(concurrence, labels=None, x_values=None, **kwargs):  # -no-cov-
     """
     Convenience function for concurrence plots.
+
+    Additional kwargs given here will be passed to the matplotlib
+    ``Axes.plot()`` method.
 
     Parameters
     ----------
@@ -280,4 +289,4 @@ def plot_concurrence(concurrence, labels=None, x_values=None):  # -no-cov-
     --------
     :class:`.ConcurrencePlotter`
     """
-    return ConcurrencePlotter(concurrence, labels, x_values).plot()
+    return ConcurrencePlotter(concurrence, labels, x_values).plot(**kwargs)
