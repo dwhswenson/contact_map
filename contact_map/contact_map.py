@@ -164,7 +164,7 @@ class ContactObject(object):
         self._s_atom_idx_to_residue_idx = {
             i: self._r_atom_idx_to_residue_idx[e] for
             i, e in enumerate(self._all_atoms)
-            }
+        }
         self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
 
     def _set_atom_slice(self):
