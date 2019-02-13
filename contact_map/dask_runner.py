@@ -39,6 +39,7 @@ def dask_run(trajectory, client, run_info):
 
     return freq.result()
 
+
 class DaskContactFrequency(ContactFrequency):
     """Dask-based parallelization of contact frequency.
 
@@ -87,7 +88,7 @@ class DaskContactFrequency(ContactFrequency):
         self.kwargs = kwargs
 
         super(DaskContactFrequency, self).__init__(
-            trajectory, query, haystack, cutoff, n_neighbors_ignored
+            trajectory, query, haystack, cutoff, n_neighbors_ignored,
         )
 
     def _build_contact_map(self, trajectory):
@@ -107,5 +108,3 @@ class DaskContactFrequency(ContactFrequency):
         return {'parameters': self.parameters,
                 'trajectory_file': self.filename,
                 'load_kwargs': self.kwargs}
-
-
