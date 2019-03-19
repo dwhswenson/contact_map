@@ -2,4 +2,4 @@ future
 numpy
 scipy
 pandas
---no-binary mdtraj
+--no-binary :all: mdtraj
