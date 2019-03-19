@@ -4,7 +4,7 @@ language: python
 python:
   - '2.7'
   - '3.6'
-  #- '3.7'
+  - '3.7'
 
 branches:
   only:
@@ -14,7 +14,7 @@ branches:
 
 env:
   global:
-    - CANONICAL_PYTHON="3.6"
+    - CANONICAL_PYTHON="3.7"
     - CANONICAL_MDTRAJ="release"
     - CODECLIMATE=""
     - TWINE_USERNAME="dwhswenson"
@@ -27,16 +27,9 @@ env:
     - MDTRAJ="dev"
 
 matrix:
-  include:
-    - python: "3.7"
-      dist: "xenial"
-      sudo: true
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
-      #python: "3.5"
-    #- env: MDTRAJ="dev"
-      #python: "3.7"
 
 before_install:
   - echo "before install"
