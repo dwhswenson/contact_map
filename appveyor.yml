@@ -33,7 +33,7 @@ install:
   # install python
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   # test python version
-  - "%CMD_IN_ENV% conda config --add channels omnia"  # TODO: switch to conda-forge?
+  - "%CMD_IN_ENV% conda config --add channels conda-forge"  
   - "%CMD_IN_ENV% conda update -yq --all"
   - "%CMD_IN_ENV% conda install -yq \"conda-build<3.0.26\""
   - "%CMD_IN_ENV% python --version"
