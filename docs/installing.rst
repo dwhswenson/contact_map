@@ -97,6 +97,19 @@ This is a three-step process:
    interpreted uses) and the ``.`` tells it to find ``setup.py`` in the
    current directory.
 
+Additional functionality
+========================
+
+Installing some additional packages will immediately enable additional
+features in ``contact_map``. To get all the functionality, install the
+packages in ``optional_installs.txt``, either with ``pip install -r
+optional_installs.txt`` or ``conda install -y --file
+optional_installs.txt``.
+
+Specific extra functionality that can be enabled:
+
+* plotting tools (install ``matplotlib``)
+* parallelization (install ``dask``, ``distributed``)
 
 Testing your installation
 =========================
