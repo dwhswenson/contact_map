@@ -1,8 +1,10 @@
+dist: "xenial"
+sudo: true
 language: python
 python:
-  - '3.7'
   - '2.7'
   - '3.6'
+  #- '3.7'
 
 branches:
   only:
@@ -27,9 +29,8 @@ env:
 matrix:
   include:
     - python: "3.7"
-      #dist: "xenial"
-      #sudo: true
-      env: MDTRAJ="release"
+      dist: "xenial"
+      sudo: true
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
