@@ -13,6 +13,7 @@ except ImportError:
 else:
     HAS_MATPLOTLIB = True
 
+
 def _colorbar(with_colorbar, cmap_f, norm, min_val):
     if with_colorbar is False:
         return None
@@ -22,6 +23,7 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val):
         cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
     # leave open other inputs to be parsed later (like tuples)
     return cb
+
 
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
@@ -130,17 +132,29 @@ class ContactCount(object):
 
         min_val = 0.0
 
+        # Get dpi and figsize(either from the kwargs or matplotlib.rcParams)
+        dpi = kwargs.get('dpi', matplotlib.rcParams['figure.dpi'])
+        figx, figy = kwargs.get('figsize',
+                                matplotlib.rcParams['figure.figsize'])
+        # Set width and height to be at least 1 pixel
+        # matplotlib.patches uses a width/height in the unit of values
+        # values/pixels < 1 (more pixels than values) should become 1
+        # values/pixels > 1 (more values than pixels) should become
+        # values/pixels
+        patch_width = max(1, self.n_x/(dpi*figx))
+        patch_height = max(1, self.n_y/(dpi*figy))
+
         for (pair, value) in self.counter.items():
             if value < min_val:
                 min_val = value
             pair_list = list(pair)
             patch_0 = matplotlib.patches.Rectangle(
-                pair_list, 1, 1,
+                pair_list, patch_width, patch_height,
                 facecolor=cmap_f(norm(value)),
                 linewidth=0
             )
             patch_1 = matplotlib.patches.Rectangle(
-                (pair_list[1], pair_list[0]), 1, 1,
+                (pair_list[1], pair_list[0]), patch_width, patch_height,
                 facecolor=cmap_f(norm(value)),
                 linewidth=0
             )
