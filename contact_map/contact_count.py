@@ -132,17 +132,19 @@ class ContactCount(object):
 
         min_val = 0.0
 
-        # Get dpi and figsize(either from the kwargs or matplotlib.rcParams)
-        dpi = kwargs.get('dpi', matplotlib.rcParams['figure.dpi'])
-        figx, figy = kwargs.get('figsize',
-                                matplotlib.rcParams['figure.figsize'])
+        # Get dpi, and total pixelswidht and pixelheight
+        dpi = fig.dpi()
+        xpixels = dpi*fig.get_figwidth()
+        ypixels = dpi*fig.get_figheight()
+
         # Set width and height to be at least 1 pixel
         # matplotlib.patches uses a width/height in the unit of values
-        # values/pixels < 1 (more pixels than values) should become 1
-        # values/pixels > 1 (more values than pixels) should become
-        # values/pixels
-        patch_width = max(1, self.n_x/(dpi*figx))
-        patch_height = max(1, self.n_y/(dpi*figy))
+        # values/pixel < 1 (more pixels than values) should become 1
+        # values/pixel > 1 (more values than pixels) should become
+        # values/pixel
+
+        patch_width = max(1, self.n_x/xpixels)
+        patch_height = max(1, self.n_y/ypixels)
 
         for (pair, value) in self.counter.items():
             if value < min_val:
