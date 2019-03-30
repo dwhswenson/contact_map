@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
 import pandas as pd
-
+import warnings
 from .plot_utils import ranged_colorbar
 
 # matplotlib is technically optional, but required for plotting
@@ -113,7 +113,9 @@ class ContactCount(object):
             minimum value for color map interpolation; default -1.0
         vmax : float
             maximum value for color map interpolation; default 1.0
-
+        **kwargs
+            All aditional keyword arguments to be passed to the
+            :func:`matplotlib.pyplot.subplots` call
         Returns
         -------
         fig : :class:`matplotlib.Figure`
@@ -134,29 +136,33 @@ class ContactCount(object):
 
         # Get dpi, and total pixelswidht and pixelheight
         dpi = fig.get_dpi()
-        xpixels = dpi*fig.get_figwidth()
-        ypixels = dpi*fig.get_figheight()
+        figwidth = fig.get_figwidth()
+        figheight = fig.get_figheight()
+        xpixels = dpi*figwidth
+        ypixels = dpi*figheight
 
-        # Set width and height to be at least 1 pixel
-        # matplotlib.patches uses a width/height in the unit of values
-        # values/pixel < 1 (more pixels than values) should become 1
-        # values/pixel > 1 (more values than pixels) should become
-        # values/pixel
-
-        patch_width = max(1, self.n_x/xpixels)
-        patch_height = max(1, self.n_y/ypixels)
+        # Check if every value has a pixel
+        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
+            msg = ("The number of pixels in the figure is insufficient to show"
+                   " all the contacts.\n Please save this as a vector image "
+                   "(such as a PDF) to view the correct result.\n Another "
+                   "option is to increase the 'dpi' (currently: "+str(dpi)+"),"
+                   " or the 'figsize' (curently: "+str((figwidth, figheight)) +
+                   ").\n Adviced minimum amount of pixels = "
+                   + str((self.n_x, self.n_y))+" (width, height).")
+            warnings.warn(msg, RuntimeWarning)
 
         for (pair, value) in self.counter.items():
             if value < min_val:
                 min_val = value
             pair_list = list(pair)
             patch_0 = matplotlib.patches.Rectangle(
-                pair_list, patch_width, patch_height,
+                pair_list, 1, 1,
                 facecolor=cmap_f(norm(value)),
                 linewidth=0
             )
             patch_1 = matplotlib.patches.Rectangle(
-                (pair_list[1], pair_list[0]), patch_width, patch_height,
+                (pair_list[1], pair_list[0]), 1, 1,
                 facecolor=cmap_f(norm(value)),
                 linewidth=0
             )
