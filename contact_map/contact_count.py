@@ -98,7 +98,8 @@ class ContactCount(object):
         columns = list(range(self.n_y))
         return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True):
+    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
+             **kwargs):
         """
         Plot contact matrix (requires matplotlib)
 
@@ -123,7 +124,7 @@ class ContactCount(object):
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(**kwargs)
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
