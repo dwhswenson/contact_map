@@ -133,7 +133,7 @@ class ContactCount(object):
         min_val = 0.0
 
         # Get dpi, and total pixelswidht and pixelheight
-        dpi = fig.dpi()
+        dpi = fig.get_dpi()
         xpixels = dpi*fig.get_figwidth()
         ypixels = dpi*fig.get_figheight()
 
