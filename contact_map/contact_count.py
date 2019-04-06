@@ -100,6 +100,36 @@ class ContactCount(object):
         columns = list(range(self.n_y))
         return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
+    def _check_number_of_pixels(self, figure):
+        """
+        This checks to see if the number of pixels in the figure is high enough
+        to accuratly represent the the contact map. It raises a RuntimeWarning
+        if this is not the case.
+
+        Parameters
+        ----------
+        figure: :class:`matplotlib.Figure`
+            matplotlib figure to compare the amount of pixels from
+
+        """
+        # Get dpi, and total pixelswidht and pixelheight
+        dpi = figure.get_dpi()
+        figwidth = figure.get_figwidth()
+        figheight = figure.get_figheight()
+        xpixels = dpi*figwidth
+        ypixels = dpi*figheight
+
+        # Check if every value has a pixel
+        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
+            msg = ("The number of pixels in the figure is insufficient to show"
+                   " all the contacts.\n Please save this as a vector image "
+                   "(such as a PDF) to view the correct result.\n Another "
+                   "option is to increase the 'dpi' (currently: "+str(dpi)+"),"
+                   " or the 'figsize' (curently: "+str((figwidth, figheight)) +
+                   ").\n Adviced minimum amount of pixels = "
+                   + str((self.n_x, self.n_y))+" (width, height).")
+            warnings.warn(msg, RuntimeWarning)
+
     def plot(self, cmap='seismic', vrange=(-1.0, 1.0), with_colorbar=True,
              **kwargs):
         """
@@ -133,23 +163,8 @@ class ContactCount(object):
 
         min_val = 0.0
 
-        # Get dpi, and total pixelswidht and pixelheight
-        dpi = fig.get_dpi()
-        figwidth = fig.get_figwidth()
-        figheight = fig.get_figheight()
-        xpixels = dpi*figwidth
-        ypixels = dpi*figheight
-
-        # Check if every value has a pixel
-        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
-            msg = ("The number of pixels in the figure is insufficient to show"
-                   " all the contacts.\n Please save this as a vector image "
-                   "(such as a PDF) to view the correct result.\n Another "
-                   "option is to increase the 'dpi' (currently: "+str(dpi)+"),"
-                   " or the 'figsize' (curently: "+str((figwidth, figheight)) +
-                   ").\n Adviced minimum amount of pixels = "
-                   + str((self.n_x, self.n_y))+" (width, height).")
-            warnings.warn(msg, RuntimeWarning)
+        # Check the number of pixels of the figure
+        self._check_number_of_pixels(fig)
 
         for (pair, value) in self.counter.items():
             if value < min_val:
