@@ -125,12 +125,13 @@ class ContactCount(object):
                    " all the contacts.\n Please save this as a vector image "
                    "(such as a PDF) to view the correct result.\n Another "
                    "option is to increase the 'dpi' (currently: "+str(dpi)+"),"
-                   " or the 'figsize' (curently: "+str((figwidth, figheight)) +
-                   ").\n Adviced minimum amount of pixels = "
+                   " or the 'figsize' (currently: " + str((figwidth,
+                                                           figheight)) +
+                   ").\n Recommended minimum amount of pixels = "
                    + str((self.n_x, self.n_y))+" (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
-    def plot(self, cmap='seismic', vrange=(-1.0, 1.0), with_colorbar=True,
+    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
              **kwargs):
         """
         Plot contact matrix (requires matplotlib)
@@ -139,11 +140,12 @@ class ContactCount(object):
         ----------
         cmap : str
             color map name, default 'seismic'
-        vrange : tuple
-            (minimum, maximum) value for color map interpolation;
-            default (-1.0, 1.0)
+        vmin : float
+            minimum value for color map interpolation; default -1.0
+        vmax : float
+            maximum value for color map interpolation; default 1.0
         **kwargs
-            All aditional keyword arguments to be passed to the
+            All additional keyword arguments to be passed to the
             :func:`matplotlib.pyplot.subplots` call
         Returns
         -------
@@ -154,9 +156,9 @@ class ContactCount(object):
         """
         if not HAS_MATPLOTLIB:  # pragma: no cover
             raise RuntimeError("Error importing matplotlib")
-        vmin, vmax = vrange
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
+
         fig, ax = plt.subplots(**kwargs)
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
