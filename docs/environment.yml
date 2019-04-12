@@ -1,6 +1,5 @@
 name: test
 channels:
-    - omnia
     - defaults
     - conda-forge
 dependencies:
