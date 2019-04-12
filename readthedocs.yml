@@ -1,5 +1,8 @@
 version: 2
 
+conda:
+    environment: docs/environment.yml
+
 python:
     install:
       #- requirements: docs/rtd_requirements.txt
@@ -9,5 +12,3 @@ python:
         path: .
     system_packages: false
 
-conda:
-    environment: docs/environment.yml
