@@ -2,12 +2,12 @@ name: test
 channels:
     - conda-forge
 dependencies:
-    - python
+    - python=3.7
     - mdtraj=1.9.2
     - numpy=1.16.2
     - scipy=1.2.1
     - pandas=0.24.2
-    - packaging
-    - nbsphinx
-    - pandoc
-    - jupyter
+    - packaging=19.0
+    - nbsphinx=0.4.2
+    - pandoc=2.7.1
+    - jupyter=1.0.0
