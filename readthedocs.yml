@@ -2,12 +2,12 @@ version: 2
 
 python:
     install:
-      - requirements: docs/rtd_requirements.txt
-      - requirements: requirements.txt
-      - requirements: docs/requirements.txt
+      #- requirements: docs/rtd_requirements.txt
+      #- requirements: requirements.txt
+      #- requirements: docs/requirements.txt
       - method: pip
         path: .
     system_packages: false
 
-#conda:
-    #environment: docs/environment.yml
+conda:
+    environment: docs/environment.yml
