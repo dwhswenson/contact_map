@@ -8,6 +8,6 @@ dependencies:
     - scipy=1.2.1
     - pandas=0.24.2
     - packaging=19.0
-    - nbsphinx=0.4.2
-    - pandoc=2.7.1
-    - jupyter=1.0.0
+    - nbsphinx
+    - pandoc
+    - jupyter
