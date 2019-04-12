@@ -42,7 +42,7 @@ install:
   - pip list
 
 script:
-  - export MPLBACKEND=PS
+  - export MPLBACKEND=SVG
   - python -c "import contact_map"
   - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE}
   - py.test -vv --cov=contact_map --cov-report xml:cov.xml
