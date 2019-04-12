@@ -1,0 +1,4 @@
+packaging
+nbsphinx
+pandoc
+jupyter
