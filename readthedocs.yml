@@ -8,7 +8,9 @@ python:
       #- requirements: docs/rtd_requirements.txt
       #- requirements: requirements.txt
       #- requirements: docs/requirements.txt
-      - method: pip
+      - method: setuptools
         path: .
-    system_packages: false
+      #- method: pip
+        #path: .
+    #system_packages: false
 
