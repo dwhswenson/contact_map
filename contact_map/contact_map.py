@@ -70,6 +70,7 @@ def _atom_slice(traj, indices):
                          unitcell_lengths=unitcell_lengths,
                          unitcell_angles=unitcell_angles)
 
+
 def _residue_for_atom(topology, atom_list):
     return set([topology.atom(a).residue for a in atom_list])
 
@@ -741,7 +742,6 @@ class ContactFrequency(ContactObject):
                                                n_neighbors_ignored)
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
-        #self._atom_contacts = self.convert_atom_contacts(atom_contacts)
 
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
