@@ -197,7 +197,7 @@ class ContactObject(object):
     def s_idx_to_idx(self, idx):
         """function to convert a sliced atom index back to real index"""
         if self._use_atom_slice:
-            return(self._all_atoms[idx])
+            return self._all_atoms[idx]
         else:
             return idx
 
@@ -740,8 +740,8 @@ class ContactFrequency(ContactObject):
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
         contacts = self._build_contact_map(trajectory)
-        (atom_contacts, self._residue_contacts) = contacts
-        self._atom_contacts = self.convert_atom_contacts(atom_contacts)
+        (self._atom_contacts, self._residue_contacts) = contacts
+        #self._atom_contacts = self.convert_atom_contacts(atom_contacts)
 
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
@@ -777,7 +777,6 @@ class ContactFrequency(ContactObject):
         residue_query_atom_idxs = self.residue_query_atom_idxs
 
         used_trajectory = self.slice_trajectory(trajectory)
-
         for frame_num in self.frames:
             frame_contacts = self.contact_map(used_trajectory, frame_num,
                                               residue_query_atom_idxs,
@@ -787,7 +786,7 @@ class ContactFrequency(ContactObject):
             # self._atom_contacts_count += frame_atom_contacts
             atom_contacts_count.update(frame_atom_contacts)
             residue_contacts_count += frame_residue_contacts
-
+        atom_contacts_count = self.convert_atom_contacts(atom_contacts_count)
         return (atom_contacts_count, residue_contacts_count)
 
     @property
