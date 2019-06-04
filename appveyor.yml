@@ -34,7 +34,7 @@ install:
   # install python
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   - conda config --add channels conda-forge
-  - conda install -yq conda conda-build
+  - conda install -yq conda conda-build=3.10
   - "%CMD_IN_ENV% activate base"
   #- "%CMD_IN_ENV% conda update -yq --all"
   #- "%CMD_IN_ENV% conda config --add channels conda-forge"  
