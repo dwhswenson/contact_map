@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
 import pandas as pd
-
+import warnings
 from .plot_utils import ranged_colorbar
 
 # matplotlib is technically optional, but required for plotting
@@ -13,6 +13,7 @@ except ImportError:
 else:
     HAS_MATPLOTLIB = True
 
+
 def _colorbar(with_colorbar, cmap_f, norm, min_val):
     if with_colorbar is False:
         return None
@@ -22,6 +23,7 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val):
         cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
     # leave open other inputs to be parsed later (like tuples)
     return cb
+
 
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
@@ -98,7 +100,39 @@ class ContactCount(object):
         columns = list(range(self.n_y))
         return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True):
+    def _check_number_of_pixels(self, figure):
+        """
+        This checks to see if the number of pixels in the figure is high enough
+        to accuratly represent the the contact map. It raises a RuntimeWarning
+        if this is not the case.
+
+        Parameters
+        ----------
+        figure: :class:`matplotlib.Figure`
+            matplotlib figure to compare the amount of pixels from
+
+        """
+        # Get dpi, and total pixelswidht and pixelheight
+        dpi = figure.get_dpi()
+        figwidth = figure.get_figwidth()
+        figheight = figure.get_figheight()
+        xpixels = dpi*figwidth
+        ypixels = dpi*figheight
+
+        # Check if every value has a pixel
+        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
+            msg = ("The number of pixels in the figure is insufficient to show"
+                   " all the contacts.\n Please save this as a vector image "
+                   "(such as a PDF) to view the correct result.\n Another "
+                   "option is to increase the 'dpi' (currently: "+str(dpi)+"),"
+                   " or the 'figsize' (currently: " + str((figwidth,
+                                                           figheight)) +
+                   ").\n Recommended minimum amount of pixels = "
+                   + str((self.n_x, self.n_y))+" (width, height).")
+            warnings.warn(msg, RuntimeWarning)
+
+    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
+             **kwargs):
         """
         Plot contact matrix (requires matplotlib)
 
@@ -110,7 +144,9 @@ class ContactCount(object):
             minimum value for color map interpolation; default -1.0
         vmax : float
             maximum value for color map interpolation; default 1.0
-
+        **kwargs
+            All additional keyword arguments to be passed to the
+            :func:`matplotlib.pyplot.subplots` call
         Returns
         -------
         fig : :class:`matplotlib.Figure`
@@ -123,11 +159,14 @@ class ContactCount(object):
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(**kwargs)
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
         min_val = 0.0
+
+        # Check the number of pixels of the figure
+        self._check_number_of_pixels(fig)
 
         for (pair, value) in self.counter.items():
             if value < min_val:

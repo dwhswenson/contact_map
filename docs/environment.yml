@@ -1,15 +1,13 @@
 name: test
 channels:
-    - omnia
-    - defaults
     - conda-forge
 dependencies:
-    - python
-    - mdtraj
-    - numpy
-    - scipy
-    - pandas
-    - packaging
+    - python=3.7
+    - mdtraj=1.9.2
+    - numpy=1.16.2
+    - scipy=1.2.1
+    - pandas=0.24.2
+    - packaging=19.0
     - nbsphinx
     - pandoc
     - jupyter

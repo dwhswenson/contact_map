@@ -1,5 +1,16 @@
+version: 2
+
 conda:
-    file: docs/environment.yml
+    environment: docs/environment.yml
 
 python:
-    setup_py_install: true
+    install:
+      #- requirements: docs/rtd_requirements.txt
+      #- requirements: requirements.txt
+      #- requirements: docs/requirements.txt
+      - method: setuptools
+        path: .
+      #- method: pip
+        #path: .
+    #system_packages: false
+

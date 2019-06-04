@@ -51,6 +51,27 @@ class TestContactCount(object):
         self.atom_contacts.plot()
         self.residue_contacts.plot(with_colorbar=False)
 
+    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
+    def test_plot_kwargs(self):
+        fig, _ = self.residue_contacts.plot(figsize=(12, 13), dpi=192)
+        # Assert that the kwargs have been passed through
+        assert fig.get_dpi() == 192
+        assert fig.get_figwidth() == 12
+        assert fig.get_figheight() == 13
+
+    @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
+    def test_pixel_warning(self):
+        # This should not raise a warning (5*2>=10)
+        with pytest.warns(None) as record:
+            self.atom_contacts.plot(figsize=(5, 5), dpi=2)
+        # See if no warning was raised
+        assert len(record) == 0
+
+        # Now raise the warning as 4*2 < 10
+        with pytest.warns(RuntimeWarning) as record:
+            self.atom_contacts.plot(figsize=(4, 4), dpi=2)
+        assert len(record) == 1
+
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
         assert self.atom_contacts.n_x == self.topology.n_atoms
