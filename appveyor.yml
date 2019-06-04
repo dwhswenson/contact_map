@@ -33,12 +33,14 @@ build: false
 install:
   # install python
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+  - conda config --add channels conda-forge
+  - conda install -yq conda=4.4 conda-build
   - "%CMD_IN_ENV% activate base"
-  - "%CMD_IN_ENV% conda update -yq --all"
-  - "%CMD_IN_ENV% conda config --add channels conda-forge"  
+  #- "%CMD_IN_ENV% conda update -yq --all"
+  #- "%CMD_IN_ENV% conda config --add channels conda-forge"  
   #- "%CMD_IN_ENV% conda install -yq \"conda-build<3.0.26\""
   #- "%CMD_IN_ENV% conda install -yq \"conda=4.5\" conda-build"
-  - "%CMD_IN_ENV% conda install -yq conda-build"
+  #- "%CMD_IN_ENV% conda install -yq conda-build"
   # test python version
   - "%CMD_IN_ENV% python --version"
   - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
