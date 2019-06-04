@@ -44,7 +44,7 @@ install:
 script:
   - export MPLBACKEND=SVG
   - python -c "import contact_map"
-  - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE} --allow-patch-skip  #TODO remove allow-patch-skip
+  - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE} #--allow-patch-skip  # allow-patch-skip if there was a testpypi problem
   - py.test -vv --cov=contact_map --cov-report xml:cov.xml
 
 after_success:
