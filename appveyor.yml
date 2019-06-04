@@ -21,9 +21,8 @@ environment:
       CONDA_PY: "27"
       ARCH: '64'
     - PYTHON: "C:\\Miniconda36"
-      CONDA_PY: "36"
+      CONDA_PY: "36" # No MDTraj for py37/Win32
       ARCH: '32'
-      # MDTraj hasn't released py37/Win32 (last Win32 was 1.9.1)
     - PYTHON: "C:\\Miniconda37-x64"
       CONDA_PY: "37"
       ARCH: '64'
@@ -35,13 +34,6 @@ install:
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   - conda config --add channels conda-forge
   - conda install -yq conda=4.5 conda-build=3.10
-  #- "%CMD_IN_ENV% conda update -yq --all"
-  #- "%CMD_IN_ENV% conda config --add channels conda-forge"  
-  #- "%CMD_IN_ENV% conda install -yq \"conda-build<3.0.26\""
-  #- "%CMD_IN_ENV% conda install -yq \"conda=4.5\" conda-build"
-  #- "%CMD_IN_ENV% conda install -yq conda-build"
-  # test python version
-  # now we do our own install
 
 test_script:
   #- "%CMD_IN_ENV% activate base"
