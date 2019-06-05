@@ -1,13 +1,12 @@
 package:
   name: contact_map
   # add ".dev0" for unreleased versions
-  version: "0.4.0.dev0"
+  version: "0.5.0.dev0"
 
 source:
   path: ../../
 
 build:
-  preserve_egg_dir: True
   number: 0
   script: python setup.py install --single-version-externally-managed --record record.txt
 

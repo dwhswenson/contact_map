@@ -9,7 +9,7 @@ from setuptools import setup
 ####################### USER SETUP AREA #################################
 # * VERSION: base version (do not include .dev0, etc -- that's automatic)
 # * IS_RELEASE: whether this is a release
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 IS_RELEASE = False
 
 DEV_NUM = 0  # always 0: we don't do public (pypi) .dev releases
