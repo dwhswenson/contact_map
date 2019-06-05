@@ -1,8 +1,10 @@
+dist: "xenial"
+sudo: true
 language: python
 python:
-  - '3.6'
   - '2.7'
-  - '3.5'
+  - '3.6'
+  - '3.7'
 
 branches:
   only:
@@ -12,7 +14,7 @@ branches:
 
 env:
   global:
-    - CANONICAL_PYTHON="3.6"
+    - CANONICAL_PYTHON="3.7"
     - CANONICAL_MDTRAJ="release"
     - CODECLIMATE=""
     - TWINE_USERNAME="dwhswenson"
@@ -27,7 +29,7 @@ env:
 matrix:
   exclude:
     - env: MDTRAJ="dev"
-      python: "3.5"
+      python: "3.6"
 
 before_install:
   - echo "before install"
