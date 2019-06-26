@@ -39,8 +39,8 @@ install:
   - source ci/pip-install/install_requirements.sh
   - pip install -e .
   - pip install -U -r ci/pip-install/testing_requirements.txt
-  - if [ "$MDTRAJ" = "dev" ]; then pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
-  - if [ "$MDTRAJ" = "dev" ]; then pip install -r optional_installs.txt; fi
+  - if [ "$MDTRAJ" = "dev" ]; then python -m pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt; fi
+  - if [ "$MDTRAJ" = "dev" ]; then python -m pip install -r optional_installs.txt; fi
   - pip list
 
 script:

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-pip install --upgrade pip
-pip install cython  # may be required for numpy override?
-pip install --upgrade --force-reinstall numpy  # override Travis numpy
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install cython  # may be required for numpy override?
+python -m pip install --upgrade --force-reinstall numpy  # override Travis numpy
+python -m pip install -r requirements.txt
