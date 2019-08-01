@@ -161,8 +161,8 @@ if __name__ == "__main__":
     write_version_py(os.path.join('contact_map', 'version.py'))
     setup(
         name="contact_map",
-        author="David W.H. Swenson",
-        author_email="dwhs@hyperblazer.net",
+        author="David W.H. Swenson and Sander Roet",
+        author_email="dwhs@hyperblazer.net, sroet@hotmail.com",
         version=PACKAGE_VERSION,
         license="LGPL-2.1+",
         url="http://github.com/dwhswenson/contact_map",
