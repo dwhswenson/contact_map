@@ -162,7 +162,7 @@ if __name__ == "__main__":
     setup(
         name="contact_map",
         author="David W.H. Swenson and Sander Roet",
-        author_email="dwhs@hyperblazer.net, sroet@hotmail.com",
+        author_email="dwhs@hyperblazer.net, sanderroet@hotmail.com",
         version=PACKAGE_VERSION,
         license="LGPL-2.1+",
         url="http://github.com/dwhswenson/contact_map",
