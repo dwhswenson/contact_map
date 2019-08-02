@@ -1,0 +1,4 @@
+/* somehow, pygments CSS chokes when we have NGLView's CSS around. 
+ * Here are some fixes. */
+div.input_area div.highlight { color: #000000 }
+div.output_area div.highlight { color: #000000 }

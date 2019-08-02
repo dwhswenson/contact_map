@@ -213,6 +213,8 @@ html_js_files = [
     DEFAULT_EMBED_REQUIREJS_URL,
 ]
 
+html_css_files = ["fix_pygments.css"]
+
 # If not None, a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
 # The empty string is equivalent to '%b %d, %Y'.
