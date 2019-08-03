@@ -3,8 +3,7 @@ import numpy as np
 try:  # try loop for testing
     import matplotlib
     import matplotlib.pyplot as plt
-    from matplotlib.colors import LinearSegmentedColormap
-    from matplotlib.colors import Normalize
+    from matplotlib.colors import LinearSegmentedColormap, Normalize
 except ImportError:  # pragma: no cover
     pass
 
@@ -118,13 +117,10 @@ def hex_colors(data, cmap, rescale_range='auto', style='web'):
     list of str :
         hexadecimal representation of each color
     """
-    treat_style = {
-        'web': lambda c: "#" + c[2:],
-        'python': lambda c: c,
-        'raw': lambda c: c[2:]
-    }[style]
+    prefix = {'web': '#', 'python': '0x', 'raw': ''}[style]
+    formatter = prefix + "{:06x}"
     ints = int_colors(data, cmap, rescale_range)
-    return [treat_style(hex(c)) for c in ints]
+    return [formatter.format(c) for c in ints]
 
 
 def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
