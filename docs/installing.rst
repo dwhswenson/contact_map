@@ -101,7 +101,7 @@ Additional functionality
 ========================
 
 Installing some additional packages will immediately enable additional
-features in ``contact_map``. To get all the functionality, install the
+features in Contact Map Explorer. To get all the functionality, install the
 packages in ``optional_installs.txt``, either with ``pip install -r
 optional_installs.txt`` or ``conda install -y --file
 optional_installs.txt``.
@@ -133,5 +133,5 @@ suite. This can be done by installing ``pytest`` (using either ``pip`` or
 
    py.test --pyargs contact_map -v
 
-This will run the tests on the installed version of ``contact_map``. All
-tests should either pass or skip.
+This will run the tests on the installed version of Contact Map Explorer.
+All tests should either pass or skip.
