@@ -1,8 +1,6 @@
 """
 Contact map analysis.
 """
-# Maintainer: David W.H. Swenson (dwhs@hyperblazer.net)
-# Licensed under LGPL, version 2.1 or greater
 import collections
 import itertools
 import pickle
