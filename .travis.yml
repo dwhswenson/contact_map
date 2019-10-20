@@ -6,6 +6,9 @@ python:
   - '3.6'
   - '3.7'
 
+notifications:
+  webhooks: https://coveralls.io/webhook
+
 branches:
   only:
   - master
