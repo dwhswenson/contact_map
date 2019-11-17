@@ -1,6 +1,7 @@
 import os
 import collections
 import mdtraj as md
+import copy
 
 # pylint: disable=wildcard-import, missing-docstring, protected-access
 # pylint: disable=attribute-defined-outside-init, invalid-name, no-self-use
@@ -11,7 +12,7 @@ from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
-from contact_map.contact_count import ContactCount, HAS_MATPLOTLIB
+from contact_map.contact_count import HAS_MATPLOTLIB
 
 traj = md.load(find_testfile("trajectory.pdb"))
 
@@ -39,9 +40,10 @@ traj_residue_contact_count = {
 
 test_file = "test_file.p"
 
+
 def pdb_topology_dict():
     serial = {str(i): i+1 for i in range(10)}
-    name = {str(i): "C" + str(i%2 + 1) for i in range(10)}
+    name = {str(i): "C" + str(i % 2 + 1) for i in range(10)}
     element = {str(i): "C" for i in range(10)}
     res_seq = {str(i): str(i/2 + 1) for i in range(10)}
     res_name = {str(i): "XXX" for i in range(10)}
@@ -56,18 +58,22 @@ def pdb_topology_dict():
            'segmentID': seg_id}
     return dct
 
+
 def counter_of_inner_list(ll):
     return collections.Counter([frozenset(i) for i in ll])
+
 
 def check_most_common_order(most_common):
     for i in range(len(most_common) - 1):
         assert most_common[i][1] >= most_common[i+1][1]
+
 
 def check_use_atom_slice(m, use_atom_slice, expected):
     if use_atom_slice is not None:
         assert m._use_atom_slice == use_atom_slice
     else:
         assert m._use_atom_slice == expected[m]
+
 
 def _contact_object_compare(m, m2):
     """Compare two contact objects (with asserts).
@@ -94,6 +100,7 @@ def _check_contacts_dict_names(contact_object):
     for (contacts, names) in aliases.items():
         for name in names:
             assert contacts.counter == contact_object.contacts[name].counter
+
 
 def test_residue_neighborhood():
     top = traj.topology
@@ -262,15 +269,16 @@ class TestContactMap(object):
 
     @pytest.mark.parametrize("use_atom_slice", [True, False, None])
     def test_atom_slice(self, idx, use_atom_slice):
-        #Set class variable before init
+        # Set class variable before init
         class_default = ContactMap._class_use_atom_slice
         ContactMap._class_use_atom_slice = use_atom_slice
         map0q = ContactMap(traj[0], query=[1, 4, 5, 6],  cutoff=0.075,
                            n_neighbors_ignored=0)
         map0h = ContactMap(traj[0], haystack=[1, 4, 5, 6],
                            cutoff=0.075, n_neighbors_ignored=0)
-        map0b = ContactMap(traj[0], query=[1, 4, 5, 6], haystack=[1,4,5,6],
-                           cutoff=0.075, n_neighbors_ignored=0)
+        map0b = ContactMap(traj[0], query=[1, 4, 5, 6],
+                           haystack=[1, 4, 5, 6], cutoff=0.075,
+                           n_neighbors_ignored=0)
         maps = [map0q, map0h, map0b]
         atoms = {map0q: list(range(10)),
                  map0h: list(range(10)),
@@ -305,10 +313,25 @@ class TestContactMap(object):
         # Reset class variable (as imports are not redone between function
         # calls)
         ContactMap._class_use_atom_slice = class_default
+
     def test_contacts_dict(self, idx):
         _check_contacts_dict_names(self.maps[idx])
 
+    def test_no_unitcell(self, idx):
+        temptraj = copy.deepcopy(traj)
+        # Strip unitcell
+        temptraj.unitcell_vectors = None
+
+        # Activate atom_slice
+        atoms = [1, 4, 5, 6]
+        mapi = ContactMap(temptraj[idx], cutoff=0.075, n_neighbors_ignored=0,
+                          query=atoms, haystack=atoms)
+        expected_atom_contacts = {0: [[1, 4], [4, 6], [5, 6]],
+                                  4: [[1, 4], [4, 6], [5, 6]]}
+        expected = counter_of_inner_list(expected_atom_contacts[idx])
+        assert mapi._atom_contacts == expected
     # TODO: add tests for ContactObject._check_consistency
+
 
 class TestContactFrequency(object):
     def setup(self):
@@ -355,7 +378,7 @@ class TestContactFrequency(object):
         map2 = ContactFrequency(trajectory=traj[0:2],
                                 cutoff=0.075,
                                 n_neighbors_ignored=0)
-        assert self.map._check_compatibility(map2) == True
+        assert self.map._check_compatibility(map2) is True
 
     @pytest.mark.parametrize("diff", [
         {'trajectory': traj.atom_slice([0, 1, 2, 3])},
@@ -512,10 +535,10 @@ class TestContactFrequency(object):
         start.add_contact_frequency(add_in)
 
         assert start.atom_contacts.counter == \
-                self.map.atom_contacts.counter
+            self.map.atom_contacts.counter
 
         assert start.residue_contacts.counter == \
-                self.map.residue_contacts.counter
+            self.map.residue_contacts.counter
 
     def test_subtract_contact_frequency(self):
         first_four = ContactFrequency(trajectory=traj[:4],
@@ -531,14 +554,14 @@ class TestContactFrequency(object):
         test_subject.subtract_contact_frequency(first_four)
 
         assert test_subject.atom_contacts.counter == \
-                last_frame.atom_contacts.counter
+            last_frame.atom_contacts.counter
 
         assert test_subject.residue_contacts.counter == \
-                last_frame.residue_contacts.counter
+            last_frame.residue_contacts.counter
 
     @pytest.mark.parametrize("use_atom_slice", [True, False, None])
     def test_use_atom_slice(self, use_atom_slice):
-        #Set class default before init
+        # Set class default before init
         class_default = ContactFrequency._class_use_atom_slice
         ContactFrequency._class_use_atom_slice = use_atom_slice
         mapq = ContactFrequency(trajectory=traj, cutoff=0.075,
@@ -575,6 +598,7 @@ class TestContactFrequency(object):
         # Reset class default as pytest does not re-import
         ContactFrequency._class_use_atom_slice = class_default
 
+
 class TestContactDifference(object):
     def test_diff_traj_frame(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
@@ -605,11 +629,11 @@ class TestContactDifference(object):
 
         assert diff_1.atom_contacts.counter == expected_atom_count
         assert diff_2.atom_contacts.counter == \
-                {k: -v for (k, v) in expected_atom_count.items()}
+            {k: -v for (k, v) in expected_atom_count.items()}
 
         assert diff_1.residue_contacts.counter == expected_residue_count
         assert diff_2.residue_contacts.counter == \
-                {k: -v for (k, v) in expected_residue_count.items()}
+            {k: -v for (k, v) in expected_residue_count.items()}
 
     @pytest.mark.parametrize("intermediate", ["dict", "json"])
     def test_serialization_cycle(self, intermediate):
