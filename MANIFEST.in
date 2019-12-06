@@ -1,2 +1,2 @@
-include contact_map/tests/trajectory.pdb
+include contact_map/tests/*.pdb
 include LICENSE
