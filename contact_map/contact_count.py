@@ -95,10 +95,19 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        mtx = self.sparse_matrix.tocoo()
+        # mtx = self.sparse_matrix.tocoo()
+        mtx = self.sparse_matrix
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
-        return pd.SparseDataFrame(mtx, index=index, columns=columns)
+        df = pd.DataFrame.sparse.from_spmatrix(mtx, index=index,
+                                               columns=columns)
+        # note: I think we can always use float here for dtype; but in
+        # principle maybe we need to inspect and get the internal type?
+        # Problem is, pandas technically stores a different dtype for each
+        # column.
+        df = df.astype(pd.SparseDtype("float", np.nan))
+        # return pd.SparseDataFrame(mtx, index=index, columns=columns)
+        return df
 
     def _check_number_of_pixels(self, figure):
         """

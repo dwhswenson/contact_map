@@ -89,12 +89,12 @@ class TestContactCount(object):
     def test_df(self):
         atom_df = self.map.atom_contacts.df
         residue_df = self.map.residue_contacts.df
-        assert isinstance(atom_df, pd.SparseDataFrame)
-        assert isinstance(residue_df, pd.SparseDataFrame)
+        assert isinstance(atom_df, pd.DataFrame)
+        assert isinstance(residue_df, pd.DataFrame)
 
-        assert_array_equal(atom_df.to_dense().values,
+        assert_array_equal(atom_df.sparse.to_dense().values,
                            zero_to_nan(self.atom_matrix))
-        assert_array_equal(residue_df.to_dense().values,
+        assert_array_equal(residue_df.sparse.to_dense().values,
                            zero_to_nan(self.residue_matrix))
 
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
