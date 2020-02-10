@@ -1,3 +1,5 @@
+version: ~> 1.0
+
 dist: "xenial"
 sudo: true
 language: python
@@ -36,6 +38,7 @@ matrix:
 
 before_install:
   - echo "before install"
+  - echo "$TRAVIS_BRANCH $TRAVIS_EVENT_TYPE"
   - git fetch --tags
 
 install:
