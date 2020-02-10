@@ -29,7 +29,7 @@ env:
     - MDTRAJ="release"
     - MDTRAJ="dev"
 
-matrix:
+jobs:
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
