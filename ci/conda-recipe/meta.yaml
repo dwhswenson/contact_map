@@ -20,7 +20,7 @@ requirements:
     - mdtraj
     - numpy
     - scipy
-    - pandas
+    - pandas<1.0
 
 test:
   requires:
