@@ -42,7 +42,7 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
     new_norm = matplotlib.colors.Normalize(vmin=cbmin, vmax=cbmax)
     sm = plt.cm.ScalarMappable(cmap=new_cmap, norm=new_norm)
     sm._A = []
-    cb = plt.colorbar(sm)
+    cb = plt.colorbar(sm, fraction=0.046, pad=0.04)
     return cb
 
 

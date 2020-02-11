@@ -1,183 +1,129 @@
-"""
-setup.py for contact_map
-"""
+# This file is vendored from Autorelease
 import os
-import subprocess
-import inspect
+import ast
+import sys
+
+import fnmatch  # Py 2
+
 from setuptools import setup
 
-####################### USER SETUP AREA #################################
-# * VERSION: base version (do not include .dev0, etc -- that's automatic)
-# * IS_RELEASE: whether this is a release
-VERSION = "0.4.0"
-IS_RELEASE = True
-
-DEV_NUM = 0  # always 0: we don't do public (pypi) .dev releases
-PRE_TYPE = ""  # a, b, or rc (although we rarely release such versions)
-PRE_NUM = 0
-
-# REQUIREMENTS should list any required packages
-REQUIREMENTS=['future', 'numpy', 'mdtraj', 'scipy', 'pandas']
-
-# PACKAGES should list any subpackages of the code. The assumption is that
-# package.subpackage is located at package/subpackage
-PACKAGES=['contact_map', 'contact_map.tests']
-
-# This DESCRIPTION is only used if a README.rst hasn't been made from the
-# markdown version
-DESCRIPTION="""
-Contact maps based on MDTraj; useful for studying for intramolecular and
-intermolecular contacts (atom-atom or residue-residue) from simulations of
-biomolecular systems. For a more detailed description, see package
-documentation at http://contact-map.readthedocs.io/
-"""
-SHORT_DESCRIPTION="Contact maps based on MDTraj"
-
-# note: leave the triple quotes on separate lines from the classifiers
-CLASSIFIERS="""
-Development Status :: 4 - Beta
-Intended Audience :: Science/Research
-License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
-Operating System :: POSIX
-Operating System :: Microsoft :: Windows
-Programming Language :: Python :: 2.7
-Programming Language :: Python :: 3
-Topic :: Scientific/Engineering :: Bio-Informatics
-Topic :: Scientific/Engineering :: Chemistry
-"""
-####################### USER SETUP AREA #################################
+def _glob_glob_recursive(directory, pattern):
+    # python 2 glob.glob doesn't have a recursive keyword
+    # this implements for the specific case that we want an exact match
+    # See also https://stackoverflow.com/a/2186565
+    matches = []
+    for root, dirname, filenames in os.walk(directory):
+        matches.extend([os.path.join(root, filename)
+                        for filename in fnmatch.filter(filenames, pattern)])
+    return matches
 
 
-# * VERSION: the release version number
-# * __version__: ?? how is this used ??
-# * PACKAGE_VERSION: the version used in setup.py info
-PACKAGE_VERSION = VERSION
-if PRE_TYPE != "":
-    PACKAGE_VERSION += "." + PRE_TYPE + str(PRE_NUM)
-if not IS_RELEASE:
-    PACKAGE_VERSION += ".dev" + str(DEV_NUM)
-__version__ = PACKAGE_VERSION
+class VersionPyFinder(object):
+    _VERSION_PY_FUNCTIONS = ['get_git_version', 'get_setup_cfg']
+    def __init__(self, filename='version.py', max_depth=2):
+        self.filename_base = filename
+        self.max_depth = max_depth
+        self.depth = None
+        self.filename = os.getenv("AUTORELEASE_VERSION_PY",
+                                  self._first_eligible())
+        self.functions = self._get_functions(self.filename)
 
-if os.path.isfile('README.rst'):
-    DESCRIPTION = open('README.rst').read()
+    def _find_files(self):
+        # all_files = glob.glob("**/" + self.filename_base, recursive=True)
+        all_files = _glob_glob_recursive('.', self.filename_base)
+        meets_depth = [fname for fname in all_files
+                       if len(fname.split(os.sep)) <= self.max_depth + 1]
+        return meets_depth
 
-################################################################################
-# Writing version control information to the module
-################################################################################
-def get_git_version():
-    """
-    Return the git hash as a string.
+    def _is_eligible(self, filename):
+        with open(filename, mode='r') as f:
+            contents = f.read()
 
-    Apparently someone got this from numpy's setup.py. It has since been
-    modified a few times.
-    """
-    # Return the git revision as a string
-    # copied from numpy setup.py
-    def _minimal_ext_cmd(cmd):
-        # construct minimal environment
-        env = {}
-        for k in ['SYSTEMROOT', 'PATH']:
-            v = os.environ.get(k)
-            if v is not None:
-                env[k] = v
-        # LANGUAGE is used on win32
-        env['LANGUAGE'] = 'C'
-        env['LANG'] = 'C'
-        env['LC_ALL'] = 'C'
-        with open(os.devnull, 'w') as err_out:
-            out = subprocess.Popen(cmd,
-                                   stdout=subprocess.PIPE,
-                                   stderr=err_out, # maybe debug later?
-                                   env=env).communicate()[0]
-        return out
+        tree = ast.parse(contents)
+        # we requrie that our functions be defined at module level -- we
+        # know that's how we wrote them, at least!
+        all_functions = [node.name for node in tree.body
+                         if isinstance(node, ast.FunctionDef)]
+        return all(func in all_functions
+                   for func in self._VERSION_PY_FUNCTIONS)
 
-    try:
-        git_dir = os.path.dirname(os.path.realpath(__file__))
-        out = _minimal_ext_cmd(['git', '-C', git_dir, 'rev-parse', 'HEAD'])
-        GIT_REVISION = out.strip().decode('ascii')
-    except OSError:
-        GIT_REVISION = 'Unknown'
+    def _first_eligible(self):
+        all_files = self._find_files()
+        for fname in all_files:
+            if self._is_eligible(fname):
+                return fname
+        return None
 
-    return GIT_REVISION
+    @property
+    def version_setup_depth(self):
+        def get_depth(fname):
+            return len(os.path.abspath(fname).split(os.sep))
 
-# TODO: this may get moved into another file
-VERSION_PY_CONTENT = """
-# This file is automatically generated by setup.py
-\"\"\"
-Version info for contact_map.
+        # we assume thta setup.py is in the same dir as setup.cfg
+        diff = get_depth(self.filename) - get_depth(__file__)
+        return diff
 
-``full_version`` gives the most information about the current state. It is
-always the short (PEP440) version string, followed by a git hash as
-``+gGITHASH``. If the install is not in a live git repository, that hash is
-followed by ``.install``, and represents the commit that was installed. In a
-live repository, it represents the active state.
-\"\"\"
+    def _get_functions(self, filename):
+        with open(self.filename, mode='r') as f:
+            contents = f.read()
 
-import os
-import subprocess
+        tree = ast.parse(contents)
 
-# this is automatically generated from the code in setup.py
-%(git_version_code)s
+        class MakeImportError(ast.NodeTransformer):
+            """converts a from x import y into an import error"""
+            def __init__(self, import_name):
+                self.import_name = import_name
 
-short_version = '%(version)s'
-version = '%(version)s'
-installed_git_hash = '%(git_revision)s'
-full_version = version + '+g' + installed_git_hash[:7] + '.install'
-release = %(is_release)s
-git_hash = 'Unknown'  # default
+            def visit_ImportFrom(self, node):
+                if node.module == self.import_name:
+                    replacement = ast.Raise(exc=ast.Call(
+                        func=ast.Name(id='ImportError', ctx=ast.Load()),
+                        args=[],
+                        keywords=[],
+                    ), cause=None)
+                    return ast.copy_location(replacement, node)
+                else:
+                    return node
 
-if not release:
-    git_hash = get_git_version()
-    if git_hash != '' and git_hash != 'Unknown':
-        full_version = version + '+g' + git_hash[:7]
+        import_remover = MakeImportError("_installed_version")
+        tree = import_remover.visit(tree)
+        ast.fix_missing_locations(tree)
 
-    version = full_version
-"""
-
-def write_version_py(filename):
-    # Adding the git rev number needs to be done inside write_version_py(),
-    # otherwise the import of numpy.version messes up the build under Python 3.
-    git_version_code = inspect.getsource(get_git_version)
-    if os.path.exists('.git'):
-        GIT_REVISION = get_git_version()
-    else:
-        GIT_REVISION = 'Unknown'
-
-    content = VERSION_PY_CONTENT % {
-        'version': PACKAGE_VERSION,
-        'git_revision': GIT_REVISION,
-        'is_release': str(IS_RELEASE),
-        'git_version_code': str(git_version_code)
-    }
-
-    with open(filename, 'w') as version_file:
-        version_file.write(content)
+        locs = dict(globals())
+        exec(compile(tree, filename="version.py", mode='exec'), locs)
+        return {f: locs[f] for f in self._VERSION_PY_FUNCTIONS}
 
 
-################################################################################
-# Installation
-################################################################################
+def write_installed_version_py(filename="_installed_version.py",
+                               src_dir=None):
+    version_finder = VersionPyFinder()
+    directory = os.path.dirname(version_finder.filename)
+    depth = version_finder.version_setup_depth
+    get_git_version = version_finder.functions['get_git_version']
+    get_setup_cfg = version_finder.functions['get_setup_cfg']
+
+    installed_version = os.path.join(directory, "_installed_version.py")
+    content = "_installed_version = '{vers}'\n"
+    content += "_installed_git_hash = '{git}'\n"
+    content += "_version_setup_depth = {depth}\n"
+
+    # question: if I use the __file__ attribute in something I compile from
+    # here, what is the file?
+    my_dir = os.path.abspath(os.path.dirname(__file__))
+    conf = get_setup_cfg(directory=my_dir, filename='setup.cfg')
+    # conf = get_setup_cfg(directory=my_dir, filename='new_setup.cfg')
+    version = conf.get('metadata', 'version')
+    git_rev = get_git_version()
+
+    if src_dir is None:
+        src_dir = conf.get('metadata', 'name')
+
+    with open (os.path.join(src_dir, filename), 'w') as f:
+        f.write(content.format(vers=version, git=git_rev, depth=depth))
+
 if __name__ == "__main__":
-    write_version_py(os.path.join('contact_map', 'version.py'))
-    setup(
-        name="contact_map",
-        author="David W.H. Swenson",
-        author_email="dwhs@hyperblazer.net",
-        version=PACKAGE_VERSION,
-        license="LGPL-2.1+",
-        url="http://github.com/dwhswenson/contact_map",
-        packages=PACKAGES,
-        package_dir={p: '/'.join(p.split('.')) for p in PACKAGES},
-        package_data={'contact_map': ['tests/*pdb']},
-        ext_modules=[],
-        scripts=[],
-        description=SHORT_DESCRIPTION,
-        long_description=DESCRIPTION,
-        platforms=['Linux', 'Mac OS X', 'Unix', 'Windows'],
-        install_requires=REQUIREMENTS,
-        requires=REQUIREMENTS,
-        tests_require=["pytest", "pytest-cov", "python-coveralls"],
-        classifiers=CLASSIFIERS.split('\n')[1:-1]
-    )
-
+    # TODO: only write version.py under special circumstances
+    write_installed_version_py()
+    # write_version_py(os.path.join('autorelease', 'version.py'))
+    setup()
 

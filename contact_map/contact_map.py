@@ -61,6 +61,9 @@ def _atom_slice(traj, indices):
     if traj._have_unitcell:
         unitcell_lengths = traj._unitcell_lengths.copy()
         unitcell_angles = traj._unitcell_angles.copy()
+    else:
+        unitcell_lengths = None
+        unitcell_angles = None
     time = traj._time.copy()
 
     # Hackish to make the smart slicing work

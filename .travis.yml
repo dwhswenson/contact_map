@@ -1,8 +1,13 @@
+version: ~> 1.0
+
 language: python
 python:
-  - '3.6'
+  - '3.7'
   - '2.7'
-  - '3.5'
+  - '3.6'
+
+notifications:
+  webhooks: https://coveralls.io/webhook
 
 branches:
   only:
@@ -12,7 +17,7 @@ branches:
 
 env:
   global:
-    - CANONICAL_PYTHON="3.6"
+    - CANONICAL_PYTHON="3.7"
     - CANONICAL_MDTRAJ="release"
     - CODECLIMATE=""
     - TWINE_USERNAME="dwhswenson"
@@ -24,13 +29,14 @@ env:
     - MDTRAJ="release"
     - MDTRAJ="dev"
 
-matrix:
+jobs:
   exclude:
     - env: MDTRAJ="dev"
-      python: "3.5"
+      python: "3.6"
 
 before_install:
   - echo "before install"
+  - echo "$TRAVIS_BRANCH $TRAVIS_EVENT_TYPE"
   - git fetch --tags
 
 install:
@@ -44,75 +50,15 @@ install:
 script:
   - export MPLBACKEND=SVG
   - python -c "import contact_map"
-  - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE} --allow-patch-skip  #TODO remove allow-patch-skip
+  - python autorelease_check.py --branch ${TRAVIS_BRANCH} --event ${TRAVIS_EVENT_TYPE} #--allow-patch-skip  # allow-patch-skip if there was a testpypi problem
   - py.test -vv --cov=contact_map --cov-report xml:cov.xml
 
 after_success:
+  - export COVERALLS_PARALLEL=true
   - coveralls
   - python-codacy-coverage -r cov.xml
 
-jobs:
-  include:
-    - stage: deploy testpypi
-      # This stage runs when you make a PR to stable. It tests that the
-      # deployment to testpypi works.
-      if: "(branch = stable) and (type = pull_request)"
-      python: '3.6'
-      addons:
-        apt_packages:
-          - pandoc
-      install:
-        - pip install twine
-      script: 
-        - pandoc --from=markdown --to=rst --output=README.rst README.md
-        - python setup.py sdist bdist_wheel
-        - twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-      after_success: skip
-    - stage: test testpypi
-      # This stage run when you make a PR to stable; after the package has
-      # been deployed to testpypi. It checks that the deployed package
-      # works.
-      if: "(branch = stable) and (type = pull_request)"
-      python: '3.6'
-      install:
-        - source ci/pip-install/install_requirements.sh
-        - pip install -U -r ci/pip-install/testing_requirements.txt
-        - pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple contact_map
-      script:
-        - cd ~
-        - python -c "import contact_map"
-        - py.test --pyargs contact_map
-      after_success: skip
-    - stage: cut release
-      # This stage runs after you merge a PR into stable. It cuts the GitHub
-      # release based on the current stable branch and the release notes
-      # from the last PR merged into stable.
-      if: "(branch = stable) and (not type in (pull_request, cron))"
-      python: '3.6'
-      install:
-        - pip install autorelease
-      script:
-        - VERSION=`python setup.py --version`
-        - PROJECT=`python setup.py --name`
-        - autorelease-release --project $PROJECT --version $VERSION --token $AUTORELEASE_TOKEN
-      after_success: skip
-    - stage: deploy pypi
-      # This stage runs when a version-labelled tag is made. It deploys the
-      # package to PyPI.
-      if: tag =~ ^v[0-9]+\.
-      addons:
-        apt_packages:
-          - pandoc
-      install: skip
-      script:
-          - pandoc --from=markdown --to=rst --output=README.rst README.md
-      after_success: true
-      deploy:
-        provider: pypi
-        distributions: sdist bdist_wheel
-        skip_cleanup: true  # need the readme.rst from the script stage
-        user: dwhswenson
-        on:
-            tags: true
-        password:
-          secure: "UN99BfNgMlE1qOwkbvJYMEdPGVF02dnZ5iF9HZY5HwJr7nlW1ixEGn6SzICS7WwLzthfqpbwXaqVGEsbsn1YwsvQe72JyCZxftoxZC2bVi5JV/OZka5uUTx0NXtzukZp33AUTDA9J2vushIxZCHSJG+GFqx4c+L8Y194V0QS4sw/lbtGC3qZ8jmszCnRgfPbb0tmCe4Jj1snclspPXhYtXL2z9Xh4r+ImCfosBFfThtsUs6t37/Jrx1srmDrt0eaGGBm1NAcyIVP6x03TdVVUFt/ud3U7+o0iHhqdEZKfUc2Dp6YN08Ck6Zyr/dR/A0Sc3/pWvytXwXLzOj+d7BtaAmPApcAc6v5GEmwWc4mkdsD+CEEW1q3CEFbWq6RTL+oa2zvEO6k0VrnHMCni3KqsWGmF6B209tHhy8jFAmCIruD2foUz7NxEKWNEOR4bqIjOGGIgGp4mfH+1l73JrI995ZmB1PqiIkxVeX0nPrZUZtBxOUyxg6aiL+NHMaYr5NCq2uCzDYhtwWnk26Oq6/JAEMxN+SCiC+O+DSvdQaUgUp6eS5whHGvf27ZxRMkmTSYTIMN6V1/PQ9WWSFsy0QBUYB7UJf/JLFnTi5xHj08jFNzUVOmeyq9MBzJF/ztnTTBSJgzNDROV+2qsZC0Ulm/hesMe0Swxqu/S5PelzrgwCA="
+
+import:
+  - dwhswenson/autorelease:autorelease-travis.yml@v0.1.0
+

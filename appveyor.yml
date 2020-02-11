@@ -21,10 +21,10 @@ environment:
       CONDA_PY: "27"
       ARCH: '64'
     - PYTHON: "C:\\Miniconda36"
-      CONDA_PY: "36"
+      CONDA_PY: "36" # No MDTraj for py37/Win32
       ARCH: '32'
-    - PYTHON: "C:\\Miniconda36-x64"
-      CONDA_PY: "36"
+    - PYTHON: "C:\\Miniconda37-x64"
+      CONDA_PY: "37"
       ARCH: '64'
 
 build: false
@@ -32,13 +32,15 @@ build: false
 install:
   # install python
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
-  # test python version
-  - "%CMD_IN_ENV% conda config --add channels omnia"  # TODO: switch to conda-forge?
-  - "%CMD_IN_ENV% conda update -yq --all"
-  - "%CMD_IN_ENV% conda install -yq \"conda-build<3.0.26\""
-  - "%CMD_IN_ENV% python --version"
-  - "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  # now we do our own install
+  - conda config --add channels conda-forge
+  - conda install -yq conda=4.5 conda-build=3.10
 
 test_script:
-  - "%CMD_IN_ENV% conda build --quiet ci\\conda-recipe"
+  #- "%CMD_IN_ENV% activate base"
+  #- "%CMD_IN_ENV% python --version"
+  #- "%CMD_IN_ENV% python -c \"import struct; print(struct.calcsize('P') * 8)\""
+  #- "%CMD_IN_ENV% conda build --quiet ci\\conda-recipe"
+  - activate base
+  - python --version
+  - python -c "import struct; print(struct.calcsize('P') * 8)"
+  - conda build --quiet ci\conda-recipe

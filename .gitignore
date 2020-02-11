@@ -3,7 +3,7 @@ dask-worker-space
 *nc
 .pytest_cache
 
-contact_map/version.py
+contact_map/_installed_version.py
 cover
 
 # Byte-compiled / optimized / DLL files
