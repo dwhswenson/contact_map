@@ -1,10 +1,10 @@
-dist: "xenial"
-sudo: true
+version: ~> 1.0
+
 language: python
 python:
+  - '3.7'
   - '2.7'
   - '3.6'
-  - '3.7'
 
 notifications:
   webhooks: https://coveralls.io/webhook
@@ -29,13 +29,14 @@ env:
     - MDTRAJ="release"
     - MDTRAJ="dev"
 
-matrix:
+jobs:
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
 
 before_install:
   - echo "before install"
+  - echo "$TRAVIS_BRANCH $TRAVIS_EVENT_TYPE"
   - git fetch --tags
 
 install:
