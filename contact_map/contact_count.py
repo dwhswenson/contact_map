@@ -13,6 +13,8 @@ except ImportError:
 else:
     HAS_MATPLOTLIB = True
 
+# pandas 0.25 not available on py27; can drop this when we drop py27
+_PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
 def _colorbar(with_colorbar, cmap_f, norm, min_val):
     if with_colorbar is False:
@@ -49,7 +51,6 @@ def _patch_from_spmatrix(cls, data):
 
     return cls._simple_new(arr, index, dtype)
 
-_PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 if _PD_VERSION >= (0, 25):
     pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
 # TODO: this is the end of what to remove when pandas is fixed
@@ -124,10 +125,14 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        # mtx = self.sparse_matrix.tocoo()
         mtx = self.sparse_matrix
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
+
+        if _PD_VERSION < (0, 25):  # py27 only
+            mtx = mtx.tocoo()
+            return pd.SparseDataFrame(mtx, index=index, columns=columns)
+
         df = pd.DataFrame.sparse.from_spmatrix(mtx, index=index,
                                                columns=columns)
         # note: I think we can always use float here for dtype; but in
@@ -135,7 +140,6 @@ class ContactCount(object):
         # Problem is, pandas technically stores a different dtype for each
         # column.
         df = df.astype(pd.SparseDtype("float", np.nan))
-        # return pd.SparseDataFrame(mtx, index=index, columns=columns)
         return df
 
     def _check_number_of_pixels(self, figure):
