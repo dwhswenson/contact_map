@@ -49,7 +49,9 @@ def _patch_from_spmatrix(cls, data):
 
     return cls._simple_new(arr, index, dtype)
 
-pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
+_PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
+if _PD_VERSION >= (0, 25):
+    pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
 # TODO: this is the end of what to remove when pandas is fixed
 
 class ContactCount(object):
