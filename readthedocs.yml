@@ -1,13 +1,13 @@
 version: 2
 
-conda:
-    environment: docs/environment.yml
+#conda:
+    #environment: docs/environment.yml
 
 python:
     install:
-      #- requirements: docs/rtd_requirements.txt
+      - requirements: docs/rtd_requirements.txt
       #- requirements: requirements.txt
-      #- requirements: docs/requirements.txt
+      - requirements: docs/requirements.txt
       - method: setuptools
         path: .
       #- method: pip
