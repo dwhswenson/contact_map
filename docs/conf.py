@@ -22,6 +22,8 @@ import shutil
 import sphinx_rtd_theme
 import pkg_resources
 import packaging.version
+from ipywidgets.embed import DEFAULT_EMBED_REQUIREJS_URL
+
 # sys.path.insert(0, os.path.abspath('.'))
 #sys.path.insert(0, os.path.abspath('../contact_map/'))
 sys.path.append(os.path.abspath('_themes'))
@@ -124,7 +126,7 @@ language = None
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
-                    '**ipynb-checkpoints']
+                    '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -205,6 +207,13 @@ html_static_path = ['_static']
 # directly to the root of the documentation.
 #
 # html_extra_path = []
+
+html_js_files = [
+    'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js',
+    DEFAULT_EMBED_REQUIREJS_URL,
+]
+
+html_css_files = ["fix_pygments.css"]
 
 # If not None, a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
