@@ -28,7 +28,7 @@ build: false
 
 install:
   # install python
-  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON\\condabin;%PATH%
+  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PYTHON\\bin;%PATH\\Library\\bin;%PATH%
   - conda config --add channels conda-forge
   #- conda install -yq conda=4.5 conda-build=3.10
   - conda install -yq conda conda-build
