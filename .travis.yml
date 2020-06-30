@@ -2,8 +2,8 @@ version: ~> 1.0
 
 language: python
 python:
+  - '3.8'
   - '3.7'
-  - '2.7'
   - '3.6'
 
 notifications:
@@ -17,7 +17,7 @@ branches:
 
 env:
   global:
-    - CANONICAL_PYTHON="3.7"
+    - CANONICAL_PYTHON="3.8"
     - CANONICAL_MDTRAJ="release"
     - CODECLIMATE=""
     - TWINE_USERNAME="dwhswenson"
@@ -33,6 +33,8 @@ jobs:
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
+    - env: MDTRAJ="dev"
+      python: "3.7"
 
 before_install:
   - echo "before install"
