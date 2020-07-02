@@ -27,14 +27,11 @@ env:
     - secure: "g+pFYJ62KN/gfnzrzQlfRTyDwvIpwQp4aQvwB4GVrWUISoOx3X8IlK5+S26Wb/BK4cCIGAKWs+dVgCr1Ag0v4TBhmi4CBlkZXQTNv3TcbGwyhmXYbO7kf03lpapsxKu5JkFlZqe0fniwocut6d2BiAuRQjvJ1B+xhEkl3t/ARarg0G/e+1geNyCopULD3tzcUDV4BFUw6cjfm4Sqn008m+7F8vgNOG+HitPtjggmZfFgoZVvS3nnZbFxGq99Uit8PST8Rdus3PJFNJlguf4XTpsdYZeW2CjFfd9P/v8hvfM3ATSCJ8Mzh8PuWJFP48Be6IvJAn6qhgJW7jSDK6bcCahS0BXBr0EqT9maC3jNXTQiem8WT990mUbK9tpbj6a9HPaD/E1XfmfC2he/EIRt/p14hNPB8rMIR0NRcA0Hy4mTn6AsfUgzwFSRZqjicvLlgwFokn32usZAkcNsW7KQE2+YVnUq6VYG/wpCd5w3x/4sws/HWTTR0Kg98pqt31s3oI0KCktFCuz2Ipxj4sNYJ8ExwqJ3v4zr0505YpYLnJCqy02nbwBcmHv8GrodmlGn2Y5Wid3BZrn5VYQIZVWVSVosfT7B5VpcFVdXRSY5VoKE8mTU7c98HmvASOygG6TZyQBkwXWsEBDoKMssK6QuCjaJpoQt1ZkvpMVsFzzoJkY="
   matrix:
     - MDTRAJ="release"
-    - MDTRAJ="dev"
 
 jobs:
-  exclude:
+  include:
     - env: MDTRAJ="dev"
-      python: "3.6"
-    - env: MDTRAJ="dev"
-      python: "3.7"
+      python: "3.8"
 
 before_install:
   - echo "before install"
