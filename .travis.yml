@@ -2,8 +2,8 @@ version: ~> 1.0
 
 language: python
 python:
+  - '3.8'
   - '3.7'
-  - '2.7'
   - '3.6'
 
 notifications:
@@ -17,7 +17,7 @@ branches:
 
 env:
   global:
-    - CANONICAL_PYTHON="3.7"
+    - CANONICAL_PYTHON="3.8"
     - CANONICAL_MDTRAJ="release"
     - CODECLIMATE=""
     - TWINE_USERNAME="dwhswenson"
@@ -25,7 +25,7 @@ env:
     - secure: "onsUSX6Yxt0HJApAsyUr5iFQW1ZngBiMxKmdiI5aN0TqnVSQ6819xx0YIxBjgburG/pFoW1F8bh8KYITV6TKK7RpcwdOspqpeO0X6L0DdBvNWQdl99QtJZcuMS3nPBiJ4guwrJCkQa/iKgZ7k27YukTw5pgKKDgC2d10P5SQiVFHNkX8lo4FzZIBnpA93Nq9G+j2pi14PpGtxaXhktqLOSvLvy/7BIWfzy69HDGjKZ38SMF4RFRnHiBI0G2uON6N5AuLovBWpRrmPmCTiX3p2lgxss8oUSKsA9OlikAoGlLyOjzMU2Fu3JqgoXPSyjDzkqO/Bavd1S03RYUeB5cRM9kBoORjCYl2dBCAmh7U41ZigvivYC2UZ/2p300f9YmolZ4vcj9tz4THXfF5/ZgIoARFIVk3fIQOHJCnXwa3gDcf0AEmsYOUOSKJKyYxruQhyjb2reFxUyA6bqtelV82qpMT53fSZ1/ZJjA+yJJgbeB9qkrMjvUf9AjlY8faqXyIafJsogFuvg1rg+FddMlc56zUWCEdc/pgbTesQuF8GCqje++7eaN68KiWBPwjDSX6cuNkeg86xx1E4VsRcXH6rQ9JXCsGs/HN4JRZ5J+ZH4YOHaUc5pTG82mTEZHGCjAN+BuhGfSFcgSoGO6oOHRGVjw47emOLvNpjS05B/zu/4c="
     # AUTORELEASE_TOKEN
     - secure: "g+pFYJ62KN/gfnzrzQlfRTyDwvIpwQp4aQvwB4GVrWUISoOx3X8IlK5+S26Wb/BK4cCIGAKWs+dVgCr1Ag0v4TBhmi4CBlkZXQTNv3TcbGwyhmXYbO7kf03lpapsxKu5JkFlZqe0fniwocut6d2BiAuRQjvJ1B+xhEkl3t/ARarg0G/e+1geNyCopULD3tzcUDV4BFUw6cjfm4Sqn008m+7F8vgNOG+HitPtjggmZfFgoZVvS3nnZbFxGq99Uit8PST8Rdus3PJFNJlguf4XTpsdYZeW2CjFfd9P/v8hvfM3ATSCJ8Mzh8PuWJFP48Be6IvJAn6qhgJW7jSDK6bcCahS0BXBr0EqT9maC3jNXTQiem8WT990mUbK9tpbj6a9HPaD/E1XfmfC2he/EIRt/p14hNPB8rMIR0NRcA0Hy4mTn6AsfUgzwFSRZqjicvLlgwFokn32usZAkcNsW7KQE2+YVnUq6VYG/wpCd5w3x/4sws/HWTTR0Kg98pqt31s3oI0KCktFCuz2Ipxj4sNYJ8ExwqJ3v4zr0505YpYLnJCqy02nbwBcmHv8GrodmlGn2Y5Wid3BZrn5VYQIZVWVSVosfT7B5VpcFVdXRSY5VoKE8mTU7c98HmvASOygG6TZyQBkwXWsEBDoKMssK6QuCjaJpoQt1ZkvpMVsFzzoJkY="
-  matrix:
+  jobs:
     - MDTRAJ="release"
     - MDTRAJ="dev"
 
@@ -33,6 +33,8 @@ jobs:
   exclude:
     - env: MDTRAJ="dev"
       python: "3.6"
+    - env: MDTRAJ="dev"
+      python: "3.7"
 
 before_install:
   - echo "before install"
