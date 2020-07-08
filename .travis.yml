@@ -62,5 +62,5 @@ after_success:
 
 
 import:
-  - dwhswenson/autorelease:autorelease-travis.yml@v0.1.0
+  - dwhswenson/autorelease:autorelease-travis.yml@stage_order
 
