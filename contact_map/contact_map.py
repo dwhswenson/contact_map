@@ -355,7 +355,8 @@ class ContactObject(object):
         dct = json.loads(json_string)
         return cls.from_dict(dct)
 
-    def _check_compatibility(self, other, err=AssertionError):
+    def _check_compatibility(self, other, return_failed=False,
+                             err=AssertionError):
         compatibility_attrs = ['cutoff', 'topology', 'query', 'haystack',
                                'n_neighbors_ignored']
         failed_attr = {}
@@ -369,8 +370,10 @@ class ContactObject(object):
             msg += "        {attr}: {self} != {other}\n".format(
                 attr=attr, self=str(vals[0]), other=str(vals[1])
             )
-        if failed_attr:
+        if failed_attr and not return_failed:
             raise err(msg)
+        elif return_failed:
+            return failed_attr
         return True
 
     def save_to_file(self, filename, mode="w"):
@@ -860,15 +863,122 @@ class ContactDifference(ContactObject):
     common way to make this object is by using the ``-`` operator, i.e.,
     ``diff = map_1 - map_2``.
     """
-    def __init__(self, positive, negative):
+    def __init__(self, positive, negative, allow_incompatable=False):
         self.positive = positive
         self.negative = negative
-        positive._check_compatibility(negative)
-        super(ContactDifference, self).__init__(positive.topology,
-                                                positive.query,
-                                                positive.haystack,
-                                                positive.cutoff,
-                                                positive.n_neighbors_ignored)
+        self.allow_incompatable = allow_incompatable
+        failed = positive._check_compatibility(
+            negative,
+            return_failed=allow_incompatable
+        )
+        if not allow_incompatable:
+            topology = positive.topology
+            query = positive.query
+            haystack = positive.haystack
+            cutoff = positive.cutoff
+            n_neighbors_ignored = positive.n_neighbors_ignored
+        else:
+            (topology, query, haystack,
+             cutoff, n_neighbors_ignored) = self._fix_self(positive, negative,
+                                                           failed)
+
+        super(ContactDifference, self).__init__(
+              positive.topology,
+              positive.query,
+              positive.haystack,
+              positive.cutoff,
+              positive.n_neighbors_ignored)
+
+    def _fix_self(self, positive, negative, failed):
+        # First make the default output
+        output = {'topology': positive.topology,
+                  'query': positive.query,
+                  'haystack': positive.haystack,
+                  'cutoff': positive.cutoff,
+                  'n_neighbors_ignored': positive.n_neighbors_ignored}
+        default_attr = {'topology': md.Topology(),
+                        'query': {},
+                        'haystack': {},
+                        'cutoff': 0,
+                        'n_neighbors_ignored': int(10**9),  # very big
+                        }
+
+        for fail in failed:
+            default = default_attr.get(fail, None)
+            pos = getattr(positive, fail, default)
+            neg = getattr(negative, fail, default)
+            if fail in {'query', 'haystack'}:
+                # We just sum the sets and assume it is OK
+                fixed = pos | neg
+            elif fail == 'cutoff':
+                # We assume bigger cutoff contains more data
+                fixed = max(pos, neg)
+            elif fail == 'n_neighbors_ignored':
+                # We assume less ignored neighbors contains more data
+                fixed = min(pos, neg)
+            elif fail == 'topology':
+                # This requires quite a bit of logic
+                fixed = self._fix_topology(positive, negative)
+            output[fail] = fixed
+        return tuple(output.values())
+
+    def _fix_topology(self, positive, negative):
+        # Now we are going to see if atoms make sense
+        postop = positive.topology
+        negtop = negative.topology
+
+        # Make a custom topology
+        topology = postop.copy()
+        # Make a generator if needed
+        all_atoms_pos = positive.query | positive.haystack
+        all_atoms_neg = negative.query | negative.haystack
+        # Assume the topology of the bigger system contains the smaller one
+        if postop.n_atoms >= negtop.n_atoms:
+            topology = postop.copy()
+        else:
+            topology = negtop.copy()
+
+        overlap_atoms = all_atoms_pos & all_atoms_neg
+        genatom = (postop.atom(i) == negtop.atom(i) for i in overlap_atoms)
+        if all(genatom):
+            # all atoms involved are equal so we asume the residues are as
+            # well everything works that we require
+            return topology
+        elif (all_atoms_pos == all_atoms_neg):
+            # Indices are equal, but the atoms migh not be equal
+            # updating the topology names
+            for idx in overlap_atoms:
+                posname = postop.atom(idx).name
+                negname = negtop.atom(idx).name
+                if posname != negname:
+                    topology.atom(idx).name = "/".join([posname, negname])
+        else:
+            # Atom mapping does not make sense at the moment, override func
+            # TODO: Might be fixable if all_atoms are equal length
+            self.atom_contacts = self._missing_atom_contacts
+
+        # We know something is different so we are going to check residues
+        # Check number of residues involved in the map
+        res_idx_pos = set([postop.atom(i).residue.index
+                           for i in overlap_atoms])
+        res_idx_neg = set([negtop.atom(i).residue.index
+                           for i in overlap_atoms])
+        if res_idx_pos == res_idx_neg:
+            # We assume residues names are different becuase atoms are
+            # different if we end up here
+            for idx in res_idx_pos:
+                posname = postop.residue(idx).name
+                negname = negtop.residue(idx).name
+                if posname != negname:
+                    topology.residue(idx).name = "/".join([posname, negname])
+
+        else:
+            # Can't be fixed for now
+            # TODO: Can be fixed if the number of residues is equal
+            # Or one is a subset of the other
+            self.residue_contacts = self._missing_residue_contacts
+            return md.Topology()
+        return topology
 
     def to_dict(self):
         """Convert object to a dict.
@@ -883,7 +993,8 @@ class ContactDifference(ContactObject):
             'positive': self.positive.to_json(),
             'negative': self.negative.to_json(),
             'positive_cls': self.positive.__class__.__name__,
-            'negative_cls': self.negative.__class__.__name__
+            'negative_cls': self.negative.__class__.__name__,
+            'allow_incompatable': self.allow_incompatable,
         }
 
     @classmethod
@@ -915,7 +1026,8 @@ class ContactDifference(ContactObject):
 
         positive = rebuild('positive')
         negative = rebuild('negative')
-        return cls(positive, negative)
+        allow_incompatable = dct['allow_incompatable']
+        return cls(positive, negative, allow_incompatable=allow_incompatable)
 
     def __sub__(self, other):
         raise NotImplementedError
@@ -938,3 +1050,13 @@ class ContactDifference(ContactObject):
         diff = collections.Counter(self.positive.residue_contacts.counter)
         diff.subtract(self.negative.residue_contacts.counter)
         return ContactCount(diff, self.topology.residue, n_x, n_y)
+
+    @property
+    def _missing_atom_contacts(self):
+        raise RuntimeError("Different atom indices involved between the two"
+                           " maps, so this does not make sense.")
+
+    @property
+    def _missing_residue_contacts(self):
+        raise RuntimeError("Different residue indices between the two maps,"
+                           " so this does not make sense.")
