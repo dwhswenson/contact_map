@@ -60,13 +60,6 @@ after_success:
   - coveralls
   - python-codacy-coverage -r cov.xml
 
-stages:
-    - test
-    - deploy_testpypi
-    - test_testpypi
-    - deploy_pypi
-    - cut_release
-
 import:
   - dwhswenson/autorelease:autorelease-travis.yml@stage_order
 
