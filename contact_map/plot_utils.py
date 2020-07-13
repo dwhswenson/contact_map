@@ -8,7 +8,7 @@ except ImportError:  # pragma: no cover
     pass
 
 
-def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map", ax=None):
+def ranged_colorbar(cmap, norm, cbmin, cbmax, ax=None):
     """Create a colorbar with given endpoints.
 
     Parameters
@@ -21,8 +21,6 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map", ax=None):
         minimum value for the colorbar
     cbmax : float
         maximum value for the colorbar
-    name : str
-        name for the submap to be created
     ax : matplotlib.axes
         the axes to take space from to plot the colorbar
 
