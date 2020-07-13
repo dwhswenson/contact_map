@@ -7,6 +7,7 @@ try:  # try loop for testing
 except ImportError:  # pragma: no cover
     pass
 
+
 def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
     """Create a colorbar with given endpoints.
 
@@ -44,5 +45,3 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
     sm._A = []
     cb = plt.colorbar(sm, fraction=0.046, pad=0.04)
     return cb
-
-

@@ -16,6 +16,7 @@ else:
 # pandas 0.25 not available on py27; can drop this when we drop py27
 _PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
+
 def _colorbar(with_colorbar, cmap_f, norm, min_val):
     if with_colorbar is False:
         return None
@@ -202,17 +203,39 @@ class ContactCount(object):
         cmap_f = plt.get_cmap(cmap)
 
         fig, ax = plt.subplots(**kwargs)
-        ax.axis([0, self.n_x, 0, self.n_y])
-        ax.set_facecolor(cmap_f(norm(0.0)))
 
-        min_val = 0.0
+        min_val = min(0.0, *self.counter.values())
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
+        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
+
+        _colorbar(with_colorbar, cmap_f, norm, min_val)
+
+        return (fig, ax)
+
+    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0):
+        """
+        Plot contact matrix on a matplotlib.axes
+
+        Parameters
+        ----------
+        ax : matplotlib.axes
+           axes to plot the contact matrix on
+        cmap : str
+            color map name, default 'seismic'
+        vmin : float
+            minimum value for color map interpolation; default -1.0
+        vmax : float
+            maximum value for color map interpolation; default 1.0
+        """
+
+        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+        cmap_f = plt.get_cmap(cmap)
+        ax.axis([0, self.n_x, 0, self.n_y])
+        ax.set_facecolor(cmap_f(norm(0.0)))
 
         for (pair, value) in self.counter.items():
-            if value < min_val:
-                min_val = value
             pair_list = list(pair)
             patch_0 = matplotlib.patches.Rectangle(
                 pair_list, 1, 1,
@@ -226,10 +249,6 @@ class ContactCount(object):
             )
             ax.add_patch(patch_0)
             ax.add_patch(patch_1)
-
-        _colorbar(with_colorbar, cmap_f, norm, min_val)
-
-        return (fig, ax)
 
     def most_common(self, obj=None):
         """
