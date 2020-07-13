@@ -8,7 +8,7 @@ except ImportError:  # pragma: no cover
     pass
 
 
-def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
+def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map", ax=None):
     """Create a colorbar with given endpoints.
 
     Parameters
@@ -23,6 +23,8 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
         maximum value for the colorbar
     name : str
         name for the submap to be created
+    ax : matplotlib.axes
+        the axes to take space from to plot the colorbar
 
     Returns
     -------
@@ -34,6 +36,12 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
         cmap_f = plt.get_cmap(cmap)
     else:
         cmap_f = cmap
+
+    if ax is None:
+        fig = plt
+    else:
+        fig = ax.figure
+
     cbmin_normed = float(cbmin - norm.vmin) / (norm.vmax - norm.vmin)
     cbmax_normed = float(cbmax - norm.vmin) / (norm.vmax - norm.vmin)
     n_colors = int(round((cbmax_normed - cbmin_normed) * cmap_f.N))
@@ -43,5 +51,5 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, name="Partial Map"):
     new_norm = matplotlib.colors.Normalize(vmin=cbmin, vmax=cbmax)
     sm = plt.cm.ScalarMappable(cmap=new_cmap, norm=new_norm)
     sm._A = []
-    cb = plt.colorbar(sm, fraction=0.046, pad=0.04)
+    cb = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
     return cb

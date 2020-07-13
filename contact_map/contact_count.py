@@ -17,13 +17,13 @@ else:
 _PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
 
-def _colorbar(with_colorbar, cmap_f, norm, min_val):
+def _colorbar(with_colorbar, cmap_f, norm, min_val, ax=None):
     if with_colorbar is False:
         return None
     elif with_colorbar is True:
         cbmin = np.floor(min_val)  # [-1.0..0.0] => -1; [0.0..1.0] => 0
         cbmax = 1.0
-        cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
+        cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax, ax=ax)
     # leave open other inputs to be parsed later (like tuples)
     return cb
 
@@ -199,22 +199,16 @@ class ContactCount(object):
         """
         if not HAS_MATPLOTLIB:  # pragma: no cover
             raise RuntimeError("Error importing matplotlib")
-        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap_f = plt.get_cmap(cmap)
-
         fig, ax = plt.subplots(**kwargs)
-
-        min_val = min(0.0, *self.counter.values())
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
         self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
 
-        _colorbar(with_colorbar, cmap_f, norm, min_val)
-
         return (fig, ax)
 
-    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0):
+    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0,
+                  with_colorbar=True):
         """
         Plot contact matrix on a matplotlib.axes
 
@@ -228,6 +222,8 @@ class ContactCount(object):
             minimum value for color map interpolation; default -1.0
         vmax : float
             maximum value for color map interpolation; default 1.0
+        with_colorbar : bool
+            If a colorbar is added to the axes
         """
 
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
@@ -235,7 +231,10 @@ class ContactCount(object):
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
+        min_val = 0.0
         for (pair, value) in self.counter.items():
+            if value < min_val:
+                min_val = value
             pair_list = list(pair)
             patch_0 = matplotlib.patches.Rectangle(
                 pair_list, 1, 1,
@@ -249,6 +248,8 @@ class ContactCount(object):
             )
             ax.add_patch(patch_0)
             ax.add_patch(patch_1)
+
+        _colorbar(with_colorbar, cmap_f, norm, min_val, ax=ax)
 
     def most_common(self, obj=None):
         """
