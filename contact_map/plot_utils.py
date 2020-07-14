@@ -21,7 +21,7 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, ax=None):
         minimum value for the colorbar
     cbmax : float
         maximum value for the colorbar
-    ax : matplotlib.axes
+    ax : matplotlib.Axes
         the axes to take space from to plot the colorbar
 
     Returns
