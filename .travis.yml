@@ -60,7 +60,6 @@ after_success:
   - coveralls
   - python-codacy-coverage -r cov.xml
 
-
 import:
-  - dwhswenson/autorelease:autorelease-travis.yml@v0.1.0
+  - dwhswenson/autorelease:autorelease-travis.yml@v0.2.1
 
