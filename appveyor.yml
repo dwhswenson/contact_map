@@ -14,26 +14,24 @@ environment:
     PYTHONUNBUFFERED: 1
 
   matrix:
-    - PYTHON: "C:\\Miniconda"
-      CONDA_PY: "27"
-      ARCH: '32'
-    - PYTHON: "C:\\Miniconda-x64"
-      CONDA_PY: "27"
-      ARCH: '64'
-    - PYTHON: "C:\\Miniconda36"
-      CONDA_PY: "36" # No MDTraj for py37/Win32
-      ARCH: '32'
+    #- PYTHON: "C:\\Miniconda38-x64"
+      #CONDA_PY: "38" 
+      #ARCH: '64'
     - PYTHON: "C:\\Miniconda37-x64"
       CONDA_PY: "37"
+      ARCH: '64'
+    - PYTHON: "C:\\Miniconda36-x64"
+      CONDA_PY: "36" 
       ARCH: '64'
 
 build: false
 
 install:
-  # install python
+  # set up conda Python
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
   - conda config --add channels conda-forge
-  - conda install -yq conda=4.5 conda-build=3.10
+  # note: it may become necessary to pin versions of conda/conda-build
+  - conda install -yq conda conda-build
 
 test_script:
   #- "%CMD_IN_ENV% activate base"

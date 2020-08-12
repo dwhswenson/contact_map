@@ -13,6 +13,8 @@ except ImportError:
 else:
     HAS_MATPLOTLIB = True
 
+# pandas 0.25 not available on py27; can drop this when we drop py27
+_PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
 def _colorbar(with_colorbar, cmap_f, norm, min_val):
     if with_colorbar is False:
@@ -24,6 +26,34 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val):
     # leave open other inputs to be parsed later (like tuples)
     return cb
 
+
+# TODO: remove following: this is a monkeypatch for a bug in pandas
+# see: https://github.com/pandas-dev/pandas/issues/29814
+from pandas._libs.sparse import BlockIndex, IntIndex, SparseIndex
+def _patch_from_spmatrix(cls, data):
+    length, ncol = data.shape
+
+    if ncol != 1:
+        raise ValueError("'data' must have a single column, not '{}'".format(ncol))
+
+    # our sparse index classes require that the positions be strictly
+    # increasing. So we need to sort loc, and arr accordingly.
+    arr = data.data
+    #idx, _ = data.nonzero()
+    idx = data.indices
+    loc = np.argsort(idx)
+    arr = arr.take(loc)
+    idx.sort()
+
+    zero = np.array(0, dtype=arr.dtype).item()
+    dtype = pd.SparseDtype(arr.dtype, zero)
+    index = IntIndex(length, idx)
+
+    return cls._simple_new(arr, index, dtype)
+
+if _PD_VERSION >= (0, 25):
+    pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
+# TODO: this is the end of what to remove when pandas is fixed
 
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
@@ -95,10 +125,22 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        mtx = self.sparse_matrix.tocoo()
+        mtx = self.sparse_matrix
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
-        return pd.SparseDataFrame(mtx, index=index, columns=columns)
+
+        if _PD_VERSION < (0, 25):  # py27 only
+            mtx = mtx.tocoo()
+            return pd.SparseDataFrame(mtx, index=index, columns=columns)
+
+        df = pd.DataFrame.sparse.from_spmatrix(mtx, index=index,
+                                               columns=columns)
+        # note: I think we can always use float here for dtype; but in
+        # principle maybe we need to inspect and get the internal type?
+        # Problem is, pandas technically stores a different dtype for each
+        # column.
+        df = df.astype(pd.SparseDtype("float", np.nan))
+        return df
 
     def _check_number_of_pixels(self, figure):
         """
