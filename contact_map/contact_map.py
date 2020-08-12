@@ -171,6 +171,23 @@ class ContactObject(object):
         }
         self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
 
+    @classmethod
+    def from_contacts(cls, topology, query, haystack, cutoff,
+                      n_neighbors_ignored, atom_contacts, residue_contacts):
+        obj = cls.__new__(cls)
+        super(cls, obj).__init__(topology, query, haystack, cutoff,
+                                 n_neighbors_ignored)
+
+        def get_contact_counter(contact):
+            if isinstance(contact, ContactCount):
+                return contact.counter
+            else:
+                return contact
+
+        obj._atom_contacts = get_contact_counter(atom_contacts)
+        obj._residue_contacts = get_contact_counter(residue_contacts)
+        return obj
+
     def _set_atom_slice(self):
         """ Set atom slice logic """
         if (self._class_use_atom_slice is None and
@@ -745,6 +762,17 @@ class ContactFrequency(ContactObject):
                                                n_neighbors_ignored)
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
+
+    @classmethod
+    def from_contacts(cls, topology, query, haystack, cutoff,
+                      n_neighbors_ignored, atom_contacts, residue_contacts,
+                      n_frames):
+        obj = super(ContactFrequency, cls).from_contacts(
+            topology, query, haystack, cutoff, n_neighbors_ignored,
+            atom_contacts, residue_contacts
+        )
+        obj._n_frames = n_frames
+        return obj
 
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
