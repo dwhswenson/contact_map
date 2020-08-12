@@ -61,5 +61,5 @@ after_success:
   - python-codacy-coverage -r cov.xml
 
 import:
-  - dwhswenson/autorelease:autorelease-travis.yml@stage_order
+  - dwhswenson/autorelease:autorelease-travis.yml@v0.2.1
 
