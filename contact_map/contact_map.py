@@ -172,8 +172,9 @@ class ContactObject(object):
         self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
 
     @classmethod
-    def from_contacts(cls, topology, query, haystack, cutoff,
-                      n_neighbors_ignored, atom_contacts, residue_contacts):
+    def from_contacts(cls, atom_contacts, residue_contacts, topology,
+                      query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2):
         obj = cls.__new__(cls)
         super(cls, obj).__init__(topology, query, haystack, cutoff,
                                  n_neighbors_ignored)
@@ -764,12 +765,12 @@ class ContactFrequency(ContactObject):
         (self._atom_contacts, self._residue_contacts) = contacts
 
     @classmethod
-    def from_contacts(cls, topology, query, haystack, cutoff,
-                      n_neighbors_ignored, atom_contacts, residue_contacts,
-                      n_frames):
+    def from_contacts(cls, atom_contacts, residue_contacts, n_frames,
+                      topology, query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2):
         obj = super(ContactFrequency, cls).from_contacts(
-            topology, query, haystack, cutoff, n_neighbors_ignored,
-            atom_contacts, residue_contacts
+            atom_contacts, residue_contacts, topology, query, haystack,
+            cutoff, n_neighbors_ignored
         )
         obj._n_frames = n_frames
         return obj
@@ -949,6 +950,10 @@ class ContactDifference(ContactObject):
         raise NotImplementedError
 
     def contact_map(self, *args, **kwargs):  #pylint: disable=W0221
+        raise NotImplementedError
+
+    @classmethod
+    def from_contacts(self, *args, **kwargs):  #pylint: disable=W0221
         raise NotImplementedError
 
     @property
