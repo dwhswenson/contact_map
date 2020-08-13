@@ -1,5 +1,5 @@
 pytest
 pytest-cov
-python-coveralls
+coveralls
 codacy-coverage
 autorelease
