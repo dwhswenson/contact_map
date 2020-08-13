@@ -173,13 +173,17 @@ class ContactTrajectory(ContactObject, abc.Sequence):
 
 class MutableContactTrajectory(ContactTrajectory, abc.MutableSequence):
     def __setitem__(self, key, value):
-        pass
+        self._contact_maps[key] = value
 
     def __delitem__(self, key):
-        pass
+        del self._contact_maps[key]
 
     def insert(self, key, value):
-        pass
+        self._contact_maps.insert(key, value)
+
+    def __hash__(self):
+        # mutable objects must have unique hashes
+        return id(self)
 
 
 class WindowedIterator(abc.Iterator):
@@ -279,22 +283,31 @@ class ContactTrajectoryWindow(abc.Iterator):
         self.step = step
         self.slow_build_iter = self._slow_build_iter
         self._window_iter = None
+        self._contact_map = None
 
     def __iter__(self):
         self._window_iter = WindowedIterator(length=len(self.trajectory),
                                              width=self.width,
                                              step=self.step,
                                              slow_build=self.slow_build_iter)
+        self._contact_map = ContactFrequency.from_contacts(
+            set([]), set([]),
+            topology=self.trajectory.topology,
+            query=self.trajectory.query,
+            haystack=self.trajectory.haystack,
+            cutoff=self.trajectory.cutoff,
+            n_neighbors_ignored=self.trajectory.n_neighbors_ignored
+        )
         return self
 
     def __next__(self):
         to_add, to_sub = next(self._window_iter)
         for frame in self.trajectory[to_add]:
-            self._frequency.add_contact_frequency(frame)
+            self._contact_map.add_contact_frequency(frame)
         for frame in self.trajectory[to_sub]:
-            self._frequency.subtract_contact_frequency(frame)
+            self._contact_map.subtract_contact_frequency(frame)
 
         self._frame_range = f_range
-        return self._frequency
+        return self._contact_map
 
 

@@ -71,6 +71,9 @@ class TestContactTrajectory(object):
         _contact_object_compare(cmap, self.map)
         assert cmap == self.map
 
+    def test_contact_frequency(self):
+        pytest.skip()
+
     @pytest.mark.parametrize("intermediate", ["dict", "json"])
     def test_serialization_cycle(self, intermediate):
         # NOTE: this is identical to TestContactFrequency; can probably
@@ -110,6 +113,26 @@ class TestContactTrajectory(object):
 
         _contact_object_compare(self.map, cmap)
         assert self.map == cmap
+
+    def test_window_iter(self):
+        pytest.skip()
+
+
+class TestMutableContactTrajectory(object):
+    def setup(self):
+        pass
+
+    def test_setitme(self):
+        pytest.skip()
+
+    def test_delitem(self):
+        pytest.skip()
+
+    def test_insert(self):
+        pytest.skip()
+
+    def test_hash_eq(self):
+        pytest.skip()
 
 
 class TestWindowedIterator(object):
