@@ -130,7 +130,7 @@ class ContactCount(object):
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
 
-        if _PD_VERSION < (0, 25):  # py27 only
+        if _PD_VERSION < (0, 25):  # py27 only  -no-cov-
             mtx = mtx.tocoo()
             return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
