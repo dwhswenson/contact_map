@@ -31,7 +31,7 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val, ax=None):
 # TODO: remove following: this is a monkeypatch for a bug in pandas
 # see: https://github.com/pandas-dev/pandas/issues/29814
 from pandas._libs.sparse import BlockIndex, IntIndex, SparseIndex
-def _patch_from_spmatrix(cls, data):
+def _patch_from_spmatrix(cls, data):  # -no-cov-
     length, ncol = data.shape
 
     if ncol != 1:
