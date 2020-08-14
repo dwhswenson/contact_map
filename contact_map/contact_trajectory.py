@@ -114,9 +114,10 @@ class ContactTrajectory(ContactObject, abc.Sequence):
             query=self.query,
             haystack=self.haystack,
             cutoff=self.cutoff,
-            n_neighbors_ignored=n_neighbors_ignored
+            n_neighbors_ignored=self.n_neighbors_ignored
         )
         for cmap in self._contact_maps:
+            # TODO: compatibility
             freq.add_contact_frequency(cmap)
 
         return freq
@@ -143,6 +144,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
 
     @classmethod
     def from_contact_maps(cls, maps):
+        # TODO: compatbility
         obj = cls.__new__(cls)
         super(cls, obj).__init__(maps[0].topology, maps[0].query,
                                  maps[0].haystack, maps[0].cutoff,

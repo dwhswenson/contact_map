@@ -3,33 +3,40 @@
 # pylint: disable=wrong-import-order, unused-wildcard-import
 
 from .utils import *
-from .test_contact_map import counter_of_inner_list, _contact_object_compare
+from .test_contact_map import (
+    counter_of_inner_list, _contact_object_compare, traj_atom_contact_count,
+    traj_residue_contact_count
+)
 
 import mdtraj as md
 
 from contact_map.contact_trajectory import *
 from contact_map.contact_count import ContactCount
 
+TRAJ_ATOM_CONTACTS = [
+    [[1, 4], [4, 6], [5, 6]],
+    [[1, 5], [4, 6], [5, 6]],
+    [[1, 4], [4, 6], [5, 6]],
+    [[1, 4], [4, 6], [4, 7], [5, 6], [5, 7]],
+    [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4], [8, 5], [4, 6], [4, 7],
+     [5, 6], [5, 7]]
+]
+
+TRAJ_RES_CONTACTS = [
+    [[0, 2], [2, 3]],
+    [[0, 2], [2, 3]],
+    [[0, 2], [2, 3]],
+    [[0, 2], [2, 3]],
+    [[0, 2], [2, 3], [0, 4], [2, 4]]
+]
+
 class TestContactTrajectory(object):
     def setup(self):
         self.traj = md.load(find_testfile("trajectory.pdb"))
         self.map = ContactTrajectory(self.traj, cutoff=0.075,
                                      n_neighbors_ignored=0)
-        self.expected_atom_contacts = [
-            [[1, 4], [4, 6], [5, 6]],
-            [[1, 5], [4, 6], [5, 6]],
-            [[1, 4], [4, 6], [5, 6]],
-            [[1, 4], [4, 6], [4, 7], [5, 6], [5, 7]],
-            [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4], [8, 5], [4, 6],
-             [4, 7], [5, 6], [5, 7]]
-        ]
-        self.expected_residue_contacts = [
-            [[0, 2], [2, 3]],
-            [[0, 2], [2, 3]],
-            [[0, 2], [2, 3]],
-            [[0, 2], [2, 3]],
-            [[0, 2], [2, 3], [0, 4], [2, 4]]
-        ]
+        self.expected_atom_contacts = TRAJ_ATOM_CONTACTS
+        self.expected_residue_contacts = TRAJ_RES_CONTACTS
 
     @pytest.mark.parametrize('contact_type', ['atom', 'residue'])
     def test_contacts(self, contact_type):
@@ -72,7 +79,16 @@ class TestContactTrajectory(object):
         assert cmap == self.map
 
     def test_contact_frequency(self):
-        pytest.skip()
+        freq = self.map.contact_frequency()
+        expected_atom_count = {
+            key: val / 5.0 for key, val in traj_atom_contact_count.items()
+        }
+        expected_res_count = {
+            key: val / 5.0
+            for key, val in traj_residue_contact_count.items()
+        }
+        assert freq.atom_contacts.counter == expected_atom_count
+        assert freq.residue_contacts.counter == expected_res_count
 
     @pytest.mark.parametrize("intermediate", ["dict", "json"])
     def test_serialization_cycle(self, intermediate):
@@ -120,19 +136,35 @@ class TestContactTrajectory(object):
 
 class TestMutableContactTrajectory(object):
     def setup(self):
-        pass
+        self.traj = md.load(find_testfile("trajectory.pdb"))
+        self.map = MutableContactTrajectory(self.traj, cutoff=0.075,
+                                            n_neighbors_ignored=0)
+        self.expected_atom_contacts = TRAJ_ATOM_CONTACTS
+        self.expected_residue_contacts = TRAJ_RES_CONTACTS
 
-    def test_setitme(self):
+    def test_setitem(self):
+        cmap4 == ContactFrequency(self.traj[4], cutoff=0.075,
+                                  n_neighbors_ignored=0)
+        self.map[1] = cmap4
         pytest.skip()
 
     def test_delitem(self):
+        del self.map[1]
+        assert len(self.map) == 4
+        expected_atoms = (self.expected_atom_contacts[:1]
+                          + self.expected_atom_contacts[2:])
+        expected_res = (self.expected_residue_contacts[:1]
+                        + self.expected_residue_contacts[2:])
         pytest.skip()
 
     def test_insert(self):
         pytest.skip()
 
     def test_hash_eq(self):
-        pytest.skip()
+        cmap = MutableContactTrajectory(self.traj, cutoff=0.075,
+                                        n_neighbors_ignored=0)
+        assert hash(cmap) != hash(self.map)
+        assert cmap != self.map
 
 
 class TestWindowedIterator(object):
