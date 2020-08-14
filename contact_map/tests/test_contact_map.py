@@ -305,7 +305,8 @@ class TestContactMap(object):
 
         # Test sliced indices
         sliced_idx = [0, 1, 2, 3]
-        real_idx = [map0b.s_idx_to_idx(i) for i in sliced_idx]
+        # real_idx = [map0b.s_idx_to_idx(i) for i in sliced_idx]
+        real_idx = [map0b.indexer.real_idx[i] for i in sliced_idx]
         if map0b._use_atom_slice:
             assert real_idx == [1, 4, 5, 6]
         else:
