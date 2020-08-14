@@ -7,6 +7,9 @@ import collections
 import itertools
 import pickle
 import json
+
+import warnings
+
 import numpy as np
 import pandas as pd
 import mdtraj as md
@@ -675,13 +678,25 @@ class ContactObject(object):
 class ContactMap(ContactObject):
     """
     Contact map (atomic and residue) for a single frame.
+
+    .. deprecated:: 0.6.0
+        ``ContactMap`` will be removed in Contact Map Explorer 0.7.0 because
+        it is redundant with ``ContactFrequency``. For more, see
+        https://github.com/dwhswenson/contact_map/issues/82.
+
     """
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
 
+    _deprecation_message=(
+        "The ContactMap class will be removed in Contact Map Explorer 0.7. "
+        + "Use ContactFrequency instead. For more, see: "
+        + "https://github.com/dwhswenson/contact_map/issues/82."
+    )
+
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
-
+        warnings.warn(self._deprecation_message, FutureWarning)
         self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
                                          cutoff, n_neighbors_ignored)
@@ -691,6 +706,19 @@ class ContactMap(ContactObject):
                                         self.residue_ignore_atom_idxs)
         (atom_contacts, self._residue_contacts) = contact_maps
         self._atom_contacts = self.convert_atom_contacts(atom_contacts)
+
+    @classmethod
+    def from_dict(cls, dct):
+        warnings.warn(cls._deprecation_message, FutureWarning)
+        return super(ContactMap, cls).from_dict(dct)
+
+    # don't need to add deprecation in from_json because it uses from_dict
+
+    @classmethod
+    def from_file(cls, filename):
+        warnings.warn(cls._deprecation_message, FutureWarning)
+        return super(ContactMap, cls).from_file(filename)
+
 
     def __hash__(self):
         return hash((super(ContactMap, self).__hash__(),
