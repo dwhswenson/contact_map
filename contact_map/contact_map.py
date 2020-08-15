@@ -620,14 +620,6 @@ class ContactObject(object):
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
 
-    def convert_atom_contacts(self, atom_contacts):
-        if self._use_atom_slice:
-            result = {frozenset(tuple(map(self.s_idx_to_idx, key))): value
-                      for key, value in atom_contacts.items()}
-            return collections.Counter(result)
-        else:
-            return atom_contacts
-
     @property
     def atom_contacts(self):
         n_atoms = self.topology.n_atoms
@@ -755,10 +747,9 @@ class ContactFrequency(ContactObject):
                                               residue_ignore_atom_idxs)
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
-            # self._atom_contacts_count += frame_atom_contacts
             atom_contacts_count.update(frame_atom_contacts)
             residue_contacts_count += frame_residue_contacts
-        # atom_contacts_count = self.convert_atom_contacts(atom_contacts_count)
+
         atom_contacts_count = \
                 self.indexer.convert_atom_contacts(atom_contacts_count)
         return (atom_contacts_count, residue_contacts_count)

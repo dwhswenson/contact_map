@@ -1,8 +1,6 @@
 import collections
 
 class AtomSlicedIndexer(object):
-    # __slots__ = ['all_atoms', 'sliced_idx', 'real_idx', 'query', 'haystack',
-                 # 'atom_idx_to_residue_idx']
     def __init__(self, topology, real_query, real_haystack, all_atoms):
         self.sliced_idx = {
             real_idx : sliced_idx
@@ -23,14 +21,12 @@ class AtomSlicedIndexer(object):
         }
 
     def convert_atom_contacts(self, atom_contacts):
-        result =  {frozenset(self.real_idx[a] for a in key): value
-                   for key, value in atom_contacts.items()}
+        result =  {frozenset(map(self.real_idx.__getitem__, pair)): value
+                   for pair, value in atom_contacts.items()}
         return collections.Counter(result)
 
 
 class IdentityIndexer(object):
-    # __slots__ = ['all_atoms', 'sliced_idx', 'real_idx', 'query', 'haystack',
-                 # 'atom_idx_to_residue_idx']
     def __init__(self, topology, real_query, real_haystack, all_atoms):
         identity_mapping = {a: a for a in range(topology.n_atoms)}
         self.sliced_idx = identity_mapping
