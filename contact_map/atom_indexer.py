@@ -1,6 +1,8 @@
 import collections
 
-class AtomSlicedIndexer(object):
+class AtomSlicedIndexer(Indexer):
+    """Indexer when using atom slicing.
+    """
     def __init__(self, topology, real_query, real_haystack, all_atoms):
         self.sliced_idx = {
             real_idx : sliced_idx
@@ -25,8 +27,21 @@ class AtomSlicedIndexer(object):
                    for pair, value in atom_contacts.items()}
         return collections.Counter(result)
 
+    def slice_trajectory(self, trajectory):
+        # Prevent (memory) expensive atom slicing if not needed.
+        # This check is also needed here because ContactFrequency slices the
+        # whole trajectory before calling this function.
+        if len(self.all_atoms) < trajectory.topology.n_atoms:
+            sliced = _atom_slice(trajectory, self.all_atoms)
+            sliced_trajectory = _atom_slice(trajectory, self.all_atoms)
+        else:
+            sliced = trajectory
+        return sliced
 
-class IdentityIndexer(object):
+
+class IdentityIndexer(Indexer):
+    """Indexer when not using atom slicing.
+    """
     def __init__(self, topology, real_query, real_haystack, all_atoms):
         identity_mapping = {a: a for a in range(topology.n_atoms)}
         self.sliced_idx = identity_mapping
@@ -38,3 +53,6 @@ class IdentityIndexer(object):
 
     def convert_atom_contacts(self, atom_contacts):
         return atom_contacts
+
+    def slice_trajectory(self, trajectory):
+        return trajectory
