@@ -2,7 +2,7 @@ import inspect
 
 try:
     getargspec = inspect.getfullargspec
-except AttributeError:
+except AttributeError:  # -no-cov-
     getargspec = inspect.getargspec
 
 def inspect_method_arguments(method, no_self=True):

@@ -31,7 +31,7 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val, ax=None):
 # TODO: remove following: this is a monkeypatch for a bug in pandas
 # see: https://github.com/pandas-dev/pandas/issues/29814
 from pandas._libs.sparse import BlockIndex, IntIndex, SparseIndex
-def _patch_from_spmatrix(cls, data):
+def _patch_from_spmatrix(cls, data):  # -no-cov-
     length, ncol = data.shape
 
     if ncol != 1:
@@ -130,7 +130,7 @@ class ContactCount(object):
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
 
-        if _PD_VERSION < (0, 25):  # py27 only
+        if _PD_VERSION < (0, 25):  # py27 only  -no-cov-
             mtx = mtx.tocoo()
             return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
