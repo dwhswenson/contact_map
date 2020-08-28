@@ -52,7 +52,33 @@ class TestContactTrajectory(object):
 
     @pytest.mark.parametrize('contact_type', ['atom', 'residue'])
     def test_contacts_sliced(self, contact_type):
-        raise pytest.skip()
+        selected_atoms = [2, 3, 4, 5, 6, 7, 8, 9]
+        cmap = ContactTrajectory(self.traj, query=selected_atoms,
+                                 haystack=selected_atoms, cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        contacts = {'atom': cmap.atom_contacts,
+                    'residue': cmap.residue_contacts}[contact_type]
+        expected = {
+            'atom': [
+                [[4, 6], [5, 6]],
+                [[4, 6], [5, 6]],
+                [[4, 6], [5, 6]],
+                [[4, 6], [4, 7], [5, 6], [5, 7]],
+                [[8, 4], [8, 5], [4, 6], [4, 7], [5, 6], [5, 7]]
+            ],
+            'residue': [
+                [[2, 3]],
+                [[2, 3]],
+                [[2, 3]],
+                [[2, 3]],
+                [[2, 3], [2, 4]]
+            ]
+        }[contact_type]
+
+        for contact, expect in zip(contacts, expected):
+            expected_counter = counter_of_inner_list(expect)
+            assert contact.counter == expected_counter
+
 
     @pytest.mark.parametrize('contactcount', [True, False])
     def test_from_contacts(self, contactcount):
@@ -146,9 +172,9 @@ class TestMutableContactTrajectory(object):
         self.expected_atom_contacts = TRAJ_ATOM_CONTACTS.copy()
         self.expected_residue_contacts = TRAJ_RES_CONTACTS.copy()
 
-    def _test_expected_contacts(self, exp_atoms, exp_res):
+    def _test_expected_contacts(self, traj_map, exp_atoms, exp_res):
         i = 0  # debug
-        for cmap, exp_a, exp_r in zip(self.map, exp_atoms, exp_res):
+        for cmap, exp_a, exp_r in zip(traj_map, exp_atoms, exp_res):
             atom_counter = cmap.atom_contacts.counter
             res_counter = cmap.residue_contacts.counter
             assert atom_counter == counter_of_inner_list(exp_a)
@@ -164,7 +190,7 @@ class TestMutableContactTrajectory(object):
         expected_atoms[1] = expected_atoms[4]
         expected_res = self.expected_residue_contacts
         expected_res[1] = expected_res[4]
-        self._test_expected_contacts(expected_atoms, expected_res)
+        self._test_expected_contacts(self.map, expected_atoms, expected_res)
 
     def test_delitem(self):
         del self.map[1]
@@ -173,14 +199,14 @@ class TestMutableContactTrajectory(object):
                           + self.expected_atom_contacts[2:])
         expected_res = (self.expected_residue_contacts[:1]
                         + self.expected_residue_contacts[2:])
-        self._test_expected_contacts(expected_atoms, expected_res)
+        self._test_expected_contacts(self.map, expected_atoms, expected_res)
 
     def test_insert(self):
         cmap4 = self.map[4]
         self.map.insert(0, cmap4)
         expected_atoms = [TRAJ_ATOM_CONTACTS[4]] + TRAJ_ATOM_CONTACTS
         expected_res = [TRAJ_RES_CONTACTS[4]] + TRAJ_RES_CONTACTS
-        self._test_expected_contacts(expected_atoms, expected_res)
+        self._test_expected_contacts(self.map, expected_atoms, expected_res)
 
     def test_hash_eq(self):
         cmap = MutableContactTrajectory(self.traj, cutoff=0.075,

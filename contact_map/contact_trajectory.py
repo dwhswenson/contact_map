@@ -26,6 +26,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         Number of neighboring residues (in the same chain) to ignore.
         Default 2.
     """
+    _class_use_atom_slice = None
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
         super(ContactTrajectory, self).__init__(trajectory.topology, query,
@@ -97,6 +98,8 @@ class ContactTrajectory(ContactObject, abc.Sequence):
                                               residue_query_atom_idxs,
                                               residue_ignore_atom_idxs)
             frame_atom_contacts, frame_residue_contacts = frame_contacts
+            frame_atom_contacts = \
+                    self.convert_atom_contacts(frame_atom_contacts)
             # TODO unify contact building with something like this?
             # atom_contacts, residue_contact = self._update_contacts(...)
             atom_contacts.append(frame_atom_contacts)
