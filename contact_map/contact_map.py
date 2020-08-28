@@ -215,7 +215,7 @@ class ContactObject(object):
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
-            'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
+            # 'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
                 self._serialize_contact_counter(self._atom_contacts),
             'residue_contacts': \

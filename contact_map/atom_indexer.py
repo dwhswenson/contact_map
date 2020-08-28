@@ -1,6 +1,6 @@
 import collections
 
-class AtomSlicedIndexer(Indexer):
+class AtomSlicedIndexer(object):
     """Indexer when using atom slicing.
     """
     def __init__(self, topology, real_query, real_haystack, all_atoms):
@@ -39,7 +39,7 @@ class AtomSlicedIndexer(Indexer):
         return sliced
 
 
-class IdentityIndexer(Indexer):
+class IdentityIndexer(object):
     """Indexer when not using atom slicing.
     """
     def __init__(self, topology, real_query, real_haystack, all_atoms):
