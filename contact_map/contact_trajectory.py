@@ -120,7 +120,8 @@ class ContactTrajectory(ContactObject, abc.Sequence):
             n_neighbors_ignored=self.n_neighbors_ignored
         )
         for cmap in self._contact_maps:
-            # TODO: compatibility
+            # TODO: skipping compatibility checks would help performance; we
+            # know that everything in here *should* be compatible
             freq.add_contact_frequency(cmap)
 
         return freq
@@ -147,11 +148,14 @@ class ContactTrajectory(ContactObject, abc.Sequence):
 
     @classmethod
     def from_contact_maps(cls, maps):
-        # TODO: compatbility
         obj = cls.__new__(cls)
         super(cls, obj).__init__(maps[0].topology, maps[0].query,
                                  maps[0].haystack, maps[0].cutoff,
                                  maps[0].n_neighbors_ignored)
+
+        for cmap in maps:
+            obj._check_compatibility(cmap)
+
         obj._contact_maps = maps
         return obj
 

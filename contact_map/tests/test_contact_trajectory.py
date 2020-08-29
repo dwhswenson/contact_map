@@ -108,6 +108,7 @@ class TestContactTrajectory(object):
         _contact_object_compare(cmap, self.map)
         assert cmap == self.map
 
+
     def test_contact_frequency(self):
         freq = self.map.contact_frequency()
         expected_atom_count = {
@@ -140,6 +141,13 @@ class TestContactTrajectory(object):
         cmap = ContactTrajectory.from_contact_maps(maps)
         _contact_object_compare(self.map, cmap)
         assert self.map == cmap
+
+    def test_from_contact_maps_incompatible(self):
+        map0 = ContactFrequency(self.traj[0], cutoff=0.075,
+                                n_neighbors_ignored=0)
+        maps = [map0] + [ContactFrequency(frame) for frame in self.traj[1:]]
+        with pytest.raises(AssertionError):
+            _ = ContactTrajectory.from_contact_maps(maps)
 
     def test_join(self):
         segments = self.traj[0], self.traj[1:3], self.traj[3:]
