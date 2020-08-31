@@ -18,7 +18,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         means all heavy, non-water atoms.
     haystack : list of int
         Indices of the atoms to be included as haystack. Default ``None``
-        means all atoms.
+        means all heavy, non-water atoms.
     cutoff : float
         Cutoff distance for contacts, in nanometers. Default 0.45.
     n_neighbors_ignored : int
