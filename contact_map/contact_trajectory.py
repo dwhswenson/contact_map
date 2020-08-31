@@ -1,6 +1,5 @@
 from collections import abc, Counter
 
-
 from .contact_map import ContactFrequency, ContactObject
 import json
 
@@ -176,11 +175,30 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         contact_maps = sum([o._contact_maps for o in others], [])
         return cls.from_contact_maps(contact_maps)
 
-    def window_iter(self, window_size=1, step=1):
-        return ContactTrajectoryWindow(self, width=window_size, step=step)
+    def rolling_frequency(self, window_size=1, step=1):
+        return RollingContactFrequency(self, width=window_size, step=step)
 
 
 class MutableContactTrajectory(ContactTrajectory, abc.MutableSequence):
+    """Mutable version of :class:`.ContactTrajectory`
+
+    Parameters
+    ----------
+    trajectory : mdtraj.Trajectory
+        the trajectory to calculate contacts for
+    query : list of int
+        Indices of the atoms to be included as query. Default ``None``
+        means all atoms.
+    haystack : list of int
+        Indices of the atoms to be included as haystack. Default ``None``
+        means all atoms.
+    cutoff : float
+        Cutoff distance for contacts, in nanometers. Default 0.45.
+    n_neighbors_ignored : int
+        Number of neighboring residues (in the same chain) to ignore.
+        Default 2.
+
+    """
     def __setitem__(self, key, value):
         self._contact_maps[key] = value
 
@@ -272,7 +290,7 @@ class WindowedIterator(abc.Iterator):
         return to_add, to_sub
 
 
-class ContactTrajectoryWindow(abc.Iterator):
+class RollingContactFrequency(abc.Iterator):
     """
     Parameters
     ----------
@@ -300,12 +318,13 @@ class ContactTrajectoryWindow(abc.Iterator):
                                              step=self.step,
                                              slow_build=self.slow_build_iter)
         self._contact_map = ContactFrequency.from_contacts(
-            set([]), set([]),
+            Counter(), Counter(),
             topology=self.trajectory.topology,
             query=self.trajectory.query,
             haystack=self.trajectory.haystack,
             cutoff=self.trajectory.cutoff,
-            n_neighbors_ignored=self.trajectory.n_neighbors_ignored
+            n_neighbors_ignored=self.trajectory.n_neighbors_ignored,
+            n_frames=0
         )
         return self
 
@@ -316,7 +335,17 @@ class ContactTrajectoryWindow(abc.Iterator):
         for frame in self.trajectory[to_sub]:
             self._contact_map.subtract_contact_frequency(frame)
 
-        self._frame_range = f_range
-        return self._contact_map
+        cmap = self._contact_map
+        map_copy = ContactFrequency.from_contacts(
+            cmap._atom_contacts.copy(),
+            cmap._residue_contacts.copy(),
+            topology=cmap.topology,
+            query=cmap.query,
+            haystack=cmap.haystack,
+            cutoff=cmap.cutoff,
+            n_neighbors_ignored=cmap.n_neighbors_ignored,
+            n_frames=cmap.n_frames
+        )
+        return map_copy
 
 

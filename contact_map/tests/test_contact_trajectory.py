@@ -168,8 +168,10 @@ class TestContactTrajectory(object):
         _contact_object_compare(self.map, cmap)
         assert self.map == cmap
 
-    def test_window_iter(self):
-        pytest.skip()
+    def test_rolling_frequency(self):
+        # smoke test; correctness is tested in tests for
+        # RollingContactFrequency
+        assert len(list(self.map.rolling_frequency(window_size=2))) == 4
 
 
 class TestMutableContactTrajectory(object):
@@ -188,7 +190,6 @@ class TestMutableContactTrajectory(object):
             assert atom_counter == counter_of_inner_list(exp_a)
             assert res_counter == counter_of_inner_list(exp_r)
             i += 1
-
 
     def test_setitem(self):
         cmap4 = ContactFrequency(self.traj[4], cutoff=0.075,
@@ -286,14 +287,64 @@ class TestWindowedIterator(object):
             next(itr)
 
 
-class TestContactTrajectoryWindow(object):
+class TestRollingContactFrequency(object):
     def setup(self):
-        pass
+        self.traj = md.load(find_testfile("trajectory.pdb"))
+        self.map = ContactTrajectory(self.traj, cutoff=0.075,
+                                     n_neighbors_ignored=0)
+        self.rolling_freq = RollingContactFrequency(self.map, width=2,
+                                                    step=1)
+        self.expected_atoms = [
+            {frozenset([1, 4]): 0.5, frozenset([4, 6]): 1.0,
+             frozenset([5, 6]): 1.0, frozenset([1, 5]): 0.5},
+            {frozenset([1, 5]): 0.5, frozenset([4, 6]): 1.0,
+             frozenset([5, 6]): 1.0, frozenset([1, 4]): 0.5},
+            {frozenset([1, 4]): 1.0, frozenset([4, 6]): 1.0,
+             frozenset([5, 6]): 1.0, frozenset([4, 7]): 0.5,
+             frozenset([5, 7]): 0.5},
+            {frozenset([0, 9]): 0.5, frozenset([0, 8]): 0.5,
+             frozenset([1, 8]): 0.5, frozenset([1, 9]): 0.5,
+             frozenset([1, 4]): 1.0, frozenset([8, 4]): 0.5,
+             frozenset([8, 5]): 0.5, frozenset([4, 6]): 1.0,
+             frozenset([4, 7]): 1.0, frozenset([5, 6]): 1.0,
+             frozenset([5, 7]): 1.0}
+        ]
+        self.expected_residues = [
+            {frozenset([0, 2]): 1.0, frozenset([2, 3]): 1.0},
+            {frozenset([0, 2]): 1.0, frozenset([2, 3]): 1.0},
+            {frozenset([0, 2]): 1.0, frozenset([2, 3]): 1.0},
+            {frozenset([0, 2]): 1.0, frozenset([2, 3]): 1.0,
+             frozenset([0, 4]): 0.5, frozenset([2, 4]): 0.5}
+        ]
 
     def test_normal_iteration(self):
-        pytest.skip()
-        pass
+        results = list(freq for freq in self.rolling_freq)
+        assert len(results) == 4
+
+        atom_contacts = [r.atom_contacts.counter for r in results]
+        for beauty, truth in zip(atom_contacts, self.expected_atoms):
+            assert beauty == truth
+
+        residue_contacts = [r.residue_contacts.counter for r in results]
+        for beauty, truth in zip(residue_contacts, self.expected_residues):
+            assert beauty == truth
 
     def test_slow_build_iteration(self):
-        pytest.skip()
-        pass
+        self.rolling_freq.slow_build_iter = True
+        results = list(freq for freq in self.rolling_freq)
+        assert len(results) == 5
+
+        expected_atoms = [{frozenset([1, 4]): 1.0, frozenset([4, 6]): 1.0,
+                           frozenset([5, 6]): 1.0}] + self.expected_atoms
+        expected_residues = (
+            [{frozenset([0, 2]): 1.0, frozenset([2, 3]): 1.0}]
+            + self.expected_residues
+        )
+
+        atom_contacts = [r.atom_contacts.counter for r in results]
+        for beauty, truth in zip(atom_contacts, expected_atoms):
+            assert beauty == truth
+
+        residue_contacts = [r.residue_contacts.counter for r in results]
+        for beauty, truth in zip(residue_contacts, expected_residues):
+            assert beauty == truth
