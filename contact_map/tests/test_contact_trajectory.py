@@ -188,7 +188,6 @@ class TestMutableContactTrajectory(object):
             res_counter = cmap.residue_contacts.counter
             assert atom_counter == counter_of_inner_list(exp_a)
             assert res_counter == counter_of_inner_list(exp_r)
-            i += 1
 
     def test_setitem(self):
         cmap4 = ContactFrequency(self.traj[4], cutoff=0.075,
