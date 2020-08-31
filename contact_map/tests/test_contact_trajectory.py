@@ -183,7 +183,6 @@ class TestMutableContactTrajectory(object):
         self.expected_residue_contacts = TRAJ_RES_CONTACTS.copy()
 
     def _test_expected_contacts(self, traj_map, exp_atoms, exp_res):
-        i = 0  # debug
         for cmap, exp_a, exp_r in zip(traj_map, exp_atoms, exp_res):
             atom_counter = cmap.atom_contacts.counter
             res_counter = cmap.residue_contacts.counter
