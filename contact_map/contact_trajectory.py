@@ -176,6 +176,21 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         return cls.from_contact_maps(contact_maps)
 
     def rolling_frequency(self, window_size=1, step=1):
+        """:class:`.RollingContactFrequency` iterator for this trajectory
+
+        Parameters
+        ----------
+        window_size : int
+            the number of frames in the window
+        step : int
+            the number of frames between successive starting points of the
+            window (like the ``step`` parameter in a Python slice object)
+
+        Returns
+        -------
+        :class:`.RollingContactFrequency` :
+            windowed iterator for this trajectory
+        """
         return RollingContactFrequency(self, width=window_size, step=step)
 
 
@@ -291,10 +306,12 @@ class WindowedIterator(abc.Iterator):
 
 
 class RollingContactFrequency(abc.Iterator):
-    """
+    """Iterator for "rolling-average" contact frequencies over a trajectory
+
     Parameters
     ----------
     contact_trajectory : :class:`.ContactTrajectory`
+        input trajectory
     width : int
         the number of frames in the window
     step : int
@@ -335,6 +352,8 @@ class RollingContactFrequency(abc.Iterator):
         for frame in self.trajectory[to_sub]:
             self._contact_map.subtract_contact_frequency(frame)
 
+        # need to make a copy in case the user does list(rolling_freq),
+        # otherwise they get copies of only the last version!
         cmap = self._contact_map
         map_copy = ContactFrequency.from_contacts(
             cmap._atom_contacts.copy(),
@@ -347,5 +366,3 @@ class RollingContactFrequency(abc.Iterator):
             n_frames=cmap.n_frames
         )
         return map_copy
-
-

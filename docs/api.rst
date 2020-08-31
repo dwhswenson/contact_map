@@ -17,6 +17,8 @@ Contact maps
     ContactMap
     ContactFrequency
     ContactDifference
+    ContactTrajectory
+    RollingContactFrequency
 
 Contact Concurrences
 --------------------
