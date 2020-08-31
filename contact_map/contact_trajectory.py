@@ -15,7 +15,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         the trajectory to calculate contacts for
     query : list of int
         Indices of the atoms to be included as query. Default ``None``
-        means all atoms.
+        means all heavy, non-water atoms.
     haystack : list of int
         Indices of the atoms to be included as haystack. Default ``None``
         means all atoms.
