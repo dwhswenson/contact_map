@@ -11,6 +11,8 @@ from .contact_map import (
 
 from .contact_count import ContactCount
 
+from .contact_trajectory import ContactTrajectory, RollingContactFrequency
+
 from .min_dist import NearestAtoms, MinimumDistanceCounter
 
 from .concurrence import (

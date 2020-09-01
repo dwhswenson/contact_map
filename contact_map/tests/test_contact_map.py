@@ -12,7 +12,7 @@ from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
-from contact_map.contact_count import HAS_MATPLOTLIB
+from contact_map.contact_count import HAS_MATPLOTLIB, ContactCount
 
 traj = md.load(find_testfile("trajectory.pdb"))
 
@@ -157,6 +157,25 @@ class TestContactMap(object):
         expected = counter_of_inner_list(self.expected_residue_contacts[m])
         assert m._residue_contacts == expected
         assert m.residue_contacts.counter == expected
+
+    @pytest.mark.parametrize('contactcount', [True, False])
+    def test_from_contacts(self, idx, contactcount):
+        expected = self.maps[idx]
+        atom_contact_list = self.expected_atom_contacts[expected]
+        residue_contact_list = self.expected_residue_contacts[expected]
+        atom_contacts = counter_of_inner_list(atom_contact_list)
+        residue_contacts = counter_of_inner_list(residue_contact_list)
+        if contactcount:
+            atom_contacts = ContactCount(atom_contacts, self.topology.atom,
+                                         10, 10)
+            residue_contacts = ContactCount(residue_contacts,
+                                            self.topology.residue, 5, 5)
+
+        cmap = ContactMap.from_contacts(atom_contacts, residue_contacts,
+                                        topology=self.topology,
+                                        cutoff=0.075,
+                                        n_neighbors_ignored=0)
+        _contact_object_compare(cmap, expected)
 
     def test_to_dict(self, idx):
         m = self.maps[idx]
@@ -374,6 +393,25 @@ class TestContactFrequency(object):
 
     def test_contacts_dict(self):
         _check_contacts_dict_names(self.map)
+
+    @pytest.mark.parametrize('contactcount', [True, False])
+    def test_from_contacts(self, contactcount):
+        atom_contacts = self.expected_atom_contact_count
+        residue_contacts = self.expected_residue_contact_count
+        top = traj.topology
+        if contactcount:
+            atom_contacts = ContactCount(atom_contacts, top.atom,
+                                         10, 10)
+            residue_contacts = ContactCount(residue_contacts, top.residue,
+                                            5, 5)
+
+        cmap = ContactFrequency.from_contacts(atom_contacts,
+                                              residue_contacts,
+                                              n_frames=5,
+                                              topology=top,
+                                              cutoff=0.075,
+                                              n_neighbors_ignored=0)
+        _contact_object_compare(cmap, self.map)
 
     def test_check_compatibility_true(self):
         map2 = ContactFrequency(trajectory=traj[0:2],
