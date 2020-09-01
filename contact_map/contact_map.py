@@ -155,7 +155,7 @@ class ContactObject(object):
         self._all_atoms = tuple(sorted(list(all_atoms_set)))
 
         self._use_atom_slice = self._set_atom_slice(self._all_atoms)
-        if self.use_atom_slice:
+        if self.use_atom_slice and not getattr(self, 'indexer', None):
             self.indexer = AtomSlicedIndexer(topology, self._query,
                                              self._haystack, self._all_atoms)
         else:
@@ -172,8 +172,9 @@ class ContactObject(object):
     @classmethod
     def from_contacts(cls, atom_contacts, residue_contacts, topology,
                       query=None, haystack=None, cutoff=0.45,
-                      n_neighbors_ignored=2):
+                      n_neighbors_ignored=2, indexer=None):
         obj = cls.__new__(cls)
+        obj.indexer = indexer
         super(cls, obj).__init__(topology, query, haystack, cutoff,
                                  n_neighbors_ignored)
 
@@ -756,7 +757,7 @@ class ContactFrequency(ContactObject):
     @classmethod
     def from_contacts(cls, atom_contacts, residue_contacts, n_frames,
                       topology, query=None, haystack=None, cutoff=0.45,
-                      n_neighbors_ignored=2):
+                      n_neighbors_ignored=2, indexer=None):
         obj = super(ContactFrequency, cls).from_contacts(
             atom_contacts, residue_contacts, topology, query, haystack,
             cutoff, n_neighbors_ignored
