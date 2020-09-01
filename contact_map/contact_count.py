@@ -16,13 +16,14 @@ else:
 # pandas 0.25 not available on py27; can drop this when we drop py27
 _PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
-def _colorbar(with_colorbar, cmap_f, norm, min_val):
+
+def _colorbar(with_colorbar, cmap_f, norm, min_val, ax=None):
     if with_colorbar is False:
         return None
     elif with_colorbar is True:
         cbmin = np.floor(min_val)  # [-1.0..0.0] => -1; [0.0..1.0] => 0
         cbmax = 1.0
-        cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax)
+        cb = ranged_colorbar(cmap_f, norm, cbmin, cbmax, ax=ax)
     # leave open other inputs to be parsed later (like tuples)
     return cb
 
@@ -30,7 +31,7 @@ def _colorbar(with_colorbar, cmap_f, norm, min_val):
 # TODO: remove following: this is a monkeypatch for a bug in pandas
 # see: https://github.com/pandas-dev/pandas/issues/29814
 from pandas._libs.sparse import BlockIndex, IntIndex, SparseIndex
-def _patch_from_spmatrix(cls, data):
+def _patch_from_spmatrix(cls, data):  # -no-cov-
     length, ncol = data.shape
 
     if ncol != 1:
@@ -129,7 +130,7 @@ class ContactCount(object):
         index = list(range(self.n_x))
         columns = list(range(self.n_y))
 
-        if _PD_VERSION < (0, 25):  # py27 only
+        if _PD_VERSION < (0, 25):  # py27 only  -no-cov-
             mtx = mtx.tocoo()
             return pd.SparseDataFrame(mtx, index=index, columns=columns)
 
@@ -198,18 +199,39 @@ class ContactCount(object):
         """
         if not HAS_MATPLOTLIB:  # pragma: no cover
             raise RuntimeError("Error importing matplotlib")
+        fig, ax = plt.subplots(**kwargs)
+
+        # Check the number of pixels of the figure
+        self._check_number_of_pixels(fig)
+        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
+
+        return (fig, ax)
+
+    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0,
+                  with_colorbar=True):
+        """
+        Plot contact matrix on a matplotlib.axes
+
+        Parameters
+        ----------
+        ax : matplotlib.axes
+           axes to plot the contact matrix on
+        cmap : str
+            color map name, default 'seismic'
+        vmin : float
+            minimum value for color map interpolation; default -1.0
+        vmax : float
+            maximum value for color map interpolation; default 1.0
+        with_colorbar : bool
+            If a colorbar is added to the axes
+        """
+
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
-
-        fig, ax = plt.subplots(**kwargs)
         ax.axis([0, self.n_x, 0, self.n_y])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
         min_val = 0.0
-
-        # Check the number of pixels of the figure
-        self._check_number_of_pixels(fig)
-
         for (pair, value) in self.counter.items():
             if value < min_val:
                 min_val = value
@@ -227,9 +249,7 @@ class ContactCount(object):
             ax.add_patch(patch_0)
             ax.add_patch(patch_1)
 
-        _colorbar(with_colorbar, cmap_f, norm, min_val)
-
-        return (fig, ax)
+        _colorbar(with_colorbar, cmap_f, norm, min_val, ax=ax)
 
     def most_common(self, obj=None):
         """
