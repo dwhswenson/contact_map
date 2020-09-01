@@ -155,19 +155,14 @@ class ContactObject(object):
         self._all_atoms = tuple(sorted(list(all_atoms_set)))
 
         self._use_atom_slice = self._set_atom_slice(self._all_atoms)
-        if self.use_atom_slice and not getattr(self, 'indexer', None):
-            self.indexer = AtomSlicedIndexer(topology, self._query,
-                                             self._haystack, self._all_atoms)
-        else:
-            self.indexer = IdentityIndexer(topology, self._query,
-                                           self._haystack, self._all_atoms)
+        has_indexer = getattr(self, 'indexer', None) is not None
+        if not has_indexer:
+            Indexer = {True: AtomSlicedIndexer,
+                       False: IdentityIndexer}[self.use_atom_slice]
+            self.indexer = Indexer(topology, self._query, self._haystack,
+                                   self._all_atoms)
+
         self._n_neighbors_ignored = n_neighbors_ignored
-
-        # Conversion dicts between the real and sliced atoms and their residues
-
-        # TODO: this can be removed, too
-        self._r_atom_idx_to_residue_idx = {atom.index: atom.residue.index
-                                           for atom in self.topology.atoms}
 
     @classmethod
     def from_contacts(cls, atom_contacts, residue_contacts, topology,
@@ -453,7 +448,7 @@ class ContactObject(object):
         """dict : maps query residue index to atom indices in query"""
         result = collections.defaultdict(list)
         for atom_idx in self._query:
-            residue_idx = self._r_atom_idx_to_residue_idx[atom_idx]
+            residue_idx = self.indexer.real_atom_idx_to_residue_idx[atom_idx]
             atom_idx = self.indexer.sliced_idx[atom_idx]
             result[residue_idx].append(atom_idx)
         return result
@@ -760,7 +755,7 @@ class ContactFrequency(ContactObject):
                       n_neighbors_ignored=2, indexer=None):
         obj = super(ContactFrequency, cls).from_contacts(
             atom_contacts, residue_contacts, topology, query, haystack,
-            cutoff, n_neighbors_ignored
+            cutoff, n_neighbors_ignored, indexer
         )
         obj._n_frames = n_frames
         return obj
