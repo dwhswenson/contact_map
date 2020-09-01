@@ -72,6 +72,22 @@ class TestContactCount(object):
             self.atom_contacts.plot(figsize=(4, 4), dpi=2)
         assert len(record) == 1
 
+    @pytest.mark.skipif(not HAS_NETWORKX, reason="Missing networkx")
+    def test_to_networkx(self):
+        as_index = self.residue_contacts.to_networkx(as_index=True)
+        as_res = self.residue_contacts.to_networkx()
+
+        mappings = [lambda x: x, self.map.topology.residue]
+
+        for graph, mapping in zip([as_index, as_res], mappings):
+            assert len(graph.edges) == 4
+            assert len(graph.nodes) == 4
+            assert graph[mapping(0)][mapping(4)]['weight'] == 0.2
+            assert graph[mapping(4)][mapping(0)]['weight'] == 0.2
+            with pytest.raises(KeyError):
+                graph[mapping(1)][mapping(0)]
+
+
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
         assert self.atom_contacts.n_x == self.topology.n_atoms
