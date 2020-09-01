@@ -174,6 +174,24 @@ class ContactObject(object):
         }
         self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
 
+    @classmethod
+    def from_contacts(cls, atom_contacts, residue_contacts, topology,
+                      query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2):
+        obj = cls.__new__(cls)
+        super(cls, obj).__init__(topology, query, haystack, cutoff,
+                                 n_neighbors_ignored)
+
+        def get_contact_counter(contact):
+            if isinstance(contact, ContactCount):
+                return contact.counter
+            else:
+                return contact
+
+        obj._atom_contacts = get_contact_counter(atom_contacts)
+        obj._residue_contacts = get_contact_counter(residue_contacts)
+        return obj
+
     def _set_atom_slice(self):
         """ Set atom slice logic """
         if (self._class_use_atom_slice is None and
@@ -774,6 +792,17 @@ class ContactFrequency(ContactObject):
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
 
+    @classmethod
+    def from_contacts(cls, atom_contacts, residue_contacts, n_frames,
+                      topology, query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2):
+        obj = super(ContactFrequency, cls).from_contacts(
+            atom_contacts, residue_contacts, topology, query, haystack,
+            cutoff, n_neighbors_ignored
+        )
+        obj._n_frames = n_frames
+        return obj
+
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
                      tuple(self._atom_contacts.items()),
@@ -949,6 +978,10 @@ class ContactDifference(ContactObject):
         raise NotImplementedError
 
     def contact_map(self, *args, **kwargs):  #pylint: disable=W0221
+        raise NotImplementedError
+
+    @classmethod
+    def from_contacts(self, *args, **kwargs):  #pylint: disable=W0221
         raise NotImplementedError
 
     @property
