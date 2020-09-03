@@ -25,6 +25,15 @@ from .py_2_3 import inspect_method_arguments
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
 
+def _residue_and_index(residue, topology):
+    res = residue
+    try:
+        res_idx = res.index
+    except AttributeError:
+        res_idx = residue
+        res = topology.residue(res_idx)
+    return (res, res_idx)
+
 
 def residue_neighborhood(residue, n=1):
     """Find n nearest neighbor residues
@@ -47,35 +56,6 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
-
-def _residue_and_index(residue, topology):
-    res = residue
-    try:
-        res_idx = res.index
-    except AttributeError:
-        res_idx = residue
-        res = topology.residue(res_idx)
-    return (res, res_idx)
-
-
-def _atom_slice(traj, indices):
-    """Mock MDTraj.atom_slice without rebuilding topology"""
-    xyz = np.array(traj.xyz[:, indices], order='C')
-    topology = traj.topology.copy()
-    if traj._have_unitcell:
-        unitcell_lengths = traj._unitcell_lengths.copy()
-        unitcell_angles = traj._unitcell_angles.copy()
-    else:
-        unitcell_lengths = None
-        unitcell_angles = None
-    time = traj._time.copy()
-
-    # Hackish to make the smart slicing work
-    topology._atoms = indices
-    topology._numAtoms = len(indices)
-    return md.Trajectory(xyz=xyz, topology=topology, time=time,
-                         unitcell_lengths=unitcell_lengths,
-                         unitcell_angles=unitcell_angles)
 
 
 def _residue_for_atom(topology, atom_list):
@@ -232,7 +212,6 @@ class ContactObject(object):
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
-            # 'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
                 self._serialize_contact_counter(self._atom_contacts),
             'residue_contacts': \
@@ -444,21 +423,11 @@ class ContactObject(object):
         return self._use_atom_slice
 
     @property
-    def residue_query_atom_idxs(self):
-        """dict : maps query residue index to atom indices in query"""
-        result = collections.defaultdict(list)
-        for atom_idx in self._query:
-            residue_idx = self.indexer.real_atom_idx_to_residue_idx[atom_idx]
-            atom_idx = self.indexer.sliced_idx[atom_idx]
-            result[residue_idx].append(atom_idx)
-        return result
-
-    @property
-    def residue_ignore_atom_idxs(self):
+    def _residue_ignore_atom_idxs(self):
         """dict : maps query residue index to atom indices to ignore"""
         all_atoms_set = set(self._all_atoms)
         result = {}
-        for residue_idx in self.residue_query_atom_idxs.keys():
+        for residue_idx in self.indexer.residue_query_atom_idxs.keys():
             residue = self.topology.residue(residue_idx)
             # Several steps to go residue indices -> atom indices
             ignore_residue_idxs = residue_neighborhood(
@@ -469,17 +438,9 @@ class ContactObject(object):
                                for idx in ignore_residue_idxs]
             ignore_atoms = sum([list(res.atoms)
                                 for res in ignore_residues], [])
-            ignore_atom_idxs = self._ignore_atom_idx(ignore_atoms,
-                                                     all_atoms_set)
+            ignore_atom_idxs = self.indexer.ignore_atom_idx(ignore_atoms,
+                                                            all_atoms_set)
             result[residue_idx] = ignore_atom_idxs
-        return result
-
-    def _ignore_atom_idx(self, atoms, all_atoms_set):
-        result = set([atom.index for atom in atoms])
-        if self._use_atom_slice:
-            result &= all_atoms_set
-            result = set(self.indexer.sliced_idx[a] for a in result)
-            # result = set(map(self.idx_to_s_idx, result))
         return result
 
     @property
@@ -565,17 +526,6 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
-    def slice_trajectory(self, trajectory):
-        # Prevent (memory) expensive atom slicing if not needed.
-        # This check is also needed here because ContactFrequency slices the
-        # whole trajectory before calling this function.
-        if self.use_atom_slice and (len(self._all_atoms) <
-                                    trajectory.topology.n_atoms):
-            sliced_trajectory = _atom_slice(trajectory, self._all_atoms)
-        else:
-            sliced_trajectory = trajectory
-        return sliced_trajectory
-
     def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
                     residue_ignore_atom_idxs):
         """
@@ -593,7 +543,7 @@ class ContactObject(object):
         atom_contacts : collections.Counter
         residue_contact : collections.Counter
         """
-        used_trajectory = self.slice_trajectory(trajectory)
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
 
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
@@ -677,8 +627,8 @@ class ContactMap(ContactObject):
                                          cutoff, n_neighbors_ignored)
 
         contact_maps = self.contact_map(frame, 0,
-                                        self.residue_query_atom_idxs,
-                                        self.residue_ignore_atom_idxs)
+                                        self.indexer.residue_query_atom_idxs,
+                                        self._residue_ignore_atom_idxs)
         (atom_contacts, self._residue_contacts) = contact_maps
         self._atom_contacts = self.indexer.convert_atom_contacts(atom_contacts)
 
@@ -790,10 +740,10 @@ class ContactFrequency(ContactObject):
 
         # cache things that can be calculated once based on the topology
         # (namely, which atom indices matter for each residue)
-        residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
-        residue_query_atom_idxs = self.residue_query_atom_idxs
+        residue_ignore_atom_idxs = self._residue_ignore_atom_idxs
+        residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
 
-        used_trajectory = self.slice_trajectory(trajectory)
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
         for frame_num in self.frames:
             frame_contacts = self.contact_map(used_trajectory, frame_num,
                                               residue_query_atom_idxs,

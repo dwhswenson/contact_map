@@ -113,7 +113,6 @@ def test_residue_neighborhood():
             len_n = 2*n + 1 - from_top - from_bottom
             assert len(residue_neighborhood(res, n=n)) == len_n
 
-
 @pytest.mark.parametrize("idx", [0, 4])
 class TestContactMap(object):
     def setup(self):
@@ -145,7 +144,7 @@ class TestContactMap(object):
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:
-            ignored_atoms = m.residue_ignore_atom_idxs[res.index]
+            ignored_atoms = m._residue_ignore_atom_idxs[res.index]
             assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self, idx):
@@ -371,7 +370,7 @@ class TestContactFrequency(object):
         assert set(self.map.all_atoms) == set(range(10))
         assert self.map.n_neighbors_ignored == 0
         for res in self.map.topology.residues:
-            ignored_atoms = self.map.residue_ignore_atom_idxs[res.index]
+            ignored_atoms = self.map._residue_ignore_atom_idxs[res.index]
             assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self):
@@ -626,7 +625,7 @@ class TestContactFrequency(object):
             assert m.all_atoms == atoms[m]
             atom_list = [traj.topology.atom(i) for i in m.all_atoms]
             check_use_atom_slice(m, use_atom_slice, expected_atom_slice)
-            sliced_traj = m.slice_trajectory(traj)
+            sliced_traj = m.indexer.slice_trajectory(traj)
             if m.use_atom_slice:
                 assert sliced_traj.topology.n_atoms == len(m.all_atoms)
             else:

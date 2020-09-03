@@ -87,9 +87,9 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         atom_contacts = []
         residue_contacts = []
 
-        residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
-        residue_query_atom_idxs = self.residue_query_atom_idxs
-        used_trajectory = self.slice_trajectory(trajectory)
+        residue_ignore_atom_idxs = self._residue_ignore_atom_idxs
+        residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
 
         # range(len(trajectory)) avoids recopying topology, as would occur
         # in `for frame in trajectory`
