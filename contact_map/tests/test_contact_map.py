@@ -115,11 +115,16 @@ def test_residue_neighborhood():
 
 
 @pytest.mark.parametrize("idx", [0, 4])
-class TestContactMap(object):
+class TestContactObject(object):
+    # note: these used to be the tests for the separate single-frame
+    # ContactMap class; however, it includes a lot of good unit tests for
+    # ContactObject
     def setup(self):
         self.topology = traj.topology
-        self.map0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
-        self.map4 = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        self.map0 = ContactFrequency(traj[0], cutoff=0.075,
+                                     n_neighbors_ignored=0)
+        self.map4 = ContactFrequency(traj[4], cutoff=0.075,
+                                     n_neighbors_ignored=0)
         self.maps = {0: self.map0, 4: self.map4}
 
         self.expected_atom_contacts = {
@@ -158,25 +163,6 @@ class TestContactMap(object):
         assert m._residue_contacts == expected
         assert m.residue_contacts.counter == expected
 
-    @pytest.mark.parametrize('contactcount', [True, False])
-    def test_from_contacts(self, idx, contactcount):
-        expected = self.maps[idx]
-        atom_contact_list = self.expected_atom_contacts[expected]
-        residue_contact_list = self.expected_residue_contacts[expected]
-        atom_contacts = counter_of_inner_list(atom_contact_list)
-        residue_contacts = counter_of_inner_list(residue_contact_list)
-        if contactcount:
-            atom_contacts = ContactCount(atom_contacts, self.topology.atom,
-                                         10, 10)
-            residue_contacts = ContactCount(residue_contacts,
-                                            self.topology.residue, 5, 5)
-
-        cmap = ContactMap.from_contacts(atom_contacts, residue_contacts,
-                                        topology=self.topology,
-                                        cutoff=0.075,
-                                        n_neighbors_ignored=0)
-        _contact_object_compare(cmap, expected)
-
     def test_to_dict(self, idx):
         m = self.maps[idx]
         dct = m.to_dict()
@@ -190,15 +176,15 @@ class TestContactMap(object):
                                                   for i in range(10)}
 
     def test_topology_serialization_cycle(self, idx):
-        m = self.maps[idx]
-        serialized_topology = ContactMap._serialize_topology(m.topology)
-        new_top = ContactMap._deserialize_topology(serialized_topology)
-        assert m.topology == new_top
+        top = self.maps[idx].topology
+        serialized_topology = ContactFrequency._serialize_topology(top)
+        new_top = ContactFrequency._deserialize_topology(serialized_topology)
+        assert top == new_top
 
     def test_counter_serialization_cycle(self, idx):
         m = self.maps[idx]
-        serialize = ContactMap._serialize_contact_counter
-        deserialize = ContactMap._deserialize_contact_counter
+        serialize = ContactFrequency._serialize_contact_counter
+        deserialize = ContactFrequency._deserialize_contact_counter
         serialized_atom_counter = serialize(m._atom_contacts)
         serialized_residue_counter = serialize(m._residue_contacts)
         new_atom_counter = deserialize(serialized_atom_counter)
@@ -209,19 +195,19 @@ class TestContactMap(object):
     def test_dict_serialization_cycle(self, idx):
         m = self.maps[idx]
         dct = m.to_dict()
-        m2 = ContactMap.from_dict(dct)
+        m2 = ContactFrequency.from_dict(dct)
         _contact_object_compare(m, m2)
         assert m == m2
 
     def test_json_serialization_cycle(self, idx):
         m = self.maps[idx]
         json_str = m.to_json()
-        m2 = ContactMap.from_json(json_str)
+        m2 = ContactFrequency.from_json(json_str)
         _contact_object_compare(m, m2)
         assert m == m2
 
     def test_with_ignores(self, idx):
-        m = ContactMap(traj[idx], cutoff=0.075, n_neighbors_ignored=1)
+        m = ContactFrequency(traj[idx], cutoff=0.075, n_neighbors_ignored=1)
         expected_atom_contacts = {
             0: [[1, 4]],
             4: [[0, 9], [0, 8], [1, 8], [1, 9], [1, 4], [8, 4], [8, 5]]
@@ -282,22 +268,22 @@ class TestContactMap(object):
     def test_saving(self, idx):
         m = self.maps[idx]
         m.save_to_file(test_file)
-        m2 = ContactMap.from_file(test_file)
+        m2 = ContactFrequency.from_file(test_file)
         assert m.atom_contacts.counter == m2.atom_contacts.counter
         os.remove(test_file)
 
     @pytest.mark.parametrize("use_atom_slice", [True, False, None])
     def test_atom_slice(self, idx, use_atom_slice):
         # Set class variable before init
-        class_default = ContactMap._class_use_atom_slice
-        ContactMap._class_use_atom_slice = use_atom_slice
-        map0q = ContactMap(traj[0], query=[1, 4, 5, 6],  cutoff=0.075,
-                           n_neighbors_ignored=0)
-        map0h = ContactMap(traj[0], haystack=[1, 4, 5, 6],
-                           cutoff=0.075, n_neighbors_ignored=0)
-        map0b = ContactMap(traj[0], query=[1, 4, 5, 6],
-                           haystack=[1, 4, 5, 6], cutoff=0.075,
-                           n_neighbors_ignored=0)
+        class_default = ContactFrequency._class_use_atom_slice
+        ContactFrequency._class_use_atom_slice = use_atom_slice
+        map0q = ContactFrequency(traj[0], query=[1, 4, 5, 6],  cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        map0h = ContactFrequency(traj[0], haystack=[1, 4, 5, 6],
+                                 cutoff=0.075, n_neighbors_ignored=0)
+        map0b = ContactFrequency(traj[0], query=[1, 4, 5, 6],
+                                 haystack=[1, 4, 5, 6], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         maps = [map0q, map0h, map0b]
         atoms = {map0q: list(range(10)),
                  map0h: list(range(10)),
@@ -331,7 +317,7 @@ class TestContactMap(object):
             assert real_idx == sliced_idx
         # Reset class variable (as imports are not redone between function
         # calls)
-        ContactMap._class_use_atom_slice = class_default
+        ContactFrequency._class_use_atom_slice = class_default
 
     def test_contacts_dict(self, idx):
         _check_contacts_dict_names(self.maps[idx])
@@ -343,8 +329,9 @@ class TestContactMap(object):
 
         # Activate atom_slice
         atoms = [1, 4, 5, 6]
-        mapi = ContactMap(temptraj[idx], cutoff=0.075, n_neighbors_ignored=0,
-                          query=atoms, haystack=atoms)
+        mapi = ContactFrequency(temptraj[idx], cutoff=0.075,
+                                n_neighbors_ignored=0, query=atoms,
+                                haystack=atoms)
         expected_atom_contacts = {0: [[1, 4], [4, 6], [5, 6]],
                                   4: [[1, 4], [4, 6], [5, 6]]}
         expected = counter_of_inner_list(expected_atom_contacts[idx])
@@ -505,7 +492,7 @@ class TestContactFrequency(object):
     def test_saving(self):
         m = self.map
         m.save_to_file(test_file)
-        m2 = ContactMap.from_file(test_file)
+        m2 = ContactFrequency.from_file(test_file)
         assert m.atom_contacts.counter == m2.atom_contacts.counter
         os.remove(test_file)
 
@@ -641,7 +628,8 @@ class TestContactDifference(object):
     def test_diff_traj_frame(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
-        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         expected_atom_count = {
             frozenset([0, 8]): -1.0,
             frozenset([0, 9]): -1.0,
@@ -677,7 +665,8 @@ class TestContactDifference(object):
     def test_serialization_cycle(self, intermediate):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
-        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         diff = ttraj - frame
 
         serializer, deserializer = {
@@ -691,8 +680,8 @@ class TestContactDifference(object):
         assert diff == reloaded
 
     def test_diff_frame_frame(self):
-        m0 = ContactMap(traj[0], cutoff=0.075, n_neighbors_ignored=0)
-        m4 = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        m0 = ContactFrequency(traj[0], cutoff=0.075, n_neighbors_ignored=0)
+        m4 = ContactFrequency(traj[4], cutoff=0.075, n_neighbors_ignored=0)
         # one of these simply has more contacts than the other, so to test
         # both positive diff and negative diff we flip the sign
         diff_1 = m4 - m0
@@ -723,7 +712,8 @@ class TestContactDifference(object):
     def test_contacts_dict(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
-        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         _check_contacts_dict_names(ttraj - frame)
 
     def test_diff_traj_traj(self):
@@ -769,7 +759,8 @@ class TestContactDifference(object):
     def test_saving(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
-        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         diff = ttraj - frame
 
         diff.save_to_file(test_file)
@@ -782,6 +773,7 @@ class TestContactDifference(object):
         # smoke test; checks that we cover negative counts in plotting
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
-        frame = ContactMap(traj[4], cutoff=0.075, n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
         diff = ttraj - frame
         diff.residue_contacts.plot()
