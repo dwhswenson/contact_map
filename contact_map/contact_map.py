@@ -17,6 +17,15 @@ import mdtraj as md
 from .contact_count import ContactCount
 from .py_2_3 import inspect_method_arguments
 
+# try:
+    # from numba import njit, prange
+# except ImportError:
+    # njit =  lambda *args, **kwargs: lambda x: x
+    # prange = range
+
+
+
+
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
 #   replace the current mdtraj._compute_neighbors with something that
@@ -640,35 +649,20 @@ class ContactObject(object):
         for residue_idx in residue_query_atom_idxs:
             ignore_atom_idxs = set(residue_ignore_atom_idxs[residue_idx])
             query_idxs = residue_query_atom_idxs[residue_idx]
-            for atom_idx in query_idxs:
-                # sets should make this fast, esp since neighbor_idxs
-                # should be small and s-t is avg cost len(s)
-                neighbor_idxs = set(neighborlist[atom_idx])
-                contact_neighbors = neighbor_idxs - ignore_atom_idxs
-                contact_neighbors = contact_neighbors & self._u_haystack
-                # frozenset is unique key independent of order
-                # local_pairs = set(frozenset((atom_idx, neighb))
-                #                   for neighb in contact_neighbors)
-                local_pairs = set(map(
-                    frozenset,
-                    itertools.product([atom_idx], contact_neighbors)
-                ))
-                contact_pairs |= local_pairs
-                # contact_pairs |= set(frozenset((atom_idx, neighb))
-                #                      for neighb in contact_neighbors)
-                local_residue_partners = set(self._atom_idx_to_residue_idx[a]
-                                             for a in contact_neighbors)
-                local_res_pairs = set(map(
-                    frozenset,
-                    itertools.product([residue_idx], local_residue_partners)
-                ))
-                residue_pairs |= local_res_pairs
+            local_pairs, local_residues = _residue_contacts(
+                neighborlist=neighborlist,
+                query=query_idxs,
+                haystack=self._u_haystack,
+                ignore_atoms=ignore_atom_idxs,
+                atom_to_residue=self._atom_idx_to_residue_idx
+            )
+            local_res_pairs = set(map(
+                frozenset, itertools.product([residue_idx], local_residues)
+            ))
+            contact_pairs |= local_pairs
+            residue_pairs |= local_res_pairs
 
         atom_contacts = collections.Counter(contact_pairs)
-        # residue_pairs = set(
-        #     frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
-        #     for pair in contact_pairs
-        # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
 
@@ -691,6 +685,28 @@ class ContactObject(object):
         n_res = self.topology.n_residues
         return ContactCount(self._residue_contacts, self.topology.residue,
                             n_res, n_res)
+
+
+def _residue_contacts(neighborlist, query, haystack, ignore_atoms,
+                      atom_to_residue):
+    atom_pairs = [None] * len(query)
+    atom_residues = [None] * len(query)
+    for idx, atom_idx in enumerate(query):
+        # sets should make this fast, esp since neighbor_idxs
+        # should be small and s-t is avg cost len(s)
+        neighbor_idxs = set(neighborlist[atom_idx])
+        contact_neighbors = neighbor_idxs - ignore_atoms
+        contact_neighbors = contact_neighbors & haystack
+        atom_residues[idx] = set(atom_to_residue[a]
+                                 for a in contact_neighbors)
+        atom_pairs[idx] = set(map(
+            frozenset, itertools.product([atom_idx], contact_neighbors)
+        ))
+
+    local_pairs = set.union(*atom_pairs)
+    local_residues = set.union(*atom_residues)
+
+    return local_pairs, local_residues
 
 
 class ContactMap(ContactObject):
