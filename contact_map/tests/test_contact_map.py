@@ -84,7 +84,6 @@ def _contact_object_compare(m, m2):
     assert m.query == m2.query
     assert m.haystack == m2.haystack
     assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-    # assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
     assert m.topology == m2.topology
     if hasattr(m, '_atom_contacts') or hasattr(m2, '_atom_contacts'):
         assert m._atom_contacts == m2._atom_contacts
@@ -185,8 +184,6 @@ class TestContactMap(object):
         assert dct['haystack'] == list(range(10))
         assert dct['all_atoms'] == tuple(range(10))
         assert dct['n_neighbors_ignored'] == 0
-        # assert dct['atom_idx_to_residue_idx'] == {i: i // 2
-                                                  # for i in range(10)}
 
     def test_topology_serialization_cycle(self, idx):
         m = self.maps[idx]
@@ -323,7 +320,6 @@ class TestContactMap(object):
 
         # Test sliced indices
         sliced_idx = [0, 1, 2, 3]
-        # real_idx = [map0b.s_idx_to_idx(i) for i in sliced_idx]
         real_idx = [map0b.indexer.real_idx[i] for i in sliced_idx]
         if map0b._use_atom_slice:
             assert real_idx == [1, 4, 5, 6]

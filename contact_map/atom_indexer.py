@@ -73,7 +73,6 @@ class AtomSlicedIndexer(object):
         # whole trajectory before calling this function.
         if len(self.all_atoms) < trajectory.topology.n_atoms:
             sliced = _atom_slice(trajectory, self.all_atoms)
-            sliced_trajectory = _atom_slice(trajectory, self.all_atoms)
         else:
             sliced = trajectory
         return sliced
