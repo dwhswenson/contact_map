@@ -41,7 +41,8 @@ class ContactTrajectory(ContactObject, abc.Sequence):
                 n_neighbors_ignored=self.n_neighbors_ignored,
                 atom_contacts=atom_contacts,
                 residue_contacts=residue_contacts,
-                n_frames=1
+                n_frames=1,
+                indexer=self.indexer
             )
             for atom_contacts, residue_contacts in zip(*contacts)
         ]
@@ -86,9 +87,9 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         atom_contacts = []
         residue_contacts = []
 
-        residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
-        residue_query_atom_idxs = self.residue_query_atom_idxs
-        used_trajectory = self.slice_trajectory(trajectory)
+        residue_ignore_atom_idxs = self._residue_ignore_atom_idxs
+        residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
 
         # range(len(trajectory)) avoids recopying topology, as would occur
         # in `for frame in trajectory`
@@ -98,7 +99,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
                                               residue_ignore_atom_idxs)
             frame_atom_contacts, frame_residue_contacts = frame_contacts
             frame_atom_contacts = \
-                    self.convert_atom_contacts(frame_atom_contacts)
+                    self.indexer.convert_atom_contacts(frame_atom_contacts)
             # TODO unify contact building with something like this?
             # atom_contacts, residue_contact = self._update_contacts(...)
             atom_contacts.append(frame_atom_contacts)
