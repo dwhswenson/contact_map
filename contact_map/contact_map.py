@@ -18,13 +18,14 @@ from .contact_count import ContactCount
 from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
 from .py_2_3 import inspect_method_arguments
 
-# try:
-    # from numba import njit, prange
-# except ImportError:
-    # njit =  lambda *args, **kwargs: lambda x: x
-    # prange = range
-
-
+try:
+    from numba import njit, prange
+    from numba import types
+    import numba.typed
+except ImportError:
+    HAS_NUMBA = False
+else:
+    HAS_NUMBA = True
 
 
 # TODO:
@@ -137,6 +138,12 @@ class ContactObject(object):
         self._cutoff = cutoff
         self._query = set(query)
         self._haystack = set(haystack)
+
+        self._residue_contacts_func = {
+            True: _numba_residue_contacts,
+            False: _residue_contacts
+        }[HAS_NUMBA]
+        print(HAS_NUMBA, self._residue_contacts_func)
 
 
         # Make tuple for efficient lookupt
@@ -564,7 +571,7 @@ class ContactObject(object):
         for residue_idx in residue_query_atom_idxs:
             ignore_atom_idxs = set(residue_ignore_atom_idxs[residue_idx])
             query_idxs = residue_query_atom_idxs[residue_idx]
-            local_pairs, local_residues = _residue_contacts(
+            local_pairs, local_residues = self._residue_contacts_func(
                 neighborlist=neighborlist,
                 query=query_idxs,
                 haystack=haystack,
@@ -604,8 +611,8 @@ def _residue_contacts(neighborlist, query, haystack, ignore_atoms,
         neighbor_idxs = set(neighborlist[atom_idx])
         contact_neighbors = neighbor_idxs - ignore_atoms
         contact_neighbors = contact_neighbors & haystack
-        atom_residues[idx] = set(atom_to_residue[a]
-                                 for a in contact_neighbors)
+        atom_residues[idx] = set([atom_to_residue[a]
+                                  for a in contact_neighbors])
         atom_pairs[idx] = set(map(
             frozenset, itertools.product([atom_idx], contact_neighbors)
         ))
@@ -614,6 +621,42 @@ def _residue_contacts(neighborlist, query, haystack, ignore_atoms,
     local_residues = set.union(*atom_residues)
 
     return local_pairs, local_residues
+
+@njit(parallel=True)
+def _numba_residue_contacts_inner(neighborlist, query, haystack,
+                                  ignore_atoms, atom_to_residue):
+    atom_pairs = numba.typed.List()
+    atom_residues = numba.typed.List()
+    for _ in query:
+        atom_pairs.append(numba.typed.List())
+        atom_residues.append(numba.typed.List())
+
+    for idx, atom_idx in enumerate(query):
+        neighbor_idxs = set(neighborlist[atom_idx])
+        contact_neighbors = neighbor_idxs - ignore_atoms
+        contact_neighbors = contact_neighbors & haystack
+        atom_res = [atom_to_residue[a] for a in contact_neighbors]
+        atom_residues[idx].extend(atom_res)
+        atom_pairs[idx].extend([(atom_idx, neighb)
+                                for neighb in contact_neighbors])
+        # atom_pairs[idx] = set(map(
+            # frozenset, itertools.product([atom_idx], contact_neighbors)
+        # ))
+
+    local_pairs = set.union(*atom_pairs)
+    local_residues = set.union(*atom_residues)
+
+    return local_pairs, local_residues
+
+def _numba_residue_contacts(neighborlist, query, haystack, ignore_atoms,
+                            atom_to_residue):
+    nb_atom_to_residue = numba.typed.Dict.empty(key_type=types.int64,
+                                                value_type=types.int64)
+    for key, value in atom_to_residue.items():
+        nb_atom_to_residue[key] = value
+
+    return _numba_residue_contacts_inner(neighborlist, query, haystack,
+                                         ignore_atoms, nb_atom_to_residue)
 
 
 class ContactMap(ContactObject):
