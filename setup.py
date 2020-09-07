@@ -76,11 +76,7 @@ class VersionPyFinder(object):
 
             def visit_ImportFrom(self, node):
                 if node.module == self.import_name:
-                    replacement = ast.Raise(exc=ast.Call(
-                        func=ast.Name(id='ImportError', ctx=ast.Load()),
-                        args=[],
-                        keywords=[],
-                    ), cause=None)
+                    replacement = ast.parse("raise ImportError()").body[0]
                     return ast.copy_location(replacement, node)
                 else:
                     return node

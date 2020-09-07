@@ -7,11 +7,15 @@ import collections
 import itertools
 import pickle
 import json
+
+import warnings
+
 import numpy as np
 import pandas as pd
 import mdtraj as md
 
 from .contact_count import ContactCount
+from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
 from .py_2_3 import inspect_method_arguments
 
 # TODO:
@@ -20,6 +24,15 @@ from .py_2_3 import inspect_method_arguments
 #   build a voxel list for the haystack, and then checks the voxel for each
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
+
+def _residue_and_index(residue, topology):
+    res = residue
+    try:
+        res_idx = res.index
+    except AttributeError:
+        res_idx = residue
+        res = topology.residue(res_idx)
+    return (res, res_idx)
 
 
 def residue_neighborhood(residue, n=1):
@@ -43,35 +56,6 @@ def residue_neighborhood(residue, n=1):
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
 
-
-def _residue_and_index(residue, topology):
-    res = residue
-    try:
-        res_idx = res.index
-    except AttributeError:
-        res_idx = residue
-        res = topology.residue(res_idx)
-    return (res, res_idx)
-
-
-def _atom_slice(traj, indices):
-    """Mock MDTraj.atom_slice without rebuilding topology"""
-    xyz = np.array(traj.xyz[:, indices], order='C')
-    topology = traj.topology.copy()
-    if traj._have_unitcell:
-        unitcell_lengths = traj._unitcell_lengths.copy()
-        unitcell_angles = traj._unitcell_angles.copy()
-    else:
-        unitcell_lengths = None
-        unitcell_angles = None
-    time = traj._time.copy()
-
-    # Hackish to make the smart slicing work
-    topology._atoms = indices
-    topology._numAtoms = len(indices)
-    return md.Trajectory(xyz=xyz, topology=topology, time=time,
-                         unitcell_lengths=unitcell_lengths,
-                         unitcell_angles=unitcell_angles)
 
 
 def _residue_for_atom(topology, atom_list):
@@ -145,36 +129,44 @@ class ContactObject(object):
         self._query = set(query)
         self._haystack = set(haystack)
 
+
         # Make tuple for efficient lookupt
         all_atoms_set = set(query).union(set(haystack))
-        all_atoms_list = list(all_atoms_set)
-        all_atoms_list.sort()
-        self._all_atoms = tuple(all_atoms_list)
+        self._all_atoms = tuple(sorted(list(all_atoms_set)))
 
-        self._use_atom_slice = self._set_atom_slice()
+        self._use_atom_slice = self._set_atom_slice(self._all_atoms)
+        has_indexer = getattr(self, 'indexer', None) is not None
+        if not has_indexer:
+            Indexer = {True: AtomSlicedIndexer,
+                       False: IdentityIndexer}[self.use_atom_slice]
+            self.indexer = Indexer(topology, self._query, self._haystack,
+                                   self._all_atoms)
 
-        # Set up the conversion dict to go from aton index to sliced indexes
-        self._idx_to_s_idx_dict = {e: i for
-                                   i, e in enumerate(self._all_atoms)}
-
-        # Get the sliced and used haystack indices
-        self._s_haystack = set(map(self.idx_to_s_idx, self._haystack))
-        self._u_haystack = self._set_used_haystack()
         self._n_neighbors_ignored = n_neighbors_ignored
 
-        # Conversion dicts between the real and sliced atoms and their residues
-        self._r_atom_idx_to_residue_idx = {atom.index: atom.residue.index
-                                           for atom in self.topology.atoms}
-        self._s_atom_idx_to_residue_idx = {
-            i: self._r_atom_idx_to_residue_idx[e] for
-            i, e in enumerate(self._all_atoms)
-        }
-        self._atom_idx_to_residue_idx = self._set_atom_idx_to_residue_idx()
+    @classmethod
+    def from_contacts(cls, atom_contacts, residue_contacts, topology,
+                      query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2, indexer=None):
+        obj = cls.__new__(cls)
+        obj.indexer = indexer
+        super(cls, obj).__init__(topology, query, haystack, cutoff,
+                                 n_neighbors_ignored)
 
-    def _set_atom_slice(self):
+        def get_contact_counter(contact):
+            if isinstance(contact, ContactCount):
+                return contact.counter
+            else:
+                return contact
+
+        obj._atom_contacts = get_contact_counter(atom_contacts)
+        obj._residue_contacts = get_contact_counter(residue_contacts)
+        return obj
+
+    def _set_atom_slice(self, all_atoms):
         """ Set atom slice logic """
         if (self._class_use_atom_slice is None and
-            not len(self._all_atoms) < self._topology.n_atoms):
+            not len(all_atoms) < self._topology.n_atoms):
             # Don't use if there are no atoms to be sliced
             return False
         elif self._class_use_atom_slice is None:
@@ -183,34 +175,6 @@ class ContactObject(object):
         else:
             # Use class default
             return self._class_use_atom_slice
-
-    def _set_used_haystack(self):
-        """set which haystack to use in contact map"""
-        if self._use_atom_slice:
-            return self._s_haystack
-        else:
-            return self._haystack
-
-    def _set_atom_idx_to_residue_idx(self):
-        """set which atom index to residue index is used"""
-        if self._use_atom_slice:
-            return self._s_atom_idx_to_residue_idx
-        else:
-            return self._r_atom_idx_to_residue_idx
-
-    def s_idx_to_idx(self, idx):
-        """function to convert a sliced atom index back to real index"""
-        if self._use_atom_slice:
-            return self._all_atoms[idx]
-        else:
-            return idx
-
-    def idx_to_s_idx(self, idx):
-        """function to convert a real atom index to a sliced one"""
-        if self._use_atom_slice:
-            return self._idx_to_s_idx_dict[idx]
-        else:
-            return idx
 
     @property
     def contacts(self):
@@ -248,7 +212,6 @@ class ContactObject(object):
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
-            'atom_idx_to_residue_idx': self._atom_idx_to_residue_idx,
             'atom_contacts': \
                 self._serialize_contact_counter(self._atom_contacts),
             'residue_contacts': \
@@ -463,22 +426,11 @@ class ContactObject(object):
         return self._use_atom_slice
 
     @property
-    def residue_query_atom_idxs(self):
-        """dict : maps query residue index to atom indices in query"""
-        result = collections.defaultdict(list)
-        for atom_idx in self._query:
-            residue_idx = self._r_atom_idx_to_residue_idx[atom_idx]
-            if self.use_atom_slice:
-                atom_idx = self._idx_to_s_idx_dict[atom_idx]
-            result[residue_idx].append(atom_idx)
-        return result
-
-    @property
-    def residue_ignore_atom_idxs(self):
+    def _residue_ignore_atom_idxs(self):
         """dict : maps query residue index to atom indices to ignore"""
         all_atoms_set = set(self._all_atoms)
         result = {}
-        for residue_idx in self.residue_query_atom_idxs.keys():
+        for residue_idx in self.indexer.residue_query_atom_idxs.keys():
             residue = self.topology.residue(residue_idx)
             # Several steps to go residue indices -> atom indices
             ignore_residue_idxs = residue_neighborhood(
@@ -489,16 +441,9 @@ class ContactObject(object):
                                for idx in ignore_residue_idxs]
             ignore_atoms = sum([list(res.atoms)
                                 for res in ignore_residues], [])
-            ignore_atom_idxs = self._ignore_atom_idx(ignore_atoms,
-                                                     all_atoms_set)
+            ignore_atom_idxs = self.indexer.ignore_atom_idx(ignore_atoms,
+                                                            all_atoms_set)
             result[residue_idx] = ignore_atom_idxs
-        return result
-
-    def _ignore_atom_idx(self, atoms, all_atoms_set):
-        result = set([atom.index for atom in atoms])
-        if self._use_atom_slice:
-            result &= all_atoms_set
-            result = set(map(self.idx_to_s_idx, result))
         return result
 
     @property
@@ -584,17 +529,6 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
-    def slice_trajectory(self, trajectory):
-        # Prevent (memory) expensive atom slicing if not needed.
-        # This check is also needed here because ContactFrequency slices the
-        # whole trajectory before calling this function.
-        if self.use_atom_slice and (len(self._all_atoms) <
-                                    trajectory.topology.n_atoms):
-            sliced_trajectory = _atom_slice(trajectory, self._all_atoms)
-        else:
-            sliced_trajectory = trajectory
-        return sliced_trajectory
-
     def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
                     residue_ignore_atom_idxs):
         """
@@ -612,13 +546,15 @@ class ContactObject(object):
         atom_contacts : collections.Counter
         residue_contact : collections.Counter
         """
-        used_trajectory = self.slice_trajectory(trajectory)
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
 
         neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
                                                frame_number)
 
         contact_pairs = set([])
         residue_pairs = set([])
+        haystack = self.indexer.haystack
+        atom_idx_to_residue_idx = self.indexer.atom_idx_to_residue_idx
         for residue_idx in residue_query_atom_idxs:
             ignore_atom_idxs = set(residue_ignore_atom_idxs[residue_idx])
             query_idxs = residue_query_atom_idxs[residue_idx]
@@ -627,7 +563,7 @@ class ContactObject(object):
                 # should be small and s-t is avg cost len(s)
                 neighbor_idxs = set(neighborlist[atom_idx])
                 contact_neighbors = neighbor_idxs - ignore_atom_idxs
-                contact_neighbors = contact_neighbors & self._u_haystack
+                contact_neighbors = contact_neighbors & haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
                 #                   for neighb in contact_neighbors)
@@ -638,7 +574,7 @@ class ContactObject(object):
                 contact_pairs |= local_pairs
                 # contact_pairs |= set(frozenset((atom_idx, neighb))
                 #                      for neighb in contact_neighbors)
-                local_residue_partners = set(self._atom_idx_to_residue_idx[a]
+                local_residue_partners = set(atom_idx_to_residue_idx[a]
                                              for a in contact_neighbors)
                 local_res_pairs = set(map(
                     frozenset,
@@ -653,14 +589,6 @@ class ContactObject(object):
         # )
         residue_contacts = collections.Counter(residue_pairs)
         return (atom_contacts, residue_contacts)
-
-    def convert_atom_contacts(self, atom_contacts):
-        if self._use_atom_slice:
-            result = {frozenset(tuple(map(self.s_idx_to_idx, key))): value
-                      for key, value in atom_contacts.items()}
-            return collections.Counter(result)
-        else:
-            return atom_contacts
 
     @property
     def atom_contacts(self):
@@ -678,22 +606,47 @@ class ContactObject(object):
 class ContactMap(ContactObject):
     """
     Contact map (atomic and residue) for a single frame.
+
+    .. deprecated:: 0.6.0
+        ``ContactMap`` will be removed in Contact Map Explorer 0.7.0 because
+        it is redundant with ``ContactFrequency``. For more, see
+        https://github.com/dwhswenson/contact_map/issues/82.
+
     """
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
 
+    _deprecation_message=(
+        "The ContactMap class will be removed in Contact Map Explorer 0.7. "
+        + "Use ContactFrequency instead. For more, see: "
+        + "https://github.com/dwhswenson/contact_map/issues/82."
+    )
+
     def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):
-
+        warnings.warn(self._deprecation_message, FutureWarning)
         self._frame = frame  # TODO: remove this?
         super(ContactMap, self).__init__(frame.topology, query, haystack,
                                          cutoff, n_neighbors_ignored)
 
         contact_maps = self.contact_map(frame, 0,
-                                        self.residue_query_atom_idxs,
-                                        self.residue_ignore_atom_idxs)
+                                        self.indexer.residue_query_atom_idxs,
+                                        self._residue_ignore_atom_idxs)
         (atom_contacts, self._residue_contacts) = contact_maps
-        self._atom_contacts = self.convert_atom_contacts(atom_contacts)
+        self._atom_contacts = self.indexer.convert_atom_contacts(atom_contacts)
+
+    @classmethod
+    def from_dict(cls, dct):
+        warnings.warn(cls._deprecation_message, FutureWarning)
+        return super(ContactMap, cls).from_dict(dct)
+
+    # don't need to add deprecation in from_json because it uses from_dict
+
+    @classmethod
+    def from_file(cls, filename):
+        warnings.warn(cls._deprecation_message, FutureWarning)
+        return super(ContactMap, cls).from_file(filename)
+
 
     def __hash__(self):
         return hash((super(ContactMap, self).__hash__(),
@@ -749,6 +702,17 @@ class ContactFrequency(ContactObject):
         contacts = self._build_contact_map(trajectory)
         (self._atom_contacts, self._residue_contacts) = contacts
 
+    @classmethod
+    def from_contacts(cls, atom_contacts, residue_contacts, n_frames,
+                      topology, query=None, haystack=None, cutoff=0.45,
+                      n_neighbors_ignored=2, indexer=None):
+        obj = super(ContactFrequency, cls).from_contacts(
+            atom_contacts, residue_contacts, topology, query, haystack,
+            cutoff, n_neighbors_ignored, indexer
+        )
+        obj._n_frames = n_frames
+        return obj
+
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
                      tuple(self._atom_contacts.items()),
@@ -779,20 +743,21 @@ class ContactFrequency(ContactObject):
 
         # cache things that can be calculated once based on the topology
         # (namely, which atom indices matter for each residue)
-        residue_ignore_atom_idxs = self.residue_ignore_atom_idxs
-        residue_query_atom_idxs = self.residue_query_atom_idxs
+        residue_ignore_atom_idxs = self._residue_ignore_atom_idxs
+        residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
 
-        used_trajectory = self.slice_trajectory(trajectory)
+        used_trajectory = self.indexer.slice_trajectory(trajectory)
         for frame_num in self.frames:
             frame_contacts = self.contact_map(used_trajectory, frame_num,
                                               residue_query_atom_idxs,
                                               residue_ignore_atom_idxs)
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
-            # self._atom_contacts_count += frame_atom_contacts
             atom_contacts_count.update(frame_atom_contacts)
             residue_contacts_count += frame_residue_contacts
-        atom_contacts_count = self.convert_atom_contacts(atom_contacts_count)
+
+        atom_contacts_count = \
+                self.indexer.convert_atom_contacts(atom_contacts_count)
         return (atom_contacts_count, residue_contacts_count)
 
     @property
@@ -1033,6 +998,10 @@ class ContactDifference(ContactObject):
         raise NotImplementedError
 
     def contact_map(self, *args, **kwargs):  #pylint: disable=W0221
+        raise NotImplementedError
+
+    @classmethod
+    def from_contacts(self, *args, **kwargs):  #pylint: disable=W0221
         raise NotImplementedError
 
     @property

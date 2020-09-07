@@ -12,7 +12,7 @@ from .utils import *
 
 # stuff to be testing in this file
 from contact_map.contact_map import *
-from contact_map.contact_count import HAS_MATPLOTLIB
+from contact_map.contact_count import HAS_MATPLOTLIB, ContactCount
 
 traj = md.load(find_testfile("trajectory.pdb"))
 
@@ -84,7 +84,6 @@ def _contact_object_compare(m, m2):
     assert m.query == m2.query
     assert m.haystack == m2.haystack
     assert m.n_neighbors_ignored == m2.n_neighbors_ignored
-    assert m._atom_idx_to_residue_idx == m2._atom_idx_to_residue_idx
     assert m.topology == m2.topology
     if hasattr(m, '_atom_contacts') or hasattr(m2, '_atom_contacts'):
         assert m._atom_contacts == m2._atom_contacts
@@ -112,7 +111,6 @@ def test_residue_neighborhood():
             from_top = max(0, res.index + n - (len(residues) - 1))
             len_n = 2*n + 1 - from_top - from_bottom
             assert len(residue_neighborhood(res, n=n)) == len_n
-
 
 @pytest.mark.parametrize("idx", [0, 4])
 class TestContactMap(object):
@@ -145,7 +143,7 @@ class TestContactMap(object):
         assert m.n_neighbors_ignored == 0
         assert m.topology == self.topology
         for res in m.topology.residues:
-            ignored_atoms = m.residue_ignore_atom_idxs[res.index]
+            ignored_atoms = m._residue_ignore_atom_idxs[res.index]
             assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self, idx):
@@ -158,6 +156,25 @@ class TestContactMap(object):
         assert m._residue_contacts == expected
         assert m.residue_contacts.counter == expected
 
+    @pytest.mark.parametrize('contactcount', [True, False])
+    def test_from_contacts(self, idx, contactcount):
+        expected = self.maps[idx]
+        atom_contact_list = self.expected_atom_contacts[expected]
+        residue_contact_list = self.expected_residue_contacts[expected]
+        atom_contacts = counter_of_inner_list(atom_contact_list)
+        residue_contacts = counter_of_inner_list(residue_contact_list)
+        if contactcount:
+            atom_contacts = ContactCount(atom_contacts, self.topology.atom,
+                                         10, 10)
+            residue_contacts = ContactCount(residue_contacts,
+                                            self.topology.residue, 5, 5)
+
+        cmap = ContactMap.from_contacts(atom_contacts, residue_contacts,
+                                        topology=self.topology,
+                                        cutoff=0.075,
+                                        n_neighbors_ignored=0)
+        _contact_object_compare(cmap, expected)
+
     def test_to_dict(self, idx):
         m = self.maps[idx]
         dct = m.to_dict()
@@ -167,8 +184,6 @@ class TestContactMap(object):
         assert dct['haystack'] == list(range(10))
         assert dct['all_atoms'] == tuple(range(10))
         assert dct['n_neighbors_ignored'] == 0
-        assert dct['atom_idx_to_residue_idx'] == {i: i // 2
-                                                  for i in range(10)}
 
     def test_topology_serialization_cycle(self, idx):
         m = self.maps[idx]
@@ -305,7 +320,7 @@ class TestContactMap(object):
 
         # Test sliced indices
         sliced_idx = [0, 1, 2, 3]
-        real_idx = [map0b.s_idx_to_idx(i) for i in sliced_idx]
+        real_idx = [map0b.indexer.real_idx[i] for i in sliced_idx]
         if map0b._use_atom_slice:
             assert real_idx == [1, 4, 5, 6]
         else:
@@ -351,7 +366,7 @@ class TestContactFrequency(object):
         assert set(self.map.all_atoms) == set(range(10))
         assert self.map.n_neighbors_ignored == 0
         for res in self.map.topology.residues:
-            ignored_atoms = self.map.residue_ignore_atom_idxs[res.index]
+            ignored_atoms = self.map._residue_ignore_atom_idxs[res.index]
             assert ignored_atoms == set([a.index for a in res.atoms])
 
     def test_counters(self):
@@ -373,6 +388,25 @@ class TestContactFrequency(object):
 
     def test_contacts_dict(self):
         _check_contacts_dict_names(self.map)
+
+    @pytest.mark.parametrize('contactcount', [True, False])
+    def test_from_contacts(self, contactcount):
+        atom_contacts = self.expected_atom_contact_count
+        residue_contacts = self.expected_residue_contact_count
+        top = traj.topology
+        if contactcount:
+            atom_contacts = ContactCount(atom_contacts, top.atom,
+                                         10, 10)
+            residue_contacts = ContactCount(residue_contacts, top.residue,
+                                            5, 5)
+
+        cmap = ContactFrequency.from_contacts(atom_contacts,
+                                              residue_contacts,
+                                              n_frames=5,
+                                              topology=top,
+                                              cutoff=0.075,
+                                              n_neighbors_ignored=0)
+        _contact_object_compare(cmap, self.map)
 
     def test_check_compatibility_true(self):
         map2 = ContactFrequency(trajectory=traj[0:2],
@@ -587,7 +621,7 @@ class TestContactFrequency(object):
             assert m.all_atoms == atoms[m]
             atom_list = [traj.topology.atom(i) for i in m.all_atoms]
             check_use_atom_slice(m, use_atom_slice, expected_atom_slice)
-            sliced_traj = m.slice_trajectory(traj)
+            sliced_traj = m.indexer.slice_trajectory(traj)
             if m.use_atom_slice:
                 assert sliced_traj.topology.n_atoms == len(m.all_atoms)
             else:
