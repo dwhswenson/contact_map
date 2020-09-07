@@ -25,6 +25,7 @@ from .py_2_3 import inspect_method_arguments
 #   query atom. Doesn't look like anything is doing that now: neighbors
 #   doesn't use voxels, neighborlist doesn't limit the haystack
 
+
 def _residue_and_index(residue, topology):
     res = residue
     try:
@@ -55,7 +56,6 @@ def residue_neighborhood(residue, n=1):
     # we could probably choose an faster approach here, but this is pretty
     # good, and it only gets run once per residue
     return [idx for idx in neighborhood if idx in chain]
-
 
 
 def _residue_for_atom(topology, atom_list):
@@ -128,7 +128,6 @@ class ContactObject(object):
         self._cutoff = cutoff
         self._query = set(query)
         self._haystack = set(haystack)
-
 
         # Make tuple for efficient lookupt
         all_atoms_set = set(query).union(set(haystack))
@@ -212,9 +211,9 @@ class ContactObject(object):
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
-            'atom_contacts': \
+            'atom_contacts':
                 self._serialize_contact_counter(self._atom_contacts),
-            'residue_contacts': \
+            'residue_contacts':
                 self._serialize_contact_counter(self._residue_contacts),
             'use_atom_slice': self._use_atom_slice}
         return dct
@@ -616,7 +615,7 @@ class ContactMap(ContactObject):
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
 
-    _deprecation_message=(
+    _deprecation_message = (
         "The ContactMap class will be removed in Contact Map Explorer 0.7. "
         + "Use ContactFrequency instead. For more, see: "
         + "https://github.com/dwhswenson/contact_map/issues/82."
@@ -646,7 +645,6 @@ class ContactMap(ContactObject):
     def from_file(cls, filename):
         warnings.warn(cls._deprecation_message, FutureWarning)
         return super(ContactMap, cls).from_file(filename)
-
 
     def __hash__(self):
         return hash((super(ContactMap, self).__hash__(),
@@ -828,15 +826,15 @@ class ContactDifference(ContactObject):
     common way to make this object is by using the ``-`` operator, i.e.,
     ``diff = map_1 - map_2``.
     """
-    def __init__(self, positive, negative, allow_incompatable=False):
+    def __init__(self, positive, negative, override_topology=False):
         self.positive = positive
         self.negative = negative
-        self.allow_incompatable = allow_incompatable
+        self.override_topology = override_topology
         failed = positive._check_compatibility(
             negative,
-            return_failed=allow_incompatable
+            return_failed=bool(override_topology)
         )
-        if not allow_incompatable:
+        if not bool(override_topology):
             topology = positive.topology
             query = positive.query
             haystack = positive.haystack
@@ -845,7 +843,8 @@ class ContactDifference(ContactObject):
         else:
             (topology, query, haystack,
              cutoff, n_neighbors_ignored) = self._fix_self(positive, negative,
-                                                           failed)
+                                                           failed,
+                                                           override_topology)
 
         super(ContactDifference, self).__init__(
               positive.topology,
@@ -854,94 +853,100 @@ class ContactDifference(ContactObject):
               positive.cutoff,
               positive.n_neighbors_ignored)
 
-    def _fix_self(self, positive, negative, failed):
+    def _fix_self(self, positive, negative, failed, override_topology):
         # First make the default output
         output = {'topology': positive.topology,
                   'query': positive.query,
                   'haystack': positive.haystack,
                   'cutoff': positive.cutoff,
                   'n_neighbors_ignored': positive.n_neighbors_ignored}
-        default_attr = {'topology': md.Topology(),
-                        'query': {},
-                        'haystack': {},
-                        'cutoff': 0,
-                        'n_neighbors_ignored': int(10**9),  # very big
-                        }
 
         for fail in failed:
-            default = default_attr.get(fail, None)
-            pos = getattr(positive, fail, default)
-            neg = getattr(negative, fail, default)
-            if fail in {'query', 'haystack'}:
-                # We just sum the sets and assume it is OK
-                fixed = pos | neg
-            elif fail == 'cutoff':
-                # We assume bigger cutoff contains more data
-                fixed = max(pos, neg)
-            elif fail == 'n_neighbors_ignored':
-                # We assume less ignored neighbors contains more data
-                fixed = min(pos, neg)
+            if fail in {'query', 'haystack', 'cutoff', 'n_neighbors_ignored'}:
+                # We just set them to None
+                fixed = None
             elif fail == 'topology':
                 # This requires quite a bit of logic
-                fixed = self._fix_topology(positive, negative)
+                fixed = self._fix_topology(positive, negative,
+                                           override_topology)
             output[fail] = fixed
         return tuple(output.values())
 
-    def _fix_topology(self, positive, negative):
+    def _fix_topology(self, positive, negative, override_topology):
         # Now we are going to see if atoms make sense
         postop = positive.topology
         negtop = negative.topology
 
         # Make a custom topology
-        topology = postop.copy()
+        if isinstance(override_topology, md.Topology):
+            # User provided topology
+            topology = override_topology
+            postop = topology
+            negtop = topology
+        else:
+            # Assume the topology of the bigger system contains the smaller one
+            if postop.n_atoms >= negtop.n_atoms:
+                topology = postop.copy()
+            else:
+                topology = negtop.copy()
+
         # Make a generator if needed
         all_atoms_pos = positive.query | positive.haystack
         all_atoms_neg = negative.query | negative.haystack
-        # Assume the topology of the bigger system contains the smaller one
-        if postop.n_atoms >= negtop.n_atoms:
-            topology = postop.copy()
-        else:
-            topology = negtop.copy()
 
         overlap_atoms = all_atoms_pos & all_atoms_neg
+
         genatom = (postop.atom(i) == negtop.atom(i) for i in overlap_atoms)
-        if all(genatom):
-            # all atoms involved are equal so we asume the residues are as
-            # well everything works that we require
-            return topology
-        elif (all_atoms_pos == all_atoms_neg):
-            # Indices are equal, but the atoms migh not be equal
-            # updating the topology names
-            for idx in overlap_atoms:
-                posname = postop.atom(idx).name
-                negname = negtop.atom(idx).name
-                if posname != negname:
-                    topology.atom(idx).name = "/".join([posname, negname])
-        else:
+        try:
+            all_atoms_ok = all(genatom)
+        except IndexError:
+            # If a given topology does not contain the required indices
+            all_atoms_ok = False
+        if not all_atoms_ok:
             # Atom mapping does not make sense at the moment, override func
             # TODO: Might be fixable if all_atoms are equal length
             self.atom_contacts = self._missing_atom_contacts
+            self.most_common_atoms_for_contact = self._missing_atom_contacts
+            self.most_common_atoms_for_residue = self._missing_atom_contacts
+            self.haystack_residues = self._missing_atom_contacts
+            self.query_residues = self._missing_atom_contacts
+
 
         # We know something is different so we are going to check residues
         # Check number of residues involved in the map
-        res_idx_pos = set([postop.atom(i).residue.index
+        res_idx_pos = set([positive.topology.atom(i).residue.index
                            for i in overlap_atoms])
-        res_idx_neg = set([negtop.atom(i).residue.index
+        res_idx_neg = set([negative.topology.atom(i).residue.index
                            for i in overlap_atoms])
+        all_res_ok = False
         if res_idx_pos == res_idx_neg:
-            # We assume residues names are different becuase atoms are
+            all_res_ok = True
+            # We assume residues names are different because atoms are
             # different if we end up here
             for idx in res_idx_pos:
-                posname = postop.residue(idx).name
-                negname = negtop.residue(idx).name
+                # Here we need to check
+                try:
+                    posname = postop.residue(idx).name
+                    negname = negtop.residue(idx).name
+                except IndexError:
+                    # This is thrown if a user provides an incomplete topology
+                    all_res_ok = False
+                    break
                 if posname != negname:
                     topology.residue(idx).name = "/".join([posname, negname])
 
-        else:
+        if not all_res_ok:
             # Can't be fixed for now
             # TODO: Can be fixed if the number of residues is equal
             # Or one is a subset of the other
             self.residue_contacts = self._missing_residue_contacts
+            self._residue_ignore_atom_idxs = self._missing_residue_contacts
+            self.most_common_atoms_for_contact = self._missing_residue_contacts
+            self.most_common_atoms_for_residue = self._missing_residue_contacts
+            self.haystack_residues = self._missing_residue_contacts
+            self.query_residues = self._missing_residue_contacts
+
+        if not all_res_ok and not all_atoms_ok:
             return md.Topology()
         return topology
 
@@ -959,7 +964,7 @@ class ContactDifference(ContactObject):
             'negative': self.negative.to_json(),
             'positive_cls': self.positive.__class__.__name__,
             'negative_cls': self.negative.__class__.__name__,
-            'allow_incompatable': self.allow_incompatable,
+            'override_topology': self.override_topology,
         }
 
     @classmethod
@@ -991,8 +996,8 @@ class ContactDifference(ContactObject):
 
         positive = rebuild('positive')
         negative = rebuild('negative')
-        allow_incompatable = dct['allow_incompatable']
-        return cls(positive, negative, allow_incompatable=allow_incompatable)
+        override_topology = dct['override_topology']
+        return cls(positive, negative, override_topology=override_topology)
 
     def __sub__(self, other):
         raise NotImplementedError
@@ -1021,11 +1026,11 @@ class ContactDifference(ContactObject):
         return ContactCount(diff, self.topology.residue, n_x, n_y)
 
     @property
-    def _missing_atom_contacts(self):
+    def _missing_atom_contacts(self, *args, **kwargs):
         raise RuntimeError("Different atom indices involved between the two"
                            " maps, so this does not make sense.")
 
     @property
-    def _missing_residue_contacts(self):
+    def _missing_residue_contacts(self, *args, **kwargs):
         raise RuntimeError("Different residue indices between the two maps,"
                            " so this does not make sense.")
