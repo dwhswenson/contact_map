@@ -55,16 +55,19 @@ def _count_mismatching_names(top0, top1, residx, out_topology):
         if name0 != name1:
             mismatched_idx.append((idx, name0, name1))
     if out_topology:
-        for idx, name0, name1 in mismatched_idx:
-            errored = False
-            try:
-                out_topology.residue(idx).name = "/".join([name0, name1])
-            except IndexError:
-                # If out topology is not complete
-                errored = True
-                break
-        return errored
+        return _fix_topology(mismatched_idx, out_topology)
     return len(mismatched_idx)
+
+
+def _fix_topology(mismatched_idx, out_topology):
+    """Try to fix the topology, will return true if this errors out"""
+    for idx, name0, name1 in mismatched_idx:
+        try:
+            out_topology.residue(idx).name = "/".join([name0, name1])
+        except IndexError:
+            # If out topology is not complete
+            return True
+    return False
 
 
 def check_topologies(map0, map1, override_topology):
