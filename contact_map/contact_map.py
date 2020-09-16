@@ -17,6 +17,7 @@ import mdtraj as md
 from .contact_count import ContactCount
 from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
 from .py_2_3 import inspect_method_arguments
+from .topology import check_topologies
 
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
@@ -872,36 +873,13 @@ class ContactDifference(ContactObject):
             output[fail] = fixed
         return tuple(output.values())
 
-    def _fix_topology(self, positive, negative, override_topology):
-        # Now we are going to see if atoms make sense
-        postop = positive.topology
-        negtop = negative.topology
+    def _check_topology(self, positive, negative, override_topology):
+        all_atoms_ok, all_res_ok, topology = check_topologies(
+            map0=positive,
+            map1=negative,
+            override_topology=override_topology
+        )
 
-        # Make a custom topology
-        if isinstance(override_topology, md.Topology):
-            # User provided topology
-            topology = override_topology
-            postop = topology
-            negtop = topology
-        else:
-            # Assume the topology of the bigger system contains the smaller one
-            if postop.n_atoms >= negtop.n_atoms:
-                topology = postop.copy()
-            else:
-                topology = negtop.copy()
-
-        # Make a generator if needed
-        all_atoms_pos = positive.query | positive.haystack
-        all_atoms_neg = negative.query | negative.haystack
-
-        overlap_atoms = all_atoms_pos & all_atoms_neg
-
-        genatom = (postop.atom(i) == negtop.atom(i) for i in overlap_atoms)
-        try:
-            all_atoms_ok = all(genatom)
-        except IndexError:
-            # If a given topology does not contain the required indices
-            all_atoms_ok = False
         if not all_atoms_ok:
             # Atom mapping does not make sense at the moment, override func
             # TODO: Might be fixable if all_atoms are equal length
@@ -910,30 +888,6 @@ class ContactDifference(ContactObject):
             self.most_common_atoms_for_residue = self._missing_atom_contacts
             self.haystack_residues = self._missing_atom_contacts
             self.query_residues = self._missing_atom_contacts
-
-
-        # We know something is different so we are going to check residues
-        # Check number of residues involved in the map
-        res_idx_pos = set([positive.topology.atom(i).residue.index
-                           for i in overlap_atoms])
-        res_idx_neg = set([negative.topology.atom(i).residue.index
-                           for i in overlap_atoms])
-        all_res_ok = False
-        if res_idx_pos == res_idx_neg:
-            all_res_ok = True
-            # We assume residues names are different because atoms are
-            # different if we end up here
-            for idx in res_idx_pos:
-                # Here we need to check
-                try:
-                    posname = postop.residue(idx).name
-                    negname = negtop.residue(idx).name
-                except IndexError:
-                    # This is thrown if a user provides an incomplete topology
-                    all_res_ok = False
-                    break
-                if posname != negname:
-                    topology.residue(idx).name = "/".join([posname, negname])
 
         if not all_res_ok:
             # Can't be fixed for now
@@ -946,8 +900,6 @@ class ContactDifference(ContactObject):
             self.haystack_residues = self._missing_residue_contacts
             self.query_residues = self._missing_residue_contacts
 
-        if not all_res_ok and not all_atoms_ok:
-            return md.Topology()
         return topology
 
     def to_dict(self):
