@@ -323,16 +323,18 @@ class ContactObject(object):
         compatibility_attrs = ['cutoff', 'topology', 'query', 'haystack',
                                'n_neighbors_ignored']
         failed_attr = {}
+        err_msg = ""
         for attr in compatibility_attrs:
             self_val = getattr(self, attr)
             other_val = getattr(other, attr)
             if self_val != other_val:
                 failed_attr.update({attr: (self_val, other_val)})
+                err_msg += "        {attr}: {self} != {other}\n".format(
+                    attr=attr, self=str(self_val), other=str(other_val)
+                )
+
         msg = "Incompatible ContactObjects:\n"
-        for (attr, vals) in failed_attr.items():
-            msg += "        {attr}: {self} != {other}\n".format(
-                attr=attr, self=str(vals[0]), other=str(vals[1])
-            )
+        msg += err_msg
         if failed_attr and not return_failed:
             raise err(msg)
         elif return_failed:
