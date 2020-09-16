@@ -42,7 +42,7 @@ def _get_residue_indices(top0, top1, atoms):
     return out_idx
 
 
-def _count_mismatching_names(top0, top1, residx, out_topology):
+def _count_mismatching_names(top0, top1, residx, out_topology=None):
     """Check for mismatching names.
 
     This will return truthy value if found and not fixable.
