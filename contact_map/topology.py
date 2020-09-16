@@ -19,34 +19,52 @@ def check_residues_ok(top0, top1, atoms, out_topology=None):
     If an out_topology is given, and the residues only differ in name, that
     residue name will be updated inplace in the out_topology
     """
+    res_idx = _get_residue_indices(top0, top1, atoms)
+    all_res_ok = (bool(len(res_idx)))  # True if is bigger than 0
+    all_res_ok &= not _count_mismatching_names(top0, top1, res_idx,
+                                               out_topology)
+
+    return all_res_ok
+
+
+def _get_residue_indices(top0, top1, atoms):
+    """Get the residue indices or an empty list if not equal."""
+    out_idx = []
     try:
         res_idx0 = set([top0.atom(i).residue.index for i in atoms])
         res_idx1 = set([top1.atom(i).residue.index for i in atoms])
     except IndexError:
-        return False
+        return out_idx
 
     # Check if the involved indices are equal
-    if res_idx0 != res_idx1:
-        return False
+    if res_idx0 == res_idx1:
+        out_idx = res_idx0
+    return out_idx
 
+
+def _count_mismatching_names(top0, top1, residx, out_topology):
+    """Check for mismatching names.
+
+    This will return truthy value if found and not fixable.
+    """
     # Check if the names are different
     mismatched_idx = []
-    for idx in res_idx0:
+    for idx in residx:
         name0 = top0.residue(idx).name
         name1 = top1.residue(idx).name
         if name0 != name1:
             mismatched_idx.append((idx, name0, name1))
     if out_topology:
         for idx, name0, name1 in mismatched_idx:
+            errored = False
             try:
                 out_topology.residue(idx).name = "/".join([name0, name1])
             except IndexError:
                 # If out topology is not complete
-                return False
-    elif len(mismatched_idx):
-        # triggers on len != 0
-        return False
-    return True
+                errored = True
+                break
+        return errored
+    return len(mismatched_idx)
 
 
 def check_topologies(map0, map1, override_topology):
@@ -71,6 +89,7 @@ def check_topologies(map0, map1, override_topology):
     all_atoms0 = map0.query | map0.haystack
     all_atoms1 = map1.query | map1.haystack
 
+    # Should this be an overlap or a join?
     overlap_atoms = all_atoms0 | all_atoms1
     all_atoms_ok = check_atoms_ok(top0, top1, overlap_atoms)
     all_res_ok = check_residues_ok(top0, top1, overlap_atoms, topology)
