@@ -25,24 +25,28 @@ def check_residues_ok(top0, top1, atoms, out_topology=None):
     except IndexError:
         return False
 
-    all_res_ok = False
     # Check if the involved indices are equal
-    if res_idx0 == res_idx1:
-        all_res_ok = True
-        for idx in res_idx0:
-            name0 = top0.residue(idx).name
-            name1 = top1.residue(idx).name
-            if name0 != name1 and out_topology:
-                try:
-                    out_topology.residue(idx).name = "/".join([name0, name1])
-                except IndexError:
-                    # If out topology is not complete
-                    all_res_ok = False
-                    break
-            elif name0 != name1:
-                all_res_ok = False
-                break
-    return all_res_ok
+    if res_idx0 != res_idx1:
+        return False
+
+    # Check if the names are different
+    mismatched_idx = []
+    for idx in res_idx0:
+        name0 = top0.residue(idx).name
+        name1 = top1.residue(idx).name
+        if name0 != name1:
+            mismatched_idx.append((idx, name0, name1))
+    if out_topology:
+        for idx, name0, name1 in mismatched_idx:
+            try:
+                out_topology.residue(idx).name = "/".join([name0, name1])
+            except IndexError:
+                # If out topology is not complete
+                return False
+    elif len(mismatched_idx):
+        # triggers on len != 0
+        return False
+    return True
 
 
 def check_topologies(map0, map1, override_topology):
@@ -57,12 +61,11 @@ def check_topologies(map0, map1, override_topology):
         topology = override_topology
         top0 = topology
         top1 = topology
+    elif top0.n_atoms >= top1.n_atoms:
+        # assume the topology of the bigger system contains the smaller one
+        topology = top0.copy()
     else:
-        # Assume the topology of the bigger system contains the smaller one
-        if top0.n_atoms >= top1.n_atoms:
-            topology = top0.copy()
-        else:
-            topology = top1.copy()
+        topology = top1.copy()
 
     # Figure out the overlapping atoms
     all_atoms0 = map0.query | map0.haystack
@@ -73,4 +76,5 @@ def check_topologies(map0, map1, override_topology):
     all_res_ok = check_residues_ok(top0, top1, overlap_atoms, topology)
     if not all_res_ok and not all_atoms_ok:
         topology = md.Topology()
+
     return all_atoms_ok, all_res_ok, topology
