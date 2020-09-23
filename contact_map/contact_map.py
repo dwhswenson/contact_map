@@ -526,8 +526,8 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
-    def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
-                    residue_ignore_atom_idxs):
+    def _contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
+                     residue_ignore_atom_idxs):
         """
         Returns atom and residue contact maps for the given frame.
 
@@ -707,10 +707,10 @@ class ContactFrequency(ContactObject):
         residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
 
         used_trajectory = self.indexer.slice_trajectory(trajectory)
-        for frame_num in self.frames:
-            frame_contacts = self.contact_map(used_trajectory, frame_num,
-                                              residue_query_atom_idxs,
-                                              residue_ignore_atom_idxs)
+        for frame_num in range(len(trajectory)):
+            frame_contacts = self._contact_map(used_trajectory, frame_num,
+                                               residue_query_atom_idxs,
+                                               residue_ignore_atom_idxs)
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
             atom_contacts_count.update(frame_atom_contacts)

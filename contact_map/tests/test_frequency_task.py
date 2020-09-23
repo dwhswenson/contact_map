@@ -34,12 +34,10 @@ class TestSlicing(object):
 
 class TestTasks(object):
     def setup(self):
-        self.contact_freq_0_4 = ContactFrequency(traj, cutoff=0.075,
-                                                 n_neighbors_ignored=0,
-                                                 frames=range(4))
-        self.contact_freq_4 = ContactFrequency(traj, cutoff=0.075,
-                                               n_neighbors_ignored=0,
-                                               frames=[4])
+        self.contact_freq_0_4 = ContactFrequency(traj[:4], cutoff=0.075,
+                                                 n_neighbors_ignored=0)
+        self.contact_freq_4 = ContactFrequency(traj[4], cutoff=0.075,
+                                               n_neighbors_ignored=0)
         self.total_contact_freq = ContactFrequency(traj, cutoff=0.075,
                                                    n_neighbors_ignored=0)
         self.parameters = {'cutoff': 0.075, 'n_neighbors_ignored': 0}

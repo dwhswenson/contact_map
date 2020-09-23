@@ -94,9 +94,9 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         # range(len(trajectory)) avoids recopying topology, as would occur
         # in `for frame in trajectory`
         for frame_num in range(len(trajectory)):
-            frame_contacts = self.contact_map(used_trajectory, frame_num,
-                                              residue_query_atom_idxs,
-                                              residue_ignore_atom_idxs)
+            frame_contacts = self._contact_map(used_trajectory, frame_num,
+                                               residue_query_atom_idxs,
+                                               residue_ignore_atom_idxs)
             frame_atom_contacts, frame_residue_contacts = frame_contacts
             frame_atom_contacts = \
                     self.indexer.convert_atom_contacts(frame_atom_contacts)
