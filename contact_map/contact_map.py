@@ -632,8 +632,6 @@ class ContactFrequency(ContactObject):
     n_neighbors_ignored : int
         Number of neighboring residues (in the same chain) to ignore.
         Default 2.
-    frames : list of int
-        The indices of the frames to use from the trajectory. Default all
     """
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
@@ -644,12 +642,9 @@ class ContactFrequency(ContactObject):
     )
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2, frames=None):
+                 n_neighbors_ignored=2):
         warnings.warn(self._pending_dep_msg, PendingDeprecationWarning)
-        if frames is None:
-            frames = range(len(trajectory))
-        self.frames = frames
-        self._n_frames = len(frames)
+        self._n_frames = len(trajectory)
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
