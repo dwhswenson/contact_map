@@ -602,7 +602,7 @@ class ContactObject(object):
 
 CONTACT_MAP_ERROR = (
     "The ContactMap class has been removed. Please use ContactFrequency."
-   + " For more, see: https://github.com/dwhswenson/contact_map/issues/82"
+    " For more, see: https://github.com/dwhswenson/contact_map/issues/82"
 )
 def ContactMap(*args, **kwargs):  # -no-cov-
     raise RuntimeError(CONTACT_MAP_ERROR)
@@ -639,8 +639,8 @@ class ContactFrequency(ContactObject):
     _class_use_atom_slice = None
     _pending_dep_msg = (
         "ContactFrequency will be renamed to ContactMap in version 0.8. "
-        + "Invoking it as ContactFrequency will be deprecated in 0.8. For "
-        + "more, see https://github.com/dwhswenson/contact_map/issues/82"
+        "Invoking it as ContactFrequency will be deprecated in 0.8. For "
+        "more, see https://github.com/dwhswenson/contact_map/issues/82"
     )
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
