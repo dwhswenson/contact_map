@@ -854,24 +854,30 @@ class ContactDifference(ContactObject):
         if not all_atoms_ok:
             # Atom mapping does not make sense at the moment, override func
             # TODO: Might be fixable if all_atoms are equal length
-            self.atom_contacts = self._missing_atom_contacts
-            self.most_common_atoms_for_contact = self._missing_atom_contacts
-            self.most_common_atoms_for_residue = self._missing_atom_contacts
-            self.haystack_residues = self._missing_atom_contacts
-            self.query_residues = self._missing_atom_contacts
+            self._disable_atom_contacts()
 
         if not all_res_ok:
             # Can't be fixed for now
             # TODO: Can be fixed if the number of residues is equal
             # Or one is a subset of the other
-            self.residue_contacts = self._missing_residue_contacts
-            self._residue_ignore_atom_idxs = self._missing_residue_contacts
-            self.most_common_atoms_for_contact = self._missing_residue_contacts
-            self.most_common_atoms_for_residue = self._missing_residue_contacts
-            self.haystack_residues = self._missing_residue_contacts
-            self.query_residues = self._missing_residue_contacts
+            self._disable_residue_contacts()
 
         return topology
+
+    def _disable_atom_contacts(self):
+        self.atom_contacts = self._missing_atom_contacts
+        self.most_common_atoms_for_contact = self._missing_atom_contacts
+        self.most_common_atoms_for_residue = self._missing_atom_contacts
+        self.haystack_residues = self._missing_atom_contacts
+        self.query_residues = self._missing_atom_contacts
+
+    def _disable_residue_contacts(self):
+        self.residue_contacts = self._missing_residue_contacts
+        self._residue_ignore_atom_idxs = self._missing_residue_contacts
+        self.most_common_atoms_for_contact = self._missing_residue_contacts
+        self.most_common_atoms_for_residue = self._missing_residue_contacts
+        self.haystack_residues = self._missing_residue_contacts
+        self.query_residues = self._missing_residue_contacts
 
     def to_dict(self):
         """Convert object to a dict.
