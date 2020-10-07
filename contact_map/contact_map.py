@@ -865,11 +865,15 @@ class ContactDifference(ContactObject):
         return topology
 
     def _disable_atom_contacts(self):
-        self.atom_contacts = self._missing_atom_contacts
         self.most_common_atoms_for_contact = self._missing_atom_contacts
         self.most_common_atoms_for_residue = self._missing_atom_contacts
-        self.haystack_residues = self._missing_atom_contacts
-        self.query_residues = self._missing_atom_contacts
+
+        # Overriding properties is hard
+        self.atom_contacts.fget = self._missing_atom_contacts
+
+        # Overriding inherted properties is even harder
+        setattr(self, 'haystack_residues', self._missing_atom_contacts)
+        self.query_residues = property(self._missing_atom_contacts)
 
     def _disable_residue_contacts(self):
         self.residue_contacts = self._missing_residue_contacts
@@ -954,12 +958,10 @@ class ContactDifference(ContactObject):
         diff.subtract(self.negative.residue_contacts.counter)
         return ContactCount(diff, self.topology.residue, n_x, n_y)
 
-    @property
     def _missing_atom_contacts(self, *args, **kwargs):
         raise RuntimeError("Different atom indices involved between the two"
                            " maps, so this does not make sense.")
 
-    @property
     def _missing_residue_contacts(self, *args, **kwargs):
         raise RuntimeError("Different residue indices between the two maps,"
                            " so this does not make sense.")

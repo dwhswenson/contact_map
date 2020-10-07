@@ -773,3 +773,31 @@ class TestContactDifference(object):
                                  n_neighbors_ignored=0)
         diff = ttraj - frame
         diff.residue_contacts.plot()
+
+    def test_disable_atom_contacts(self):
+        disabled_funcs = ['atom_contacts',
+                          'most_common_atoms_for_contact',
+                          'most_common_atoms_for_residue',
+                          'haystack_residues',
+                          'query_residues']
+
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        diff = ttraj - frame
+        diff._disable_atom_contacts()
+        for f in disabled_funcs:
+            with pytest.raises(RuntimeError) as e:
+                func = getattr(diff, f)
+                # This should only trigger if f is not a property
+                # (otherwise the previous line should raise)
+                func()
+            # test that 'atoms' is in the error
+            assert 'atom' in str(e.value)
+        # Make sure they are still properties
+        with pytest.raises(RuntimeError):
+            diff.atoms_contact
+
+        # Make sure residue contacts are still accessible
+        _ = diff.residue_contacts
