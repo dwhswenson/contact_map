@@ -605,60 +605,12 @@ class ContactObject(object):
                             n_res, n_res)
 
 
-class ContactMap(ContactObject):
-    """
-    Contact map (atomic and residue) for a single frame.
-
-    .. deprecated:: 0.6.0
-        ``ContactMap`` will be removed in Contact Map Explorer 0.7.0 because
-        it is redundant with ``ContactFrequency``. For more, see
-        https://github.com/dwhswenson/contact_map/issues/82.
-
-    """
-    # Default for use_atom_slice, None tries to be smart
-    _class_use_atom_slice = None
-
-    _deprecation_message = (
-        "The ContactMap class will be removed in Contact Map Explorer 0.7. "
-        + "Use ContactFrequency instead. For more, see: "
-        + "https://github.com/dwhswenson/contact_map/issues/82."
-    )
-
-    def __init__(self, frame, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2):
-        warnings.warn(self._deprecation_message, FutureWarning)
-        self._frame = frame  # TODO: remove this?
-        super(ContactMap, self).__init__(frame.topology, query, haystack,
-                                         cutoff, n_neighbors_ignored)
-
-        contact_maps = self.contact_map(frame, 0,
-                                        self.indexer.residue_query_atom_idxs,
-                                        self._residue_ignore_atom_idxs)
-        (atom_contacts, self._residue_contacts) = contact_maps
-        self._atom_contacts = self.indexer.convert_atom_contacts(atom_contacts)
-
-    @classmethod
-    def from_dict(cls, dct):
-        warnings.warn(cls._deprecation_message, FutureWarning)
-        return super(ContactMap, cls).from_dict(dct)
-
-    # don't need to add deprecation in from_json because it uses from_dict
-
-    @classmethod
-    def from_file(cls, filename):
-        warnings.warn(cls._deprecation_message, FutureWarning)
-        return super(ContactMap, cls).from_file(filename)
-
-    def __hash__(self):
-        return hash((super(ContactMap, self).__hash__(),
-                     tuple(self._atom_contacts.items()),
-                     tuple(self._residue_contacts.items())))
-
-    def __eq__(self, other):
-        is_equal = (super(ContactMap, self).__eq__(other)
-                    and self._atom_contacts == other._atom_contacts
-                    and self._residue_contacts == other._residue_contacts)
-        return is_equal
+CONTACT_MAP_ERROR = (
+    "The ContactMap class has been removed. Please use ContactFrequency."
+    " For more, see: https://github.com/dwhswenson/contact_map/issues/82"
+)
+def ContactMap(*args, **kwargs):  # -no-cov-
+    raise RuntimeError(CONTACT_MAP_ERROR)
 
 
 class ContactFrequency(ContactObject):
@@ -690,9 +642,15 @@ class ContactFrequency(ContactObject):
     """
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
+    _pending_dep_msg = (
+        "ContactFrequency will be renamed to ContactMap in version 0.8. "
+        "Invoking it as ContactFrequency will be deprecated in 0.8. For "
+        "more, see https://github.com/dwhswenson/contact_map/issues/82"
+    )
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2, frames=None):
+        warnings.warn(self._pending_dep_msg, PendingDeprecationWarning)
         if frames is None:
             frames = range(len(trajectory))
         self.frames = frames
@@ -707,12 +665,23 @@ class ContactFrequency(ContactObject):
     def from_contacts(cls, atom_contacts, residue_contacts, n_frames,
                       topology, query=None, haystack=None, cutoff=0.45,
                       n_neighbors_ignored=2, indexer=None):
+        warnings.warn(cls._pending_dep_msg, PendingDeprecationWarning)
         obj = super(ContactFrequency, cls).from_contacts(
             atom_contacts, residue_contacts, topology, query, haystack,
             cutoff, n_neighbors_ignored, indexer
         )
         obj._n_frames = n_frames
         return obj
+
+    @classmethod
+    def from_dict(cls, dct):
+        warnings.warn(cls._pending_dep_msg, PendingDeprecationWarning)
+        return super(ContactFrequency, cls).from_dict(dct)
+
+    @classmethod
+    def from_file(cls, filename):
+        warnings.warn(cls._pending_dep_msg, PendingDeprecationWarning)
+        return super(ContactFrequency, cls).from_file(filename)
 
     def __hash__(self):
         return hash((super(ContactFrequency, self).__hash__(),
