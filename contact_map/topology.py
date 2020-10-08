@@ -3,7 +3,7 @@ import mdtraj as md
 
 def check_atoms_ok(top0, top1, atoms):
     """Check if two topologies are equal on an atom level"""
-    genatom = (top0.atom(i) == top1.atom(i) for i in atoms)
+    genatom = (atoms_eq(top0.atom(i), top1.atom(i)) for i in atoms)
     # This needs try except in case one topology does not have the atom index
     try:
         all_atoms_ok = all(genatom)
@@ -13,6 +13,15 @@ def check_atoms_ok(top0, top1, atoms):
     return all_atoms_ok
 
 
+def atoms_eq(one, other):
+    """Check if atoms are equal except from resname and residue"""
+    checks = [one.name.rsplit('-', 1)[-1] == other.name.rsplit('-', 1)[-1],
+              one.element == other.element,
+              one.index == other.index,
+              one.serial == other.serial]
+    return all(checks)
+
+
 def check_residues_ok(top0, top1, atoms, out_topology=None):
     """Check if the residues in two topologies are equal.
 
@@ -20,10 +29,11 @@ def check_residues_ok(top0, top1, atoms, out_topology=None):
     residue name will be updated inplace in the out_topology
     """
     res_idx = _get_residue_indices(top0, top1, atoms)
+
     all_res_ok = (bool(len(res_idx)))  # True if is bigger than 0
+
     all_res_ok &= not _count_mismatching_names(top0, top1, res_idx,
                                                out_topology)
-
     return all_res_ok
 
 
@@ -89,10 +99,10 @@ def check_topologies(map0, map1, override_topology):
         topology = top1.copy()
 
     # Figure out the overlapping atoms
-    all_atoms0 = map0.query | map0.haystack
-    all_atoms1 = map1.query | map1.haystack
+    all_atoms0 = map0._query | map0._haystack
+    all_atoms1 = map1._query | map1._haystack
 
-    # Should this be an overlap or a join?
+    # Should this be an union or an intersect?
     overlap_atoms = all_atoms0 | all_atoms1
     all_atoms_ok = check_atoms_ok(top0, top1, overlap_atoms)
     all_res_ok = check_residues_ok(top0, top1, overlap_atoms, topology)

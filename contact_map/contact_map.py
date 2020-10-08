@@ -792,102 +792,28 @@ class ContactFrequency(ContactObject):
 class ContactDifference(ContactObject):
     """
     Contact map comparison (atomic and residue).
-
     This can compare single frames or entire trajectories (or even mix the
     two!) While this can be directly instantiated by the user, the more
     common way to make this object is by using the ``-`` operator, i.e.,
     ``diff = map_1 - map_2``.
     """
-    def __init__(self, positive, negative, override_topology=False):
+    def __init__(self, positive, negative):
         self.positive = positive
         self.negative = negative
-        self.override_topology = override_topology
-        failed = positive._check_compatibility(
-            negative,
-            return_failed=bool(override_topology)
-        )
-        if not bool(override_topology):
-            topology = positive.topology
-            query = positive.query
-            haystack = positive.haystack
-            cutoff = positive.cutoff
-            n_neighbors_ignored = positive.n_neighbors_ignored
-        else:
-            (topology, query, haystack,
-             cutoff, n_neighbors_ignored) = self._fix_self(positive, negative,
-                                                           failed,
-                                                           override_topology)
+        (topology, query,
+         haystack, cutoff,
+         n_neighbors_ignored) = self._check_compatibility(positive, negative)
 
-        super(ContactDifference, self).__init__(
-              positive.topology,
-              positive.query,
-              positive.haystack,
-              positive.cutoff,
-              positive.n_neighbors_ignored)
+        super(ContactDifference, self).__init__(topology,
+                                                query,
+                                                haystack,
+                                                cutoff,
+                                                n_neighbors_ignored)
 
-    def _fix_self(self, positive, negative, failed, override_topology):
-        # First make the default output
-        output = {'topology': positive.topology,
-                  'query': positive.query,
-                  'haystack': positive.haystack,
-                  'cutoff': positive.cutoff,
-                  'n_neighbors_ignored': positive.n_neighbors_ignored}
-
-        for fail in failed:
-            if fail in {'query', 'haystack', 'cutoff', 'n_neighbors_ignored'}:
-                # We just set them to None
-                fixed = None
-            elif fail == 'topology':
-                # This requires quite a bit of logic
-                fixed = self._fix_topology(positive, negative,
-                                           override_topology)
-            output[fail] = fixed
-        return tuple(output.values())
-
-    def _check_topology(self, positive, negative, override_topology):
-        all_atoms_ok, all_res_ok, topology = check_topologies(
-            map0=positive,
-            map1=negative,
-            override_topology=override_topology
-        )
-
-        if not all_atoms_ok:
-            # Atom mapping does not make sense at the moment, override func
-            # TODO: Might be fixable if all_atoms are equal length
-            self._disable_atom_contacts()
-
-        if not all_res_ok:
-            # Can't be fixed for now
-            # TODO: Can be fixed if the number of residues is equal
-            # Or one is a subset of the other
-            self._disable_residue_contacts()
-
-        return topology
-
-    def _disable_atom_contacts(self):
-        self.most_common_atoms_for_contact = self._missing_atom_contacts
-        self.most_common_atoms_for_residue = self._missing_atom_contacts
-
-        # Overriding properties is hard
-        self.atom_contacts.fget = self._missing_atom_contacts
-
-        # Overriding inherted properties is even harder
-        setattr(self, 'haystack_residues', self._missing_atom_contacts)
-        self.query_residues = property(self._missing_atom_contacts)
-
-    def _disable_residue_contacts(self):
-        self.residue_contacts = self._missing_residue_contacts
-        self._residue_ignore_atom_idxs = self._missing_residue_contacts
-        self.most_common_atoms_for_contact = self._missing_residue_contacts
-        self.most_common_atoms_for_residue = self._missing_residue_contacts
-        self.haystack_residues = self._missing_residue_contacts
-        self.query_residues = self._missing_residue_contacts
 
     def to_dict(self):
         """Convert object to a dict.
-
         Keys should be strings; values should be (JSON-) serializable.
-
         See also
         --------
         from_dict
@@ -896,19 +822,16 @@ class ContactDifference(ContactObject):
             'positive': self.positive.to_json(),
             'negative': self.negative.to_json(),
             'positive_cls': self.positive.__class__.__name__,
-            'negative_cls': self.negative.__class__.__name__,
-            'override_topology': self.override_topology,
+            'negative_cls': self.negative.__class__.__name__
         }
 
     @classmethod
     def from_dict(cls, dct):
         """Create object from dict.
-
         Parameters
         ----------
         dct : dict
             dict-formatted serialization (see to_dict for details)
-
         See also
         --------
         to_dict
@@ -929,8 +852,7 @@ class ContactDifference(ContactObject):
 
         positive = rebuild('positive')
         negative = rebuild('negative')
-        override_topology = dct['override_topology']
-        return cls(positive, negative, override_topology=override_topology)
+        return cls(positive, negative)
 
     def __sub__(self, other):
         raise NotImplementedError
@@ -958,10 +880,137 @@ class ContactDifference(ContactObject):
         diff.subtract(self.negative.residue_contacts.counter)
         return ContactCount(diff, self.topology.residue, n_x, n_y)
 
-    def _missing_atom_contacts(self, *args, **kwargs):
+    def _check_compatibility(self, positive, negative):
+        failed = positive._check_compatibility(negative, return_failed=True)
+        return self._fix_self(positive, negative, failed)
+
+    def _fix_self(self, positive, negative, failed):
+        # First make the default output
+        output = {'topology': positive.topology,
+                  'query': positive.query,
+                  'haystack': positive.haystack,
+                  'cutoff': positive.cutoff,
+                  'n_neighbors_ignored': positive.n_neighbors_ignored}
+
+        for fail in failed:
+            if fail in {'query', 'haystack'}:
+                fixed = []
+            elif fail in {'cutoff', 'n_neighbors_ignored'}:
+                # We just set them to None
+                fixed = None
+            elif fail == 'topology':
+                # This requires quite a bit of logic
+                fixed = self._check_topology(positive, negative, False)
+            output[fail] = fixed
+        return tuple(output.values())
+
+    def _check_topology(self, positive, negative, override_topology):
+        all_atoms_ok, all_res_ok, topology = check_topologies(
+            map0=positive,
+            map1=negative,
+            override_topology=override_topology
+        )
+
+        if not all_atoms_ok:
+            # Atom mapping does not make sense at the moment, override func
+            # TODO: Might be fixable if all_atoms are equal length
+            self._disable_atom_contacts()
+
+        if not all_res_ok:
+            # Can't be fixed for now
+            # TODO: Can be fixed if the number of residues is equal
+            # Or one is a subset of the other
+            self._disable_residue_contacts()
+
+        return topology
+
+    def _disable_atom_contacts(self):
+        msg = (
+            "The two different contact maps had atoms that were not equal "
+            "between the two topologies. If you want to compare these "
+            "use `diff = AtomMismatchDifference(map1, map2)`"
+        )
+        raise RuntimeError(msg)
+
+    def _disable_residue_contacts(self):
+        msg = (
+            "The two different contact maps had residues that were not equal "
+            "between the two topologies. If you want to compare these "
+            "use `diff = ResidueMismatchDifference(map1, map2)`"
+        )
+        raise RuntimeError(msg)
+
+
+class AtomMismatchedContactDifference(ContactDifference):
+    """
+    Contact map comparison (only residues).
+
+    This can compare single frames or entire trajectories (or even mix the
+    two!) While this can be directly instantiated by the user, the more
+    common way to make this object is by using the ``-`` operator, i.e.,
+    ``diff = map_1 - map_2``.
+    """
+    def _disable_atom_contacts(self):
+        pass
+
+    def most_common_atoms_for_contact(self, *args, **kwargs):
+        self._missing_atom_contacts()
+
+    def most_common_atoms_for_residue(self, *args, **kwargs):
+        self._missing_atom_contacts()
+
+    @property
+    def atom_contacts(self):
+        self._missing_atom_contacts()
+
+    @property
+    def haystack_residues(self):
+        self._missing_atom_contacts()
+
+    @property
+    def query_residues(self):
+        self._missing_atom_contacts()
+
+    def _missing_atom_contacts(self):
         raise RuntimeError("Different atom indices involved between the two"
                            " maps, so this does not make sense.")
 
-    def _missing_residue_contacts(self, *args, **kwargs):
-        raise RuntimeError("Different residue indices between the two maps,"
-                           " so this does not make sense.")
+
+class ResidueMismatchedContactDifference(ContactDifference):
+    """
+    Contact map comparison (only atoms).
+
+    This can compare single frames or entire trajectories (or even mix the
+    two!) While this can be directly instantiated by the user, the more
+    common way to make this object is by using the ``-`` operator, i.e.,
+    ``diff = map_1 - map_2``.
+    """
+
+    def _disable_residue_contacts(self):
+        pass
+
+    @property
+    def residue_contacts(self):
+        self._missing_residue_contacts()
+
+    @property
+    def _residue_ignore_atom_idxs(self):
+        self._missing_residue_contacts()
+
+    def most_common_atoms_for_contact(self, *args, **kwargs):
+        self._missing_residue_contacts()
+
+    def most_common_atoms_for_residue(self, *args, **kwargs):
+        self._missing_residue_contacts()
+
+    @property
+    def haystack_residues(self):
+        self._missing_residue_contacts()
+
+    @property
+    def query_residues(self):
+        self._missing_residue_contacts()
+
+    def _missing_residue_contacts(self):
+        raise RuntimeError("Different residue indices involved between the two"
+                           " maps, so this does not make sense.")
