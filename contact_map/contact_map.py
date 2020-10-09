@@ -797,6 +797,8 @@ class ContactDifference(ContactObject):
     common way to make this object is by using the ``-`` operator, i.e.,
     ``diff = map_1 - map_2``.
     """
+    _override_topology = True  # Mainly here for subclassing
+
     def __init__(self, positive, negative):
         self.positive = positive
         self.negative = negative
@@ -809,7 +811,6 @@ class ContactDifference(ContactObject):
                                                 haystack,
                                                 cutoff,
                                                 n_neighbors_ignored)
-
 
     def to_dict(self):
         """Convert object to a dict.
@@ -900,16 +901,19 @@ class ContactDifference(ContactObject):
                 fixed = None
             elif fail == 'topology':
                 # This requires quite a bit of logic
-                fixed = self._check_topology(positive, negative, False)
+                fixed = self._check_topology(positive, negative)
             output[fail] = fixed
         return tuple(output.values())
 
-    def _check_topology(self, positive, negative, override_topology):
+    def _check_topology(self, positive, negative):
         all_atoms_ok, all_res_ok, topology = check_topologies(
             map0=positive,
             map1=negative,
-            override_topology=override_topology
+            override_topology=self._override_topology
         )
+        if not all_atoms_ok and not all_res_ok:
+            # We don\t know how to fix this, defer to the user
+            self._disable_all_contacts()
 
         if not all_atoms_ok:
             # Atom mapping does not make sense at the moment, override func
@@ -924,11 +928,25 @@ class ContactDifference(ContactObject):
 
         return topology
 
+    def _disable_all_contacts(self):
+        msg = (
+            "The two different contact maps had atoms and residues that were "
+            " not equal between the two topologies."
+            " If you want to compare these, use "
+            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
+            " with a mdtraj.Topology that contains all atoms and residues."
+        )
+        raise RuntimeError(msg)
+
     def _disable_atom_contacts(self):
         msg = (
             "The two different contact maps had atoms that were not equal "
             "between the two topologies. If you want to compare these "
-            "use `diff = AtomMismatchDifference(map1, map2)`"
+            "use `diff = AtomMismatchedContactDifference(map1, map2)`.\n"
+            "Alternatively, use "
+            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
+            " with a mdtraj.Topology."
+
         )
         raise RuntimeError(msg)
 
@@ -936,7 +954,10 @@ class ContactDifference(ContactObject):
         msg = (
             "The two different contact maps had residues that were not equal "
             "between the two topologies. If you want to compare these "
-            "use `diff = ResidueMismatchDifference(map1, map2)`"
+            "use `diff = ResidueMismatchedContactDifference(map1, map2)`.\n"
+            "Alternatively, use "
+            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
+            " with a mdtraj.Topology."
         )
         raise RuntimeError(msg)
 
@@ -1014,3 +1035,9 @@ class ResidueMismatchedContactDifference(ContactDifference):
     def _missing_residue_contacts(self):
         raise RuntimeError("Different residue indices involved between the two"
                            " maps, so this does not make sense.")
+
+
+class OverrideTopologyContactDifference(ContactDifference):
+    def __init__(self, positive, negative, topology):
+        self._override_topology = topology
+        super().__init__(positive, negative)

@@ -40,13 +40,20 @@ def check_residues_ok(top0, top1, atoms, out_topology=None):
 def _get_residue_indices(top0, top1, atoms):
     """Get the residue indices or an empty list if not equal."""
     out_idx = []
-    try:
-        res_idx0 = set([top0.atom(i).residue.index for i in atoms])
-        res_idx1 = set([top1.atom(i).residue.index for i in atoms])
-    except IndexError:
-        return out_idx
-
+    res_idx0 = []
+    res_idx1 = []
+    for i in atoms:
+        for idx, top in zip([res_idx0, res_idx1], [top0, top1]):
+            try:
+                idx.append(top.atom(i).residue.index)
+            except IndexError:
+                # Pass here and assume this will either line upbetween the two
+                # or not
+                pass
     # Check if the involved indices are equal
+    res_idx0 = set(res_idx0)
+    res_idx1 = set(res_idx1)
+
     if res_idx0 == res_idx1:
         out_idx = res_idx0
     return out_idx
@@ -56,6 +63,7 @@ def _count_mismatching_names(top0, top1, residx, out_topology=None):
     """Check for mismatching names.
 
     This will return truthy value if found and not fixable.
+    It also assumes all indices are present in both topologies
     """
     # Check if the names are different
     mismatched_idx = []
@@ -64,20 +72,17 @@ def _count_mismatching_names(top0, top1, residx, out_topology=None):
         name1 = top1.residue(idx).name
         if name0 != name1:
             mismatched_idx.append((idx, name0, name1))
+
     if out_topology:
-        return _fix_topology(mismatched_idx, out_topology)
+        _fix_topology(mismatched_idx, out_topology)
+        mismatched_idx = []
     return len(mismatched_idx)
 
 
 def _fix_topology(mismatched_idx, out_topology):
-    """Try to fix the topology, will return true if this errors out"""
+    """Fix the topology, assumes all indices are present"""
     for idx, name0, name1 in mismatched_idx:
-        try:
-            out_topology.residue(idx).name = "/".join([name0, name1])
-        except IndexError:
-            # If out topology is not complete
-            return True
-    return False
+        out_topology.residue(idx).name = "/".join([name0, name1])
 
 
 def check_topologies(map0, map1, override_topology):
@@ -97,6 +102,8 @@ def check_topologies(map0, map1, override_topology):
         topology = top0.copy()
     else:
         topology = top1.copy()
+    if override_topology:
+        override_topology = topology
 
     # Figure out the overlapping atoms
     all_atoms0 = map0._query | map0._haystack
@@ -105,7 +112,8 @@ def check_topologies(map0, map1, override_topology):
     # Should this be an union or an intersect?
     overlap_atoms = all_atoms0 | all_atoms1
     all_atoms_ok = check_atoms_ok(top0, top1, overlap_atoms)
-    all_res_ok = check_residues_ok(top0, top1, overlap_atoms, topology)
+    all_res_ok = check_residues_ok(top0, top1, overlap_atoms,
+                                   override_topology)
     if not all_res_ok and not all_atoms_ok:
         topology = md.Topology()
 
