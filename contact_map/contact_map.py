@@ -965,11 +965,6 @@ class ContactDifference(ContactObject):
 class AtomMismatchedContactDifference(ContactDifference):
     """
     Contact map comparison (only residues).
-
-    This can compare single frames or entire trajectories (or even mix the
-    two!) While this can be directly instantiated by the user, the more
-    common way to make this object is by using the ``-`` operator, i.e.,
-    ``diff = map_1 - map_2``.
     """
     def _disable_atom_contacts(self):
         pass
@@ -1000,11 +995,6 @@ class AtomMismatchedContactDifference(ContactDifference):
 class ResidueMismatchedContactDifference(ContactDifference):
     """
     Contact map comparison (only atoms).
-
-    This can compare single frames or entire trajectories (or even mix the
-    two!) While this can be directly instantiated by the user, the more
-    common way to make this object is by using the ``-`` operator, i.e.,
-    ``diff = map_1 - map_2``.
     """
 
     def _disable_residue_contacts(self):
@@ -1038,6 +1028,10 @@ class ResidueMismatchedContactDifference(ContactDifference):
 
 
 class OverrideTopologyContactDifference(ContactDifference):
+    """
+    Contact map comparison with a user provided Topology.
+    """
+
     def __init__(self, positive, negative, topology):
         self._override_topology = topology
         super().__init__(positive, negative)
