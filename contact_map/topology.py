@@ -37,23 +37,23 @@ def check_residues_ok(top0, top1, atoms, out_topology=None):
     return all_res_ok
 
 
+def _get_all_possible_residue_indices(top, atoms):
+    out = []
+    for i in atoms:
+        try:
+            out.append(top.atom(i).residue.index)
+        except IndexError:
+            break
+    return set(out)
+
+
 def _get_residue_indices(top0, top1, atoms):
     """Get the residue indices or an empty list if not equal."""
-    out_idx = []
-    res_idx0 = []
-    res_idx1 = []
-    for i in atoms:
-        for idx, top in zip([res_idx0, res_idx1], [top0, top1]):
-            try:
-                idx.append(top.atom(i).residue.index)
-            except IndexError:
-                # Pass here and assume this will either line upbetween the two
-                # or not
-                pass
-    # Check if the involved indices are equal
-    res_idx0 = set(res_idx0)
-    res_idx1 = set(res_idx1)
+    out_idx = {}
+    res_idx0 = _get_all_possible_residue_indices(top0, atoms)
+    res_idx1 = _get_all_possible_residue_indices(top1, atoms)
 
+    # Check if the involved indices are equal
     if res_idx0 == res_idx1:
         out_idx = res_idx0
     return out_idx
@@ -85,12 +85,7 @@ def _fix_topology(mismatched_idx, out_topology):
         out_topology.residue(idx).name = "/".join([name0, name1])
 
 
-def check_topologies(map0, map1, override_topology):
-    """Check if the topologies of two contact maps are ok or can be fixed"""
-    # Grab the two topologies
-    top0 = map0.topology
-    top1 = map1.topology
-
+def _get_default_topologies(top0, top1, override_topology):
     # Make a custom topology
     if isinstance(override_topology, md.Topology):
         # User provided topology
@@ -102,6 +97,18 @@ def check_topologies(map0, map1, override_topology):
         topology = top0.copy()
     else:
         topology = top1.copy()
+    return top0, top1, topology
+
+
+def check_topologies(map0, map1, override_topology):
+    """Check if the topologies of two contact maps are ok or can be fixed"""
+    # Grab the two topologies
+    top0 = map0.topology
+    top1 = map1.topology
+
+    top0, top1, topology = _get_default_topologies(top0, top1,
+                                                   override_topology)
+
     if override_topology:
         override_topology = topology
 
