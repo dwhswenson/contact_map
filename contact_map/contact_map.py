@@ -17,7 +17,7 @@ import mdtraj as md
 from .contact_count import ContactCount
 from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
 from .py_2_3 import inspect_method_arguments
-from .topology import check_topologies
+from .fix_parameters import ParameterFixer
 
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
@@ -797,14 +797,23 @@ class ContactDifference(ContactObject):
     common way to make this object is by using the ``-`` operator, i.e.,
     ``diff = map_1 - map_2``.
     """
-    _override_topology = True  # Mainly here for subclassing
+    # Some class variables on how we handle mismatches, mainly for subclassing.
+    _allow_mismatched_atoms = False
+    _allow_mismatched_residues = False
+    _override_topology = True
 
     def __init__(self, positive, negative):
         self.positive = positive
         self.negative = negative
+        fix_parameters = ParameterFixer(
+            allow_mismatched_atoms=self._allow_mismatched_atoms,
+            allow_mismatched_residues=self._allow_mismatched_residues,
+            override_topology=self._override_topology)
+
         (topology, query,
          haystack, cutoff,
-         n_neighbors_ignored) = self._check_compatibility(positive, negative)
+         n_neighbors_ignored) = fix_parameters.get_parameters(positive,
+                                                              negative)
 
         super(ContactDifference, self).__init__(topology,
                                                 query,
@@ -881,93 +890,12 @@ class ContactDifference(ContactObject):
         diff.subtract(self.negative.residue_contacts.counter)
         return ContactCount(diff, self.topology.residue, n_x, n_y)
 
-    def _check_compatibility(self, positive, negative):
-        failed = positive._check_compatibility(negative, return_failed=True)
-        return self._fix_self(positive, negative, failed)
-
-    def _fix_self(self, positive, negative, failed):
-        # First make the default output
-        output = {'topology': positive.topology,
-                  'query': positive.query,
-                  'haystack': positive.haystack,
-                  'cutoff': positive.cutoff,
-                  'n_neighbors_ignored': positive.n_neighbors_ignored}
-
-        for fail in failed:
-            if fail in {'query', 'haystack'}:
-                fixed = []
-            elif fail in {'cutoff', 'n_neighbors_ignored'}:
-                # We just set them to None
-                fixed = None
-            elif fail == 'topology':
-                # This requires quite a bit of logic
-                fixed = self._check_topology(positive, negative)
-            output[fail] = fixed
-        return tuple(output.values())
-
-    def _check_topology(self, positive, negative):
-        all_atoms_ok, all_res_ok, topology = check_topologies(
-            map0=positive,
-            map1=negative,
-            override_topology=self._override_topology
-        )
-        if not all_atoms_ok and not all_res_ok:
-            # We don\t know how to fix this, defer to the user
-            self._disable_all_contacts()
-
-        if not all_atoms_ok:
-            # Atom mapping does not make sense at the moment, override func
-            # TODO: Might be fixable if all_atoms are equal length
-            self._disable_atom_contacts()
-
-        if not all_res_ok:
-            # Can't be fixed for now
-            # TODO: Can be fixed if the number of residues is equal
-            # Or one is a subset of the other
-            self._disable_residue_contacts()
-
-        return topology
-
-    def _disable_all_contacts(self):
-        msg = (
-            "The two different contact maps had atoms and residues that were "
-            " not equal between the two topologies."
-            " If you want to compare these, use "
-            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
-            " with a mdtraj.Topology that contains all atoms and residues."
-        )
-        raise RuntimeError(msg)
-
-    def _disable_atom_contacts(self):
-        msg = (
-            "The two different contact maps had atoms that were not equal "
-            "between the two topologies. If you want to compare these "
-            "use `diff = AtomMismatchedContactDifference(map1, map2)`.\n"
-            "Alternatively, use "
-            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
-            " with a mdtraj.Topology."
-
-        )
-        raise RuntimeError(msg)
-
-    def _disable_residue_contacts(self):
-        msg = (
-            "The two different contact maps had residues that were not equal "
-            "between the two topologies. If you want to compare these "
-            "use `diff = ResidueMismatchedContactDifference(map1, map2)`.\n"
-            "Alternatively, use "
-            "`diff = OverrideTopologyContactDifference(map1, map2, topology)`"
-            " with a mdtraj.Topology."
-        )
-        raise RuntimeError(msg)
-
 
 class AtomMismatchedContactDifference(ContactDifference):
     """
     Contact map comparison (only residues).
     """
-    def _disable_atom_contacts(self):
-        pass
+    _allow_mismatched_atoms = True
 
     def most_common_atoms_for_contact(self, *args, **kwargs):
         self._missing_atom_contacts()
@@ -996,9 +924,7 @@ class ResidueMismatchedContactDifference(ContactDifference):
     """
     Contact map comparison (only atoms).
     """
-
-    def _disable_residue_contacts(self):
-        pass
+    _allow_mismatched_residues = True
 
     @property
     def residue_contacts(self):
