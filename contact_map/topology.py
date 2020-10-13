@@ -113,11 +113,11 @@ def check_topologies(map0, map1, override_topology):
         override_topology = topology
 
     # Figure out the overlapping atoms
-    all_atoms0 = map0._query | map0._haystack
-    all_atoms1 = map1._query | map1._haystack
+    all_atoms0 = set(map0._all_atoms)
+    all_atoms1 = set(map1._all_atoms)
 
-    # Should this be an union or an intersect?
-    overlap_atoms = all_atoms0 | all_atoms1
+    # This is intersect (for difference)
+    overlap_atoms = all_atoms0 & all_atoms1
     all_atoms_ok = check_atoms_ok(top0, top1, overlap_atoms)
     all_res_ok = check_residues_ok(top0, top1, overlap_atoms,
                                    override_topology)

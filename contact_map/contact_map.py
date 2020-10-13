@@ -63,6 +63,10 @@ def _residue_for_atom(topology, atom_list):
     return set([topology.atom(a).residue for a in atom_list])
 
 
+def _residue_idx_for_atom(topology, atom_list):
+    return set([topology.atom(a).residue.index for a in atom_list])
+
+
 def _range_from_object_list(object_list):
     """
     Objects must have .index attribute (e.g., MDTraj Residue/Atom)
@@ -814,7 +818,12 @@ class ContactDifference(ContactObject):
          haystack, cutoff,
          n_neighbors_ignored) = fix_parameters.get_parameters(positive,
                                                               negative)
-
+        self._all_atoms_intersect = set(
+            positive._all_atoms).intersection(negative._all_atoms)
+        self._all_residues_intersect = _residue_idx_for_atom(
+            topology,
+            self._all_atoms_intersect
+        )
         super(ContactDifference, self).__init__(topology,
                                                 query,
                                                 haystack,
@@ -878,16 +887,25 @@ class ContactDifference(ContactObject):
     def atom_contacts(self):
         n_x = self.topology.n_atoms
         n_y = self.topology.n_atoms
-        diff = collections.Counter(self.positive.atom_contacts.counter)
-        diff.subtract(self.negative.atom_contacts.counter)
+        filtered_pos = self.positive.atom_contacts.filter(
+            self._all_atoms_intersect)
+        filtered_neg = self.negative.atom_contacts.filter(
+            self._all_atoms_intersect)
+
+        diff = collections.Counter(filtered_pos.counter)
+        diff.subtract(filtered_neg.counter)
         return ContactCount(diff, self.topology.atom, n_x, n_y)
 
     @property
     def residue_contacts(self):
         n_x = self.topology.n_residues
         n_y = self.topology.n_residues
-        diff = collections.Counter(self.positive.residue_contacts.counter)
-        diff.subtract(self.negative.residue_contacts.counter)
+        filtered_pos = self.positive.residue_contacts.filter(
+            self._all_residues_intersect)
+        filtered_neg = self.negative.residue_contacts.filter(
+            self._all_residues_intersect)
+        diff = collections.Counter(filtered_pos.counter)
+        diff.subtract(filtered_neg.counter)
         return ContactCount(diff, self.topology.residue, n_x, n_y)
 
 
