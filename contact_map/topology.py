@@ -8,7 +8,7 @@ def check_atoms_ok(top0, top1, atoms):
     try:
         all_atoms_ok = all(genatom)
     except IndexError:
-        # If a given topology does not containthe required indices.
+        # If a given topology does not contain the required indices.
         all_atoms_ok = False
     return all_atoms_ok
 

@@ -328,7 +328,7 @@ class ContactObject(object):
             self_val = getattr(self, attr)
             other_val = getattr(other, attr)
             if self_val != other_val:
-                failed_attr.update({attr: (self_val, other_val)})
+                failed_attr[attr] = (self_val, other_val)
                 err_msg += "        {attr}: {self} != {other}\n".format(
                     attr=attr, self=str(self_val), other=str(other_val)
                 )
