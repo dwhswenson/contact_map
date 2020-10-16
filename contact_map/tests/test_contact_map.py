@@ -829,6 +829,25 @@ class TestContactDifference(object):
         assert diff.atom_contacts is not None
         assert diff.residue_contacts is not None
 
+    def test_truncated_diffs_residues(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        traj_trunc = traj.atom_slice(range(6))
+        ttraj_trunc = ContactFrequency(traj_trunc[0:4], cutoff=0.075,
+                                       n_neighbors_ignored=0)
+        frame_trunc = ContactFrequency(traj_trunc[4], cutoff=0.075,
+                                       n_neighbors_ignored=0)
+        # The diff should only be made for atoms and residues in both maps
+        diff1 = ttraj - frame_trunc
+        diff2 = ttraj_trunc - frame_trunc
+        # Make sure the topology does not fail here
+        assert diff1.atom_contacts is not None
+        assert diff1.residue_contacts is not None
+
+        # Make sure the diffs are equal
+        assert diff1.atom_contacts.counter == diff2.atom_contacts.counter
+        assert diff1.residue_contacts.counter == diff2.residue_contacts.counter
+
     def test_residue_rename_gives_different_atoms(self):
         ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
                                  n_neighbors_ignored=0)
@@ -881,16 +900,7 @@ class TestContactDifference(object):
         chain = frame.topology.chain(0)
         _ = frame.topology.add_residue(name='test',
                                        chain=chain)
-        res = frame.topology.residue(0)
-
-        frame.topology.atom(9).residue = res
-        frame.topology.atom(8).residue = res
-
-        assert frame.topology.atom(9).residue.index == 0
-        assert frame.topology.atom(8).residue.index == 0
-        assert ttraj.topology.atom(9).residue.index == 4
-        assert ttraj.topology.atom(8).residue.index == 4
-
+        frame.topology.residue(0).resSeq = "test"
 
         with pytest.raises(RuntimeError) as e:
             diff = ttraj - frame
@@ -902,6 +912,7 @@ class TestContactDifference(object):
         frame = ContactFrequency(traj[4], cutoff=0.075,
                                  n_neighbors_ignored=0)
 
+        # Grab atom info to add 'equal' atoms at the end
         element8 = frame.topology.atom(8).element
         element9 = frame.topology.atom(9).element
 
@@ -912,7 +923,7 @@ class TestContactDifference(object):
         serial9 = frame.topology.atom(9).serial
 
 
-        # subset the topology
+        # Remove residue from the internals of the topology
         frame._topology = frame.topology.subset(range(8))
         assert frame.topology.n_residues == 4
         # Add the original atoms again
@@ -1101,9 +1112,7 @@ class TestOverrideTopologyContactDifference(object):
         frame = ContactFrequency(traj[4], cutoff=0.075,
                                  n_neighbors_ignored=0)
 
-        # Now we are going to delete an atom; this needs to be the last atom
-        # otherwise we trigger on a short-circuit
-        frame._topology = frame.topology.subset(range(2))
+        frame.topology.delete_atom_by_index(9)
 
         # Make sure still break
         with pytest.raises(RuntimeError) as e:

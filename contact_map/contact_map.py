@@ -137,7 +137,8 @@ class ContactObject(object):
         # Make tuple for efficient lookupt
         all_atoms_set = set(query).union(set(haystack))
         self._all_atoms = tuple(sorted(list(all_atoms_set)))
-
+        self._all_residues = _residue_idx_for_atom(self._topology,
+                                                   all_atoms_set)
         self._use_atom_slice = self._set_atom_slice(self._all_atoms)
         has_indexer = getattr(self, 'indexer', None) is not None
         if not has_indexer:
@@ -215,6 +216,8 @@ class ContactObject(object):
             'haystack': list([int(val) for val in self._haystack]),
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
+            'all_residues': tuple(
+                [int(val) for val in self._all_residues]),
             'n_neighbors_ignored': self._n_neighbors_ignored,
             'atom_contacts':
                 self._serialize_contact_counter(self._atom_contacts),
@@ -245,6 +248,7 @@ class ContactObject(object):
             'query': deserialize_set,
             'haystack': deserialize_set,
             'all_atoms': deserialize_set,
+            'all_residues': deserialize_set,
             'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
         }
         for key in deserialization_helpers:
@@ -820,10 +824,8 @@ class ContactDifference(ContactObject):
                                                               negative)
         self._all_atoms_intersect = set(
             positive._all_atoms).intersection(negative._all_atoms)
-        self._all_residues_intersect = _residue_idx_for_atom(
-            topology,
-            self._all_atoms_intersect
-        )
+        self._all_residues_intersect = set(
+            positive._all_residues).intersection(negative._all_residues)
         super(ContactDifference, self).__init__(topology,
                                                 query,
                                                 haystack,

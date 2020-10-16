@@ -22,18 +22,26 @@ def atoms_eq(one, other):
     return all(checks)
 
 
-def check_residues_ok(top0, top1, atoms, out_topology=None):
+def residue_eq(one, other):
+    """Check if residues are equal except from name and chain"""
+    checks = [one.index == other.index,
+              one.resSeq == other.resSeq,
+              one.segment_id == other.segment_id]
+    return all(checks)
+
+
+def check_residues_ok(top0, top1, residues, out_topology=None):
     """Check if the residues in two topologies are equal.
 
     If an out_topology is given, and the residues only differ in name, that
     residue name will be updated inplace in the out_topology
     """
-    res_idx = _get_residue_indices(top0, top1, atoms)
+    res_idx = _get_residue_indices(top0, top1, residues)
 
     all_res_ok = (bool(len(res_idx)))  # True if is bigger than 0
 
-    all_res_ok &= not _count_mismatching_names(top0, top1, res_idx,
-                                               out_topology)
+    all_res_ok &= not _count_mismatching_residues(top0, top1, res_idx,
+                                                  out_topology)
     return all_res_ok
 
 
@@ -43,23 +51,21 @@ def _get_all_possible_residue_indices(top, atoms):
         try:
             out.append(top.atom(i).residue.index)
         except IndexError:
-            break
+            pass
     return set(out)
 
 
-def _get_residue_indices(top0, top1, atoms):
-    """Get the residue indices or an empty list if not equal."""
-    out_idx = {}
-    res_idx0 = _get_all_possible_residue_indices(top0, atoms)
-    res_idx1 = _get_all_possible_residue_indices(top1, atoms)
-
-    # Check if the involved indices are equal
-    if res_idx0 == res_idx1:
-        out_idx = res_idx0
-    return out_idx
+def _get_residue_indices(top0, top1, residues):
+    """Get the residue indices or an empty list if not able."""
+    for top in (top0, top1):
+        try:
+            res = [top.residue(i).index for i in residues]
+        except IndexError:
+            return {}
+    return res
 
 
-def _count_mismatching_names(top0, top1, residx, out_topology=None):
+def _count_mismatching_residues(top0, top1, residx, out_topology=None):
     """Check for mismatching names.
 
     This will return truthy value if found and not fixable.
@@ -67,19 +73,22 @@ def _count_mismatching_names(top0, top1, residx, out_topology=None):
     """
     # Check if the names are different
     mismatched_idx = []
+    mismatched_other = []
     for idx in residx:
-        name0 = top0.residue(idx).name
-        name1 = top1.residue(idx).name
-        if name0 != name1:
-            mismatched_idx.append((idx, name0, name1))
+        res0 = top0.residue(idx)
+        res1 = top1.residue(idx)
+        if not residue_eq(res0, res1):
+            mismatched_other.append(idx)
+        elif res0.name != res1.name:
+            mismatched_idx.append((idx, res0.name, res1.name))
 
     if out_topology:
-        _fix_topology(mismatched_idx, out_topology)
+        _fix_residue_names(mismatched_idx, out_topology)
         mismatched_idx = []
-    return len(mismatched_idx)
+    return len(mismatched_idx)+len(mismatched_other)
 
 
-def _fix_topology(mismatched_idx, out_topology):
+def _fix_residue_names(mismatched_idx, out_topology):
     """Fix the topology, assumes all indices are present"""
     for idx, name0, name1 in mismatched_idx:
         out_topology.residue(idx).name = "/".join([name0, name1])
@@ -106,20 +115,25 @@ def check_topologies(map0, map1, override_topology):
     top0 = map0.topology
     top1 = map1.topology
 
+    # Figure out the overlapping atoms
+    all_atoms0 = set(map0._all_atoms)
+    all_atoms1 = set(map1._all_atoms)
+
+    # Figure out overlapping residues
+    all_residues0 = set(map0._all_residues)
+    all_residues1 = set(map1._all_residues)
+
+    # This is intersect (for difference)
+    overlap_atoms = all_atoms0.intersection(all_atoms1)
+    overlap_residues = all_residues0.intersection(all_residues1)
     top0, top1, topology = _get_default_topologies(top0, top1,
                                                    override_topology)
 
     if override_topology:
         override_topology = topology
 
-    # Figure out the overlapping atoms
-    all_atoms0 = set(map0._all_atoms)
-    all_atoms1 = set(map1._all_atoms)
-
-    # This is intersect (for difference)
-    overlap_atoms = all_atoms0 & all_atoms1
     all_atoms_ok = check_atoms_ok(top0, top1, overlap_atoms)
-    all_res_ok = check_residues_ok(top0, top1, overlap_atoms,
+    all_res_ok = check_residues_ok(top0, top1, overlap_residues,
                                    override_topology)
     if not all_res_ok and not all_atoms_ok:
         topology = md.Topology()
