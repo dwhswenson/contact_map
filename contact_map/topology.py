@@ -45,18 +45,8 @@ def check_residues_ok(top0, top1, residues, out_topology=None):
     return all_res_ok
 
 
-def _get_all_possible_residue_indices(top, atoms):
-    out = []
-    for i in atoms:
-        try:
-            out.append(top.atom(i).residue.index)
-        except IndexError:
-            pass
-    return set(out)
-
-
 def _get_residue_indices(top0, top1, residues):
-    """Get the residue indices or an empty list if not able."""
+    """Get the residue indices or an empty set if not able."""
     for top in (top0, top1):
         try:
             res = [top.residue(i).index for i in residues]
