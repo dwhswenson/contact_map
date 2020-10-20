@@ -889,26 +889,32 @@ class ContactDifference(ContactObject):
     def atom_contacts(self):
         n_x = self.topology.n_atoms
         n_y = self.topology.n_atoms
-        filtered_pos = self.positive.atom_contacts.filter(
-            self._all_atoms_intersect)
-        filtered_neg = self.negative.atom_contacts.filter(
-            self._all_atoms_intersect)
-
-        diff = collections.Counter(filtered_pos.counter)
-        diff.subtract(filtered_neg.counter)
-        return ContactCount(diff, self.topology.atom, n_x, n_y)
+        return self._get_filtered_sub(pos_count=self.positive.atom_contacts,
+                                      neg_count=self.negative.atom_contacts,
+                                      selection=self._all_atoms_intersect,
+                                      object_f=self.topology.atom,
+                                      n_x=n_x,
+                                      n_y=n_y)
 
     @property
     def residue_contacts(self):
         n_x = self.topology.n_residues
         n_y = self.topology.n_residues
-        filtered_pos = self.positive.residue_contacts.filter(
-            self._all_residues_intersect)
-        filtered_neg = self.negative.residue_contacts.filter(
-            self._all_residues_intersect)
+        return self._get_filtered_sub(pos_count=self.positive.residue_contacts,
+                                      neg_count=self.negative.residue_contacts,
+                                      selection=self._all_residues_intersect,
+                                      object_f=self.topology.residue,
+                                      n_x=n_x,
+                                      n_y=n_y)
+
+    def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
+                          **kwargs):
+        """Get a filtered subtraction between two ContactCounts"""
+        filtered_pos = pos_count.filter(selection)
+        filtered_neg = neg_count.filter(selection)
         diff = collections.Counter(filtered_pos.counter)
         diff.subtract(filtered_neg.counter)
-        return ContactCount(diff, self.topology.residue, n_x, n_y)
+        return ContactCount(diff, *args, **kwargs)
 
 
 class AtomMismatchedContactDifference(ContactDifference):

@@ -11,18 +11,18 @@ class ParameterFixer(object):
         self.allow_mismatched_residues = allow_mismatched_residues
         self.override_topology = override_topology
 
-    def get_parameters(self, positive, negative):
+    def get_parameters(self, map0, map1):
         """Get the required parameters to initialise ContactDifference"""
-        failed = positive._check_compatibility(negative, return_failed=True)
-        return self._fix_parameters(positive, negative, failed)
+        failed = map0._check_compatibility(map1, return_failed=True)
+        return self._fix_parameters(map0, map1, failed)
 
-    def _fix_parameters(self, positive, negative, failed):
+    def _fix_parameters(self, map0, map1, failed):
         # First make the default output
-        output = {'topology': positive.topology,
-                  'query': positive.query,
-                  'haystack': positive.haystack,
-                  'cutoff': positive.cutoff,
-                  'n_neighbors_ignored': positive.n_neighbors_ignored}
+        output = {'topology': map0.topology,
+                  'query': map0.query,
+                  'haystack': map0.haystack,
+                  'cutoff': map0.cutoff,
+                  'n_neighbors_ignored': map0.n_neighbors_ignored}
 
         for fail in failed:
             if fail in {'query', 'haystack'}:
@@ -32,14 +32,14 @@ class ParameterFixer(object):
                 fixed = None
             elif fail == 'topology':
                 # This requires quite a bit of logic
-                fixed = self._check_topology(positive, negative)
+                fixed = self._check_topology(map0, map1)
             output[fail] = fixed
         return tuple(output.values())
 
-    def _check_topology(self, positive, negative):
+    def _check_topology(self, map0, map1):
         all_atoms_ok, all_res_ok, topology = check_topologies(
-            map0=positive,
-            map1=negative,
+            map0=map0,
+            map1=map1,
             override_topology=self.override_topology
         )
         if not all_atoms_ok and not all_res_ok:
@@ -56,7 +56,6 @@ class ParameterFixer(object):
             # TODO: Can be fixed if the number of residues is equal
             # Or one is a subset of the other
             self._disable_residue_contacts()
-
         return topology
 
     def _disable_all_contacts(self):
