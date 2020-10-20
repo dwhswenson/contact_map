@@ -887,25 +887,21 @@ class ContactDifference(ContactObject):
 
     @property
     def atom_contacts(self):
-        n_x = self.topology.n_atoms
-        n_y = self.topology.n_atoms
         return self._get_filtered_sub(pos_count=self.positive.atom_contacts,
                                       neg_count=self.negative.atom_contacts,
                                       selection=self._all_atoms_intersect,
                                       object_f=self.topology.atom,
-                                      n_x=n_x,
-                                      n_y=n_y)
+                                      n_x=self.topology.n_atoms,
+                                      n_y=self.topology.n_atoms)
 
     @property
     def residue_contacts(self):
-        n_x = self.topology.n_residues
-        n_y = self.topology.n_residues
         return self._get_filtered_sub(pos_count=self.positive.residue_contacts,
                                       neg_count=self.negative.residue_contacts,
                                       selection=self._all_residues_intersect,
                                       object_f=self.topology.residue,
-                                      n_x=n_x,
-                                      n_y=n_y)
+                                      n_x=self.topology.n_residues,
+                                      n_y=self.topology.n_residues)
 
     def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
                           **kwargs):
