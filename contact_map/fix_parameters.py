@@ -13,7 +13,7 @@ class ParameterFixer(object):
 
     def get_parameters(self, map0, map1):
         """Get the required parameters to initialise ContactDifference"""
-        failed = map0._check_compatibility(map1, return_failed=True)
+        failed = map0._check_compatibility(map1, err=None)
         return self._fix_parameters(map0, map1, failed)
 
     def _fix_parameters(self, map0, map1, failed):

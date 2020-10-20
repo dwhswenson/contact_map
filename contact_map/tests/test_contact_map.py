@@ -399,7 +399,7 @@ class TestContactFrequency(object):
         map2 = ContactFrequency(trajectory=traj[0:2],
                                 cutoff=0.075,
                                 n_neighbors_ignored=0)
-        assert self.map._check_compatibility(map2) is True
+        assert self.map._check_compatibility(map2) == {}
 
     @pytest.mark.parametrize("diff", [
         {'trajectory': traj.atom_slice([0, 1, 2, 3])},

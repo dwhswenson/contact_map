@@ -326,8 +326,7 @@ class ContactObject(object):
         dct = json.loads(json_string)
         return cls.from_dict(dct)
 
-    def _check_compatibility(self, other, return_failed=False,
-                             err=AssertionError):
+    def _check_compatibility(self, other, err=AssertionError):
         compatibility_attrs = ['cutoff', 'topology', 'query', 'haystack',
                                'n_neighbors_ignored']
         failed_attr = {}
@@ -343,11 +342,10 @@ class ContactObject(object):
 
         msg = "Incompatible ContactObjects:\n"
         msg += err_msg
-        if failed_attr and not return_failed:
+        if failed_attr and err is not None:
             raise err(msg)
-        elif return_failed:
+        else:
             return failed_attr
-        return True
 
     def save_to_file(self, filename, mode="w"):
         """Save this object to the given file.
