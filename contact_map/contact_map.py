@@ -537,8 +537,8 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
-    def contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
-                    residue_ignore_atom_idxs):
+    def _contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
+                     residue_ignore_atom_idxs):
         """
         Returns atom and residue contact maps for the given frame.
 
@@ -643,8 +643,6 @@ class ContactFrequency(ContactObject):
     n_neighbors_ignored : int
         Number of neighboring residues (in the same chain) to ignore.
         Default 2.
-    frames : list of int
-        The indices of the frames to use from the trajectory. Default all
     """
     # Default for use_atom_slice, None tries to be smart
     _class_use_atom_slice = None
@@ -655,12 +653,9 @@ class ContactFrequency(ContactObject):
     )
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
-                 n_neighbors_ignored=2, frames=None):
+                 n_neighbors_ignored=2):
         warnings.warn(self._pending_dep_msg, PendingDeprecationWarning)
-        if frames is None:
-            frames = range(len(trajectory))
-        self.frames = frames
-        self._n_frames = len(frames)
+        self._n_frames = len(trajectory)
         super(ContactFrequency, self).__init__(trajectory.topology,
                                                query, haystack, cutoff,
                                                n_neighbors_ignored)
@@ -723,10 +718,10 @@ class ContactFrequency(ContactObject):
         residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
 
         used_trajectory = self.indexer.slice_trajectory(trajectory)
-        for frame_num in self.frames:
-            frame_contacts = self.contact_map(used_trajectory, frame_num,
-                                              residue_query_atom_idxs,
-                                              residue_ignore_atom_idxs)
+        for frame_num in range(len(trajectory)):
+            frame_contacts = self._contact_map(used_trajectory, frame_num,
+                                               residue_query_atom_idxs,
+                                               residue_ignore_atom_idxs)
             frame_atom_contacts = frame_contacts[0]
             frame_residue_contacts = frame_contacts[1]
             atom_contacts_count.update(frame_atom_contacts)
