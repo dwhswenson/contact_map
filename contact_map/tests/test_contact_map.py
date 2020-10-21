@@ -399,7 +399,7 @@ class TestContactFrequency(object):
         map2 = ContactFrequency(trajectory=traj[0:2],
                                 cutoff=0.075,
                                 n_neighbors_ignored=0)
-        assert self.map._check_compatibility(map2) is True
+        assert self.map._check_compatibility(map2) == {}
 
     @pytest.mark.parametrize("diff", [
         {'trajectory': traj.atom_slice([0, 1, 2, 3])},
@@ -773,3 +773,349 @@ class TestContactDifference(object):
                                  n_neighbors_ignored=0)
         diff = ttraj - frame
         diff.residue_contacts.plot()
+
+    @pytest.mark.parametrize("attr", [('query',[0]), ('haystack',[0]),
+                                      ('cutoff', 0.07),
+                                      ('n_neighbors_ignored',1)])
+
+    def test_non_important_attributes(self, attr):
+        kwargs = {'cutoff':0.075,
+                  'n_neighbors_ignored':0}
+        kwargs[attr[0]] = attr[1]
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], **kwargs)
+        diff = ttraj - frame
+        # Make sure the attributes are dead
+        if attr[0] in {'query','haystack'}:
+            assert getattr(diff, attr[0]) == []
+        else:
+            assert getattr(diff, attr[0]) is None
+        # Make sure we can still do the maps
+        assert diff.atom_contacts is not None
+        assert diff.residue_contacts is not None
+
+    def test_non_important_atoms(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to add an atom, which should not be part of the maps
+        res = list(frame.topology.residues)[-1]
+        elem = md.element.get_by_symbol("H")
+        _ = frame.topology.add_atom(name='test',
+                                    element=elem,
+                                    residue=res,
+                                    serial=42)
+        diff = ttraj - frame
+        # Make sure the topology does not fail here
+        assert diff.atom_contacts is not None
+        assert diff.residue_contacts is not None
+
+    def test_non_important_residues(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to add a residue,
+        # which should not be part of the maps
+        chain = list(frame.topology.chains)[-1]
+        _ = frame.topology.add_residue(name='test',
+                                       chain=chain)
+        diff = ttraj - frame
+        # Make sure the topology does not fail here
+        assert diff.atom_contacts is not None
+        assert diff.residue_contacts is not None
+
+    def test_truncated_diffs_residues(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        traj_trunc = traj.atom_slice(range(6))
+        ttraj_trunc = ContactFrequency(traj_trunc[0:4], cutoff=0.075,
+                                       n_neighbors_ignored=0)
+        frame_trunc = ContactFrequency(traj_trunc[4], cutoff=0.075,
+                                       n_neighbors_ignored=0)
+        # The diff should only be made for atoms and residues in both maps
+        diff1 = ttraj - frame_trunc
+        diff2 = ttraj_trunc - frame_trunc
+        # Make sure the topology does not fail here
+        assert diff1.atom_contacts is not None
+        assert diff1.residue_contacts is not None
+
+        # Make sure the diffs are equal
+        assert diff1.atom_contacts.counter == diff2.atom_contacts.counter
+        assert diff1.residue_contacts.counter == diff2.residue_contacts.counter
+
+    def test_residue_rename_gives_different_atoms(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to rename a residue,
+        frame.topology.residue(0).name = 'test'
+        # Make sure the topology does not fail here
+        diff = ttraj - frame
+
+        assert diff.atom_contacts is not None
+        assert diff.residue_contacts is not None
+        assert diff.topology.residue(0).name == "XXX/test"
+
+    def test_broken_atoms_altered(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to change an element,
+        elem = md.element.get_by_symbol("H")
+        frame.topology.atom(0).element = elem
+        # Make sure the topology does not fail here
+        with pytest.raises(RuntimeError) as e:
+            diff = ttraj - frame
+        assert "AtomMismatch" in str(e.value)
+
+    def test_broken_atoms_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to delete an atom,
+        frame.topology.delete_atom_by_index(3)
+        with pytest.raises(RuntimeError) as e:
+            diff = ttraj - frame
+        assert "AtomMismatch" in str(e.value)
+
+    def test_broken_residues(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Somehow only altering residues per atom is not an unequal
+        # topology in mdtraj, so we just add one for mdtraj to trigger
+        chain = frame.topology.chain(0)
+        _ = frame.topology.add_residue(name='test',
+                                       chain=chain)
+        frame.topology.residue(0).resSeq = "test"
+
+        with pytest.raises(RuntimeError) as e:
+            diff = ttraj - frame
+        assert "ResidueMismatch" in str(e.value)
+
+    def test_broken_residues_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Grab atom info to add 'equal' atoms at the end
+        element8 = frame.topology.atom(8).element
+        element9 = frame.topology.atom(9).element
+
+        name8 = frame.topology.atom(8).name
+        name9 = frame.topology.atom(9).name
+
+        serial8 = frame.topology.atom(8).serial
+        serial9 = frame.topology.atom(9).serial
+
+
+        # Remove residue from the internals of the topology
+        frame._topology = frame.topology.subset(range(8))
+        assert frame.topology.n_residues == 4
+        # Add the original atoms again
+        res = frame.topology.atom(7).residue
+        frame.topology.add_atom(name8, element8, res, serial8)
+        frame.topology.add_atom(name9, element9, res, serial9)
+
+
+        with pytest.raises(RuntimeError) as e:
+            diff = ttraj - frame
+        assert "ResidueMismatch" in str(e.value)
+
+    def test_broken_everything_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # subset the topology
+        frame._topology = frame.topology.subset(range(8))
+        assert frame.topology.n_residues == 4
+
+
+        with pytest.raises(RuntimeError) as e:
+            diff = ttraj - frame
+        assert "OverrideTopology" in str(e.value)
+
+
+class TestAtomMismatchedContactDifference(object):
+    def test_disabled_functions(self):
+        disabled_funcs = ['atom_contacts',
+                          'most_common_atoms_for_contact',
+                          'most_common_atoms_for_residue',
+                          'haystack_residues',
+                          'query_residues']
+
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        diff = AtomMismatchedContactDifference(ttraj, frame)
+        for f in disabled_funcs:
+            with pytest.raises(RuntimeError) as e:
+                func = getattr(diff, f)
+                # This should only trigger if f is not a property
+                # (otherwise the previous line should raise)
+                func()
+            # test that 'atoms' is in the error
+            assert 'atom' in str(e.value)
+        # Make sure residue contacts are still accessible
+        _ = diff.residue_contacts
+
+    def test_broken_atoms_altered(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to change an element,
+        elem = md.element.get_by_symbol("H")
+        frame.topology.atom(0).element = elem
+
+        # Make sure this now works
+        diff = AtomMismatchedContactDifference(ttraj, frame)
+        assert diff.residue_contacts is not None
+
+    def test_broken_atoms_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to delete an atom; this needs to be the last atom
+        # otherwise we trigger on a short-circuit
+        frame.topology.delete_atom_by_index(9)
+
+        # Also need to make sure the name of the residue is different to not
+        # trigger a missing residue
+        frame.topology.residue(4).name = 'test'
+
+        # Make sure this now works
+        diff = AtomMismatchedContactDifference(ttraj, frame)
+        assert diff.residue_contacts is not None
+
+class TestResidueMismatchedContactDifference(object):
+    def test_disabled_functions(self):
+        disabled_funcs = ['residue_contacts',
+                          '_residue_ignore_atom_idxs',
+                          'most_common_atoms_for_contact',
+                          'most_common_atoms_for_residue',
+                          'haystack_residues',
+                          'query_residues']
+
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        diff = ResidueMismatchedContactDifference(ttraj, frame)
+        for f in disabled_funcs:
+            with pytest.raises(RuntimeError) as e:
+                func = getattr(diff, f)
+                # This should only trigger if f is not a property
+                # (otherwise the previous line should raise)
+                func()
+            # test that 'atoms' is in the error
+            assert 'residue' in str(e.value)
+        # Make sure residue contacts are still accessible
+        _ = diff.atom_contacts
+
+
+    def test_broken_residues_altred(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Somehow only altering residues per atom is not an unequal
+        # topology in mdtraj, so we just add one for mdtraj to trigger
+        chain = frame.topology.chain(0)
+        _ = frame.topology.add_residue(name='test',
+                                       chain=chain)
+        res = frame.topology.residue(0)
+
+        frame.topology.atom(9).residue = res
+        frame.topology.atom(8).residue = res
+
+        assert frame.topology.atom(9).residue.index == 0
+        assert frame.topology.atom(8).residue.index == 0
+        assert ttraj.topology.atom(9).residue.index == 4
+        assert ttraj.topology.atom(8).residue.index == 4
+
+
+        diff = ResidueMismatchedContactDifference(ttraj, frame)
+        assert diff.atom_contacts is not None
+
+
+    def test_broken_residues_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Grab atom info to add 'equal' atoms at the end
+        element8 = frame.topology.atom(8).element
+        element9 = frame.topology.atom(9).element
+
+        name8 = frame.topology.atom(8).name
+        name9 = frame.topology.atom(9).name
+
+        serial8 = frame.topology.atom(8).serial
+        serial9 = frame.topology.atom(9).serial
+
+        # subset the topology
+        frame._topology = frame.topology.subset(range(8))
+        assert frame.topology.n_residues == 4
+        # Add the original atoms again
+        res = frame.topology.atom(7).residue
+        frame.topology.add_atom(name8, element8, res, serial8)
+        frame.topology.add_atom(name9, element9, res, serial9)
+
+        diff = ResidueMismatchedContactDifference(ttraj, frame)
+        assert diff.atom_contacts is not None
+
+
+class TestOverrideTopologyContactDifference(object):
+    def test_broken_atoms_and_residues_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        # Now we are going to delete an atom; this needs to be the last atom
+        # otherwise we trigger on a short-circuit
+        frame.topology.delete_atom_by_index(9)
+
+        # Make sure this now works
+        diff = OverrideTopologyContactDifference(ttraj, frame, ttraj.topology)
+        assert diff.residue_contacts is not None
+        assert diff.atom_contacts is not None
+        assert diff.topology == ttraj.topology
+        assert diff.topology != frame.topology
+
+    def test_still_broken_atoms_and_residues_missing(self):
+        ttraj = ContactFrequency(traj[0:4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+        frame = ContactFrequency(traj[4], cutoff=0.075,
+                                 n_neighbors_ignored=0)
+
+        frame.topology.delete_atom_by_index(9)
+
+        # Make sure still break
+        with pytest.raises(RuntimeError) as e:
+            diff = OverrideTopologyContactDifference(ttraj, frame,
+                                                     frame.topology)
+        assert 'AtomMismatched' in str(e.value)
