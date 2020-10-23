@@ -4,6 +4,9 @@ dependencies:
   - python
   - pip
   - matplotlib
+  - nglview
+  - dask
+  - distributed
   - pip:
     - tables
     - .
