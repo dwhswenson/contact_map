@@ -4,3 +4,5 @@ dependencies:
   - python
   - pip
   - matplotlib
+  - pip:
+    - tables
