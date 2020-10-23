@@ -7,3 +7,4 @@ cd examples
 mkdir $figshare_ID
 curl -Lk -o ${figshare_ID}.zip https://ndownloader.figshare.com/articles/5550217?private_link=453b1b215cf2f9270769
 unzip -d $figshare_ID ${figshare_ID}.zip
+rm $figshare_ID.zip
