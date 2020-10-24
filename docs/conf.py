@@ -385,3 +385,27 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+# Try autogenerating binder links, adapted from
+# https://github.com/spatialaudio/nbsphinx/blob/345f406e6f98d584fa493c788099e68b218f3a30/doc/conf.py#L54
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base='').replace("/nb", "") %}
+{% if "dev" in env.config.release %}
+{% set version = "master" %}
+{% else %}
+{% set version = "v"+env.config.version %}
+{% endif %}
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. nbinfo::
+
+        This page was generated from `{{ docname }}`__.
+        Interactive online version:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+
+    __ https://github.com/dwhswenson/contact_map/blob/
+        {{ version  }}/{{ docname }}
+"""
