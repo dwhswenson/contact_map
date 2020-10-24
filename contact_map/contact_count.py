@@ -57,6 +57,19 @@ if _PD_VERSION >= (0, 25):
     pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
 # TODO: this is the end of what to remove when pandas is fixed
 
+
+def _int_or_range_to_tuple(posible_int):
+    if isinstance(posible_int, collections.abc.Iterable):
+        return (posible_int[0], posible_int[1])
+    else:
+        return (0, posible_int)
+
+
+def _get_total_counter_range(counter):
+    numbers = sorted([i for key in counter.keys() for i in key])
+    return (numbers[0], numbers[-1])
+
+
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
 
@@ -91,8 +104,11 @@ class ContactCount(object):
     def __init__(self, counter, object_f, n_x, n_y):
         self._counter = counter
         self._object_f = object_f
+        self.total_range = _get_total_counter_range(counter)
         self.n_x = n_x
         self.n_y = n_y
+        self.n_x_min, self.n_x_max = _int_or_range_to_tuple(n_x)
+        self.n_y_min, self.n_y_max = _int_or_range_to_tuple(n_y)
 
     @property
     def counter(self):
@@ -164,7 +180,8 @@ class ContactCount(object):
         ypixels = dpi*figheight
 
         # Check if every value has a pixel
-        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
+        if (xpixels/(self.n_x_max - self.n_x_min) < 1 or
+                ypixels/(self.n_y_max - self.n_y_min) < 1):
             msg = ("The number of pixels in the figure is insufficient to show"
                    " all the contacts.\n Please save this as a vector image "
                    "(such as a PDF) to view the correct result.\n Another "
@@ -229,7 +246,7 @@ class ContactCount(object):
 
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
-        ax.axis([0, self.n_x, 0, self.n_y])
+        ax.axis([self.n_x_min, self.n_x_max, self.n_y_min, self.n_y_max])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
         min_val = 0.0

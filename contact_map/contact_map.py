@@ -465,6 +465,18 @@ class ContactObject(object):
         return _residue_for_atom(self.topology, self.query)
 
     @property
+    def query_range(self):
+        """return an tuple with the (min, max) of query"""
+        sort = sorted(self.query)
+        return (sort[0], sort[-1])
+
+    @property
+    def haystack_range(self):
+        """return an tuple with the (min, max) of haystack"""
+        sort = sorted(self.haystack)
+        return (sort[0], sort[-1])
+
+    @property
     def haystack_residue_range(self):
         """(int, int): min and (max + 1) of haystack residue indices"""
         return _range_from_object_list(self.haystack_residues)
@@ -772,8 +784,8 @@ class ContactFrequency(ContactObject):
     @property
     def atom_contacts(self):
         """Atoms pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.topology.n_atoms
-        n_y = self.topology.n_atoms
+        n_x = self.query_range
+        n_y = self.haystack_range
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._atom_contacts.items()
@@ -782,8 +794,8 @@ class ContactFrequency(ContactObject):
     @property
     def residue_contacts(self):
         """Residue pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.topology.n_residues
-        n_y = self.topology.n_residues
+        n_x = self.query_residue_range
+        n_y = self.haystack_residue_range
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._residue_contacts.items()
@@ -884,8 +896,8 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.atom_contacts,
                                       selection=self._all_atoms_intersect,
                                       object_f=self.topology.atom,
-                                      n_x=self.topology.n_atoms,
-                                      n_y=self.topology.n_atoms)
+                                      n_x=self.query_range,
+                                      n_y=self.haystack_range)
 
     @property
     def residue_contacts(self):
@@ -893,8 +905,8 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.residue_contacts,
                                       selection=self._all_residues_intersect,
                                       object_f=self.topology.residue,
-                                      n_x=self.topology.n_residues,
-                                      n_y=self.topology.n_residues)
+                                      n_x=self.query_residue_range,
+                                      n_y=self.haystack_residue_range)
 
     def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
                           **kwargs):
