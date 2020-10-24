@@ -1,3 +1,10 @@
+
+{% if "dev" in release %}                                            
+{% set version = "master" %}                                                    
+{% else %}                                                                      
+{% set version = "v"+version %}                                      
+{% endif %}  
+
 Examples
 ========
 
@@ -9,6 +16,8 @@ yourself!
 You can also try them out online directly from your browser: |binder|_
 (Note: the performance of the online servers can vary widely.)
 
+|binder|_ binder link
+
 .. toctree::
     :maxdepth: 1
     :glob:
@@ -16,4 +25,4 @@ You can also try them out online directly from your browser: |binder|_
     nb/*
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
-.. _binder: https://mybinder.org/v2/gh/dwhswenson/contact_map/master?filepath=%2Fexamples
+.. _binder: https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath=%2Fexamples

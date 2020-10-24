@@ -64,6 +64,25 @@ extensions = [
     'nbsphinx',
     'IPython.sphinxext.ipython_console_highlighting'
 ]
+# Adding jinja passthrough for html
+# Taken from https://www.ericholscher.com/blog/2016/jul/25/integrating-jinja-rst-sphinx/
+html_context = {"release": release,
+                "version": version}
+def rstjinja(app, docname, source):
+    """
+    Render our pages as a jinja template for fancy templating goodness.
+    """
+    # Make sure we're outputting HTML
+    if app.builder.format != 'html':
+        return
+    src = source[0]
+    rendered = app.builder.templates.render_string(
+        src, app.config.html_context
+    )
+    source[0] = rendered
+
+def setup(app):
+    app.connect("source-read", rstjinja)
 
 # Napolean settings
 napoleon_google_docstring = False
