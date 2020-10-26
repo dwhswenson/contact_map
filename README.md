@@ -7,7 +7,7 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f7f3cf53698e4655ac8895f13fa5dea6)](https://www.codacy.com/app/dwhswenson/contact_map?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dwhswenson/contact_map&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/84768756d594176d8da6/maintainability)](https://codeclimate.com/github/dwhswenson/contact_map/maintainability)
-
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dwhswenson/contact_map/master)
 # Contact Map Explorer
 
 This package provides tools for analyzing and exploring contacts
@@ -37,6 +37,8 @@ It also facilitates visualization of the contact matrix, with colors
 representing the fraction of trajectory time that the contact was present.
 
 Full documentation is at http://contact-map.readthedocs.io/.
+
+Try it out online: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dwhswenson/contact_map/master?filepath=%2Fexamples) (Note: the performance of the online servers can vary widely.)
 
 ## Installation
 
