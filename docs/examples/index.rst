@@ -16,7 +16,6 @@ yourself!
 You can also try them out online directly from your browser: |binder|_
 (Note: the performance of the online servers can vary widely.)
 
-|binder|_ binder link
 
 .. toctree::
     :maxdepth: 1
