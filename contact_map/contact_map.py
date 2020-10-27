@@ -906,8 +906,6 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.atom_contacts,
                                       selection=self._all_atoms_intersect,
                                       object_f=self.topology.atom,
-                                      n_x=self.query_range,
-                                      n_y=self.haystack_range,
                                       max_size=self.topology.n_atoms)
 
     @property
@@ -916,8 +914,6 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.residue_contacts,
                                       selection=self._all_residues_intersect,
                                       object_f=self.topology.residue,
-                                      n_x=self.query_residue_range,
-                                      n_y=self.haystack_residue_range,
                                       max_size=self.topology.n_residues)
 
     def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
