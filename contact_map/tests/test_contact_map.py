@@ -750,7 +750,7 @@ class TestContactDifference(object):
         diff = ttraj - frame
         # Make sure the attributes are dead
         if attr[0] in {'query','haystack'}:
-            assert getattr(diff, attr[0]) == []
+            assert getattr(diff, attr[0]) == [0]
         else:
             assert getattr(diff, attr[0]) is None
         # Make sure we can still do the maps
@@ -1063,6 +1063,7 @@ class TestOverrideTopologyContactDifference(object):
 
         # Make sure this now works
         diff = OverrideTopologyContactDifference(ttraj, frame, ttraj.topology)
+
         assert diff.residue_contacts is not None
         assert diff.atom_contacts is not None
         assert diff.topology == ttraj.topology

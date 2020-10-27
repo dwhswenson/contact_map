@@ -74,11 +74,13 @@ class TestContactCount(object):
 
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
-        assert self.atom_contacts.n_x == self.topology.n_atoms
-        assert self.atom_contacts.n_y == self.topology.n_atoms
+        assert self.atom_contacts.n_x == self.map.query_range
+        assert self.atom_contacts.n_y == self.map.haystack_range
+        assert self.atom_contacts.max_size == self.topology.n_atoms
         assert self.residue_contacts._object_f == self.topology.residue
-        assert self.residue_contacts.n_x == self.topology.n_residues
-        assert self.residue_contacts.n_y == self.topology.n_residues
+        assert self.residue_contacts.n_x == self.map.query_residue_range
+        assert self.residue_contacts.n_y == self.map.haystack_residue_range
+        assert self.residue_contacts.max_size == self.topology.n_residues
 
     def test_sparse_matrix(self):
         assert_array_equal(self.map.atom_contacts.sparse_matrix.todense(),

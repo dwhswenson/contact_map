@@ -67,7 +67,7 @@ def _int_or_range_to_tuple(posible_int):
 
 def _get_total_counter_range(counter):
     numbers = sorted([i for key in counter.keys() for i in key])
-    return (numbers[0], numbers[-1])
+    return (numbers[0], numbers[-1]+1)
 
 
 class ContactCount(object):
@@ -100,8 +100,11 @@ class ContactCount(object):
         number of objects in the x direction (used in plotting)
     n_y : int
         number of objects in the y direction (used in plotting)
+    max_size : int, optional
+        maximum size of the count
+        (used to determine the shape of output matrices and dataframes)
     """
-    def __init__(self, counter, object_f, n_x, n_y):
+    def __init__(self, counter, object_f, n_x, n_y, max_size=None):
         self._counter = counter
         self._object_f = object_f
         self.total_range = _get_total_counter_range(counter)
@@ -109,6 +112,12 @@ class ContactCount(object):
         self.n_y = n_y
         self.n_x_min, self.n_x_max = _int_or_range_to_tuple(n_x)
         self.n_y_min, self.n_y_max = _int_or_range_to_tuple(n_y)
+        if max_size is None:
+            self.max_size = max([self.total_range[-1],
+                                 self.n_x_max,
+                                 self.n_y_max])
+        else:
+            self.max_size = max_size
 
     @property
     def counter(self):
@@ -127,7 +136,8 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        mtx = scipy.sparse.dok_matrix((self.n_x, self.n_y))
+        max_size = self.max_size
+        mtx = scipy.sparse.dok_matrix((max_size, max_size))
         for (k, v) in self._counter.items():
             key = list(k)
             mtx[key[0], key[1]] = v
@@ -144,8 +154,8 @@ class ContactCount(object):
             the count
         """
         mtx = self.sparse_matrix
-        index = list(range(self.n_x))
-        columns = list(range(self.n_y))
+        index = list(range(self.max_size))
+        columns = list(range(self.max_size))
 
         if _PD_VERSION < (0, 25):  # py27 only  -no-cov-
             mtx = mtx.tocoo()

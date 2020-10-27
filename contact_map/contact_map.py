@@ -466,15 +466,15 @@ class ContactObject(object):
 
     @property
     def query_range(self):
-        """return an tuple with the (min, max) of query"""
+        """return an tuple with the (min, max+1) of query"""
         sort = sorted(self.query)
-        return (sort[0], sort[-1])
+        return (sort[0], sort[-1]+1)
 
     @property
     def haystack_range(self):
-        """return an tuple with the (min, max) of haystack"""
+        """return an tuple with the (min, max+1) of haystack"""
         sort = sorted(self.haystack)
-        return (sort[0], sort[-1])
+        return (sort[0], sort[-1]+1)
 
     @property
     def haystack_residue_range(self):
@@ -897,7 +897,8 @@ class ContactDifference(ContactObject):
                                       selection=self._all_atoms_intersect,
                                       object_f=self.topology.atom,
                                       n_x=self.query_range,
-                                      n_y=self.haystack_range)
+                                      n_y=self.haystack_range,
+                                      max_size=self.topology.n_atoms)
 
     @property
     def residue_contacts(self):
@@ -906,7 +907,8 @@ class ContactDifference(ContactObject):
                                       selection=self._all_residues_intersect,
                                       object_f=self.topology.residue,
                                       n_x=self.query_residue_range,
-                                      n_y=self.haystack_residue_range)
+                                      n_y=self.haystack_residue_range,
+                                      max_size=self.topology.n_residues)
 
     def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
                           **kwargs):
