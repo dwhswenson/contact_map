@@ -134,6 +134,8 @@ class ContactObject(object):
         self._query = set(query)
         self._haystack = set(haystack)
 
+        self._query_res_idx = set(_residue_idx_for_atom(topology, query))
+        self._haystack_res_idx = set(_residue_idx_for_atom(topology, haystack))
         # Make tuple for efficient lookupt
         all_atoms_set = set(query).union(set(haystack))
         self._all_atoms = tuple(sorted(list(all_atoms_set)))
@@ -214,6 +216,10 @@ class ContactObject(object):
             'cutoff': self._cutoff,
             'query': list([int(val) for val in self._query]),
             'haystack': list([int(val) for val in self._haystack]),
+            'query_res_idx': list([int(val) for val
+                                   in self._query_res_idx]),
+            'haystack_res_idx': list([int(val) for val in
+                              self._haystack_res_idx]),
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'all_residues': tuple(
@@ -247,6 +253,8 @@ class ContactObject(object):
             'residue_contacts': cls._deserialize_contact_counter,
             'query': deserialize_set,
             'haystack': deserialize_set,
+            'query_res_idx': deserialize_set,
+            'haystack_res_idx': deserialize_set,
             'all_atoms': deserialize_set,
             'all_residues': deserialize_set,
             'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
@@ -479,12 +487,14 @@ class ContactObject(object):
     @property
     def haystack_residue_range(self):
         """(int, int): min and (max + 1) of haystack residue indices"""
-        return _range_from_object_list(self.haystack_residues)
+        sort = sorted(self._haystack_res_idx)
+        return (sort[0], sort[-1]+1)
 
     @property
     def query_residue_range(self):
         """(int, int): min and (max + 1) of query residue indices"""
-        return _range_from_object_list(self.query_residues)
+        sort = sorted(self._query_res_idx)
+        return (sort[0], sort[-1]+1)
 
     def most_common_atoms_for_residue(self, residue):
         """
