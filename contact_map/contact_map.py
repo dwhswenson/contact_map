@@ -75,6 +75,11 @@ def _range_from_object_list(object_list):
     return (min(idxs), max(idxs) + 1)
 
 
+def _range_from_iterable(iterable):
+    sort = sorted(iterable)
+    return (sort[0], sort[-1]+1)
+
+
 class ContactsDict(object):
     """Dict-like object giving access to atom or residue contacts.
 
@@ -475,26 +480,22 @@ class ContactObject(object):
     @property
     def query_range(self):
         """return an tuple with the (min, max+1) of query"""
-        sort = sorted(self.query)
-        return (sort[0], sort[-1]+1)
+        return _range_from_iterable(self.query)
 
     @property
     def haystack_range(self):
         """return an tuple with the (min, max+1) of haystack"""
-        sort = sorted(self.haystack)
-        return (sort[0], sort[-1]+1)
+        return _range_from_iterable(self.haystack)
 
     @property
     def haystack_residue_range(self):
         """(int, int): min and (max + 1) of haystack residue indices"""
-        sort = sorted(self._haystack_res_idx)
-        return (sort[0], sort[-1]+1)
+        return _range_from_iterable(self._haystack_res_idx)
 
     @property
     def query_residue_range(self):
         """(int, int): min and (max + 1) of query residue indices"""
-        sort = sorted(self._query_res_idx)
-        return (sort[0], sort[-1]+1)
+        return _range_from_iterable(self._query_res_idx)
 
     def most_common_atoms_for_residue(self, residue):
         """
@@ -794,22 +795,20 @@ class ContactFrequency(ContactObject):
     @property
     def atom_contacts(self):
         """Atoms pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.query_range
-        n_y = self.haystack_range
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._atom_contacts.items()
-        }), self.topology.atom, n_x, n_y)
+        }), self.topology.atom, self.query_range, self.haystack_range,
+            self.topology.n_atoms)
 
     @property
     def residue_contacts(self):
         """Residue pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.query_residue_range
-        n_y = self.haystack_residue_range
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._residue_contacts.items()
-        }), self.topology.residue, n_x, n_y)
+        }), self.topology.residue, self.query_residue_range,
+            self.haystack_residue_range, self.topology.n_residues)
 
 
 class ContactDifference(ContactObject):

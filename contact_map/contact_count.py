@@ -85,6 +85,16 @@ def _get_sorted_counter_range(counter):
         return high, low
     return low, high
 
+
+def _sanitize_n_x_n_y(n_x, n_y, counter):
+    if n_x is None and n_y is None:
+        n_x, n_y = _get_sorted_counter_range(counter)
+    elif n_x is None or n_y is None:
+        raise ValueError("Either both n_x and n_y need to be defined or "
+                         "neither.")
+    return n_x, n_y
+
+
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
 
@@ -111,11 +121,11 @@ class ContactCount(object):
         method to obtain the object associated with the number used in
         ``counter``; typically :meth:`mdtraj.Topology.residue` or
         :meth:`mdtraj.Topology.atom`.
-    n_x : int, optional
-        number of objects in the x direction (used in plotting)
+    n_x : int, tuple(start, end), optional
+        range of objects in the x direction (used in plotting)
         Default tries to plot the least amount of symetric points.
-    n_y : int, optional
-        number of objects in the y direction (used in plotting)
+    n_y : int, tuple(start, end), optional
+        range of objects in the y direction (used in plotting)
         Default tries to show the least amount of symetric points.
     max_size : int, optional
         maximum size of the count
@@ -125,11 +135,7 @@ class ContactCount(object):
         self._counter = counter
         self._object_f = object_f
         self.total_range = _get_total_counter_range(counter)
-        if n_x is None and n_y is None:
-            n_x, n_y = _get_sorted_counter_range(counter)
-        elif n_x is None or n_y is None:
-            raise ValueError("Either both n_x and n_y need to be defined or "
-                             "neither.")
+        n_x, n_y = _sanitize_n_x_n_y(n_x, n_y, counter)
         self.n_x = n_x
         self.n_y = n_y
         self.n_x_min, self.n_x_max = _int_or_range_to_tuple(n_x)
