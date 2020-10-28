@@ -409,6 +409,7 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 # https://github.com/spatialaudio/nbsphinx/blob/345f406e6f98d584fa493c788099e68b218f3a30/doc/conf.py#L54
 nbsphinx_prolog = r"""
 {% set docname = env.doc2path(env.docname, base='').replace("/nb", "") %}
+{% set htmldocname = docname.replace(" ", "%20") %}
 {% if "dev" in env.config.release %}
 {% set version = "master" %}
 {% else %}
@@ -423,8 +424,8 @@ nbsphinx_prolog = r"""
 
         This page was generated from `{{ docname }}`__.
         Interactive online version:
-        :raw-html:`<a href="https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath={{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+        :raw-html:`<a href="https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath={{ htmldocname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
     __ https://github.com/dwhswenson/contact_map/blob/
-        {{ version  }}/{{ docname }}
+        {{ version  }}/{{ htmldocname }}
 """
