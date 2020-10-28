@@ -409,7 +409,7 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 # https://github.com/spatialaudio/nbsphinx/blob/345f406e6f98d584fa493c788099e68b218f3a30/doc/conf.py#L54
 nbsphinx_prolog = r"""
 {% set docname = env.doc2path(env.docname, base='').replace("/nb", "") %}
-{% set htmldocname = docname.replace(" ", "%20") %}
+{% set htmldocname = docname|urlencode %}
 {% if "dev" in env.config.release %}
 {% set version = "master" %}
 {% else %}
