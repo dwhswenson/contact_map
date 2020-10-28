@@ -6,7 +6,9 @@ except ImportError:  # pragma: no cover
 __version__ = version.version
 
 from .contact_map import (
-    ContactMap, ContactFrequency, ContactDifference
+    ContactMap, ContactFrequency, ContactDifference,
+    AtomMismatchedContactDifference, ResidueMismatchedContactDifference,
+    OverrideTopologyContactDifference
 )
 
 from .contact_count import ContactCount

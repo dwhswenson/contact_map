@@ -1,3 +1,4 @@
+import collections
 import scipy
 import numpy as np
 import pandas as pd
@@ -310,3 +311,15 @@ class ContactCount(object):
         most_common : same thing, using objects as key
         """
         return self._counter.most_common()
+
+    def filter(self, idx):
+        """New ContactCount filtered to idx.
+
+        Returns a new ContactCount with the only the counter keys/values
+        where both the keys are in idx
+        """
+        dct = {k: v for k, v in self._counter.items()
+               if all([i in idx for i in k])}
+        new_count = collections.Counter()
+        new_count.update(dct)
+        return ContactCount(new_count, self._object_f, self.n_x, self.n_y)
