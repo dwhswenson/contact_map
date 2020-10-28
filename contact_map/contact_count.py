@@ -67,12 +67,17 @@ def _int_or_range_to_tuple(posible_int):
 
 def _get_total_counter_range(counter):
     numbers = sorted([i for key in counter.keys() for i in key])
+    if len(numbers) == 0:
+        return (0, 0)
     return (numbers[0], numbers[-1]+1)
 
 
 def _get_low_high_counter_range(counter):
     """Give the (min, max + 1) for both the low and high keys in counter"""
     keys = [tuple(sorted(list(i))) for i in counter.keys()]
+    if len(keys) == 0:
+        return (0, 0), (0, 0)
+
     lows = sorted([i for i, j in keys])
     highs = sorted([j for i, j in keys])
     return (lows[0], lows[-1]+1), (highs[0], highs[-1]+1)
@@ -227,7 +232,9 @@ class ContactCount(object):
                    " or the 'figsize' (currently: " + str((figwidth,
                                                            figheight)) +
                    ").\n Recommended minimum amount of pixels = "
-                   + str((self.n_x, self.n_y))+" (width, height).")
+                   + str((self.n_x_max-self.n_x_min,
+                          self.n_y_max-self.n_y_min))
+                   +" (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
     def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,

@@ -173,3 +173,34 @@ class TestContactCount(object):
         expected_count = [(ll[0], float(ll[1]) / 5.0)
                           for ll in source_expected.items()]
         assert set(contacts.most_common_idx()) == set(expected_count)
+
+    def test_n_x_smaller_than_n_y_default(self):
+        # Make a map that has a bigger range of for low numbers
+        ac0 = ContactFrequency(traj, cutoff=0.075,
+                               n_neighbors_ignored=0,
+                               query=[0, 4],
+                               haystack=[7, 8, 9]).atom_contacts
+        # Also make a map that has a bigger range of high numbers
+        ac1 = ContactFrequency(traj, cutoff=0.075,
+                               n_neighbors_ignored=0,
+                               query=[0, 1],
+                               haystack=[5, 8, 9]).atom_contacts
+        default0 = ContactCount(ac0._counter, ac0._object_f)
+        default1 = ContactCount(ac1._counter, ac1._object_f)
+        assert default0.n_x == (7, 9 + 1)  # n_x should be shorter: here 3
+        assert default0.n_y == (0, 4 + 1)  # n_y should be longer: here 5
+
+        assert default1.n_x == (0, 1 + 1)  # n_x should be shorter: here 2
+        assert default1.n_y == (5, 9 + 1)  # n_y should be longer: here 5
+
+    @pytest.mark.parametrize("keyword", ["n_x", "n_y"])
+    def test_raise_on_only_n_x_or_ny(self, keyword):
+        ac = self.map.atom_contacts
+        kwargs = {keyword: "test"}
+        with pytest.raises(ValueError) as e:
+            ContactCount(counter=ac._counter, object_f=ac._object_f, **kwargs)
+        assert keyword in str(e.value)
+
+    def test_empty_counter(self):
+        # Just a smoke test, this should not error out
+        ContactCount(dict(), None)

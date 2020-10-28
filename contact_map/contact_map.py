@@ -67,14 +67,6 @@ def _residue_idx_for_atom(topology, atom_list):
     return set([topology.atom(a).residue.index for a in atom_list])
 
 
-def _range_from_object_list(object_list):
-    """
-    Objects must have .index attribute (e.g., MDTraj Residue/Atom)
-    """
-    idxs = [obj.index for obj in object_list]
-    return (min(idxs), max(idxs) + 1)
-
-
 def _range_from_iterable(iterable):
     sort = sorted(iterable)
     return (sort[0], sort[-1]+1)
