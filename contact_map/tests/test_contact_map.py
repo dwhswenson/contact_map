@@ -736,7 +736,7 @@ class TestContactDifference(object):
         diff = ttraj - frame
         diff.residue_contacts.plot()
 
-    @pytest.mark.parametrize("attr", [('query',[0]), ('haystack',[0]),
+    @pytest.mark.parametrize("attr", [('query',[0]), ('haystack',[1]),
                                       ('cutoff', 0.07),
                                       ('n_neighbors_ignored',1)])
 
@@ -750,7 +750,7 @@ class TestContactDifference(object):
         diff = ttraj - frame
         # Make sure the attributes are dead
         if attr[0] in {'query','haystack'}:
-            assert getattr(diff, attr[0]) == [0]
+            assert getattr(diff, attr[0]) == attr[1]
         else:
             assert getattr(diff, attr[0]) is None
         # Make sure we can still do the maps

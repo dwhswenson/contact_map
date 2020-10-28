@@ -11,7 +11,7 @@ class ParameterFixer(object):
         self.allow_mismatched_atoms = allow_mismatched_atoms
         self.allow_mismatched_residues = allow_mismatched_residues
         self.override_topology = override_topology
-        self.set_mixing = set_mixing
+        self._set_mixing = set_mixing
 
     def get_parameters(self, map0, map1):
         """Get the required parameters to initialise ContactDifference"""
@@ -30,7 +30,7 @@ class ParameterFixer(object):
             if fail in {'query', 'haystack'}:
                 map0_set = set(getattr(map0, fail))
                 map1_set = set(getattr(map1, fail))
-                fixed = getattr(map0_set, self.set_mixing)(map1_set)
+                fixed = getattr(map0_set, self._set_mixing)(map1_set)
             elif fail in {'cutoff', 'n_neighbors_ignored'}:
                 # We just set them to None
                 fixed = None
