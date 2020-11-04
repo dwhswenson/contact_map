@@ -4,6 +4,7 @@ Implementation of ContactFrequency parallelization using dask.distributed
 
 from . import frequency_task
 from .contact_map import ContactFrequency, ContactObject
+from .contact_trajectory import ContactTrajectory
 import mdtraj as md
 
 
@@ -29,15 +30,19 @@ def dask_run(trajectory, client, run_info):
     """
     slices = frequency_task.default_slices(n_total=len(trajectory),
                                            n_workers=len(client.ncores()))
+    maps = dask_map_load_and_frequency(slices, client, run_info)
+    freq = client.submit(frequency_task.reduce_all_results, maps)
 
+    return freq.result()
+
+
+def dask_map_load_and_frequency(slices, client, run_info):
     subtrajs = client.map(frequency_task.load_trajectory_task, slices,
                           file_name=run_info['trajectory_file'],
                           **run_info['load_kwargs'])
     maps = client.map(frequency_task.map_task, subtrajs,
                       parameters=run_info['parameters'])
-    freq = client.submit(frequency_task.reduce_all_results, maps)
-
-    return freq.result()
+    return maps
 
 
 class DaskContactFrequency(ContactFrequency):
@@ -108,3 +113,38 @@ class DaskContactFrequency(ContactFrequency):
         return {'parameters': self.parameters,
                 'trajectory_file': self.filename,
                 'load_kwargs': self.kwargs}
+
+
+class DaskContactTrajectory(ContactTrajectory):
+    def __init__(self, client, filename, query=None, haystack=None,
+                 cutoff=0.45, n_neighbors_ignored=2, **kwargs):
+        self.client = client
+        self.filename = filename
+        self.kwargs = kwargs
+        # We only need a trajectory with the right topology
+        trajectory = md.load(filename, **kwargs)
+
+        super(DaskContactTrajectory, self).__init__(
+            trajectory, query, haystack, cutoff, n_neighbors_ignored,
+        )
+
+    def _make_contact_maps(self, trajectory):
+        frames = range(trajectory.n_frames)
+        maps = dask_map_load_and_frequency(frames, self.client, self.run_info)
+        return self.client.gather(maps)
+
+    @property
+    def parameters(self):
+        return {'query': self.query,
+                'haystack': self.haystack,
+                'cutoff': self.cutoff,
+                'n_neighbors_ignored': self.n_neighbors_ignored}
+
+    @property
+    def run_info(self):
+        return {'parameters': self.parameters,
+                'trajectory_file': self.filename,
+                'load_kwargs': self.kwargs}
+
+
+

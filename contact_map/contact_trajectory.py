@@ -31,8 +31,11 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         super(ContactTrajectory, self).__init__(trajectory.topology, query,
                                                 haystack, cutoff,
                                                 n_neighbors_ignored)
+        self._contact_maps = self._make_contact_maps(trajectory)
+
+    def _make_contact_maps(self, trajectory):
         contacts = self._build_contacts(trajectory)
-        self._contact_maps = [
+        contact_maps = [
             ContactFrequency.from_contacts(
                 topology=self.topology,
                 query=self.query,
@@ -46,6 +49,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
             )
             for atom_contacts, residue_contacts in zip(*contacts)
         ]
+        return contact_maps
 
     def __getitem__(self, num):
         return self._contact_maps[num]
