@@ -86,6 +86,26 @@ def load_trajectory_task(subslice, file_name, **kwargs):
     """
     return md.load(file_name, **kwargs)[subslice]
 
+
+def slice_trajectory_task(subslice, trajectory):
+    """
+    Task for slicing a trajectory. Reordered to take per-task variable first.
+
+    Parameters
+    ----------
+    subslice : slice
+        the slice of the trajectory to use
+    trajectory : md.Trajectory
+        trajectory to slice
+
+    Returns
+    -------
+    md.Trajectory :
+        subtrajectory for this slice
+    """
+    return trajectory[subslice]
+
+
 def map_task(subtrajectory, parameters):
     """Task to be mapped to all subtrajectories. Run ContactFrequency
 

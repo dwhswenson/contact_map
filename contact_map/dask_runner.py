@@ -45,6 +45,15 @@ def dask_map_load_and_frequency(slices, client, run_info):
     return maps
 
 
+def dask_map_traj_to_frequency(trajectory, slices, client, run_info):
+    client.scatter(trajectory)
+    subtrajs = client.map(frequency_task.slice_trajectory_task, slices,
+                          trajectory=trajectory)
+    maps = client.map(frequency_task.map_task, subtrajs,
+                      parameters=run_info['parameters'])
+    return maps
+
+
 class DaskContactFrequency(ContactFrequency):
     """Dask-based parallelization of contact frequency.
 
@@ -89,7 +98,6 @@ class DaskContactFrequency(ContactFrequency):
         self.client = client
         self.filename = filename
         trajectory = md.load(filename, **kwargs)
-
         self.kwargs = kwargs
 
         super(DaskContactFrequency, self).__init__(
@@ -121,16 +129,18 @@ class DaskContactTrajectory(ContactTrajectory):
         self.client = client
         self.filename = filename
         self.kwargs = kwargs
-        # We only need a trajectory with the right topology
-        trajectory = md.load(filename, **kwargs)
+        self.trajectory = md.load(filename, **kwargs)
 
         super(DaskContactTrajectory, self).__init__(
-            trajectory, query, haystack, cutoff, n_neighbors_ignored,
+            self.trajectory, query, haystack, cutoff, n_neighbors_ignored,
         )
 
     def _make_contact_maps(self, trajectory):
         frames = range(trajectory.n_frames)
-        maps = dask_map_load_and_frequency(frames, self.client, self.run_info)
+        #TODO DON'T run this for 1 frame at a time...
+        maps = dask_map_traj_to_frequency(self.trajectory,
+                                          frames, self.client,
+                                          self.run_info)
         return self.client.gather(maps)
 
     @property
@@ -145,6 +155,3 @@ class DaskContactTrajectory(ContactTrajectory):
         return {'parameters': self.parameters,
                 'trajectory_file': self.filename,
                 'load_kwargs': self.kwargs}
-
-
-
