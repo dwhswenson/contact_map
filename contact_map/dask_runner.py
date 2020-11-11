@@ -28,30 +28,22 @@ def dask_run(trajectory, client, run_info):
     :class:`.ContactFrequency` :
         total contact frequency for the trajectory
     """
-    slices = frequency_task.default_slices(n_total=len(trajectory),
-                                           n_workers=len(client.ncores()))
-    maps = dask_map_load_and_frequency(slices, client, run_info)
+    subtrajs = dask_load_and_slice(trajectory, client, run_info)
+
+    maps = client.map(frequency_task.map_task, subtrajs,
+                      parameters=run_info['parameters'])
     freq = client.submit(frequency_task.reduce_all_results, maps)
 
     return freq.result()
 
 
-def dask_map_load_and_frequency(slices, client, run_info):
+def dask_load_and_slice(trajectory, client, run_info):
+    slices = frequency_task.default_slices(n_total=len(trajectory),
+                                           n_workers=len(client.ncores()))
     subtrajs = client.map(frequency_task.load_trajectory_task, slices,
                           file_name=run_info['trajectory_file'],
                           **run_info['load_kwargs'])
-    maps = client.map(frequency_task.map_task, subtrajs,
-                      parameters=run_info['parameters'])
-    return maps
-
-
-def dask_map_traj_to_frequency(trajectory, slices, client, run_info):
-    client.scatter(trajectory)
-    subtrajs = client.map(frequency_task.slice_trajectory_task, slices,
-                          trajectory=trajectory)
-    maps = client.map(frequency_task.map_task, subtrajs,
-                      parameters=run_info['parameters'])
-    return maps
+    return subtrajs
 
 
 class DaskContactFrequency(ContactFrequency):
@@ -130,18 +122,40 @@ class DaskContactTrajectory(ContactTrajectory):
         self.filename = filename
         self.kwargs = kwargs
         self.trajectory = md.load(filename, **kwargs)
+        self.contact_object = ContactObject(
+            self.trajectory.topology,
+            query=query,
+            haystack=haystack,
+            cutoff=cutoff,
+            n_neighbors_ignored=n_neighbors_ignored,
+        )
 
         super(DaskContactTrajectory, self).__init__(
             self.trajectory, query, haystack, cutoff, n_neighbors_ignored,
         )
 
     def _make_contact_maps(self, trajectory):
-        frames = range(trajectory.n_frames)
-        #TODO DON'T run this for 1 frame at a time...
-        maps = dask_map_traj_to_frequency(self.trajectory,
-                                          frames, self.client,
-                                          self.run_info)
-        return self.client.gather(maps)
+        subtrajs = dask_load_and_slice(self.trajectory, self.client,
+                                       self.run_info)
+        contact_lists = self.client.map(frequency_task.contacts_per_frame_task,
+                                        subtrajs,
+                                        contact_object=self.contact_object)
+        contact_maps = [
+            ContactFrequency.from_contacts(
+                topology=self.topology,
+                query=self.query,
+                haystack=self.haystack,
+                cutoff=self.cutoff,
+                n_neighbors_ignored=self.n_neighbors_ignored,
+                atom_contacts=atom_contacts,
+                residue_contacts=residue_contacts,
+                n_frames=1,
+                indexer=self.indexer
+            )
+            for contacts in contact_lists
+            for atom_contacts, residue_contacts in zip(*contacts.result())
+        ]
+        return contact_maps
 
     @property
     def parameters(self):
