@@ -4,7 +4,10 @@
 
 from .utils import *
 from contact_map.dask_runner import *
-from contact_map import ContactFrequency
+from contact_map import ContactFrequency, ContactTrajectory
+from collections.abc import Iterable
+import mdtraj
+
 
 def dask_setup_test_cluster(distributed, n_workers=4, n_attempts=3):
     """Set up a test cluster using dask.distributed. Try up to n_attempts
@@ -25,45 +28,63 @@ def dask_setup_test_cluster(distributed, n_workers=4, n_attempts=3):
     pytest.skip("Failed to set up distributed LocalCluster")
 
 
-class TestDaskContactFrequency(object):
-    def test_dask_integration(self):
-        # this is an integration test to check that dask works
+class TestDaskRunners(object):
+    def setup(self):
         dask = pytest.importorskip('dask')  # pylint: disable=W0612
         distributed = pytest.importorskip('dask.distributed')
+        self.distributed = distributed
         # Explicitly set only 4 workers on Travis instead of 31
         # Fix copied from https://github.com/spencerahill/aospy/pull/220/files
-        cluster = dask_setup_test_cluster(distributed, n_workers=4)
-        client = distributed.Client(cluster)
-        filename = find_testfile("trajectory.pdb")
+        self.cluster = dask_setup_test_cluster(distributed, n_workers=4)
+        self.client = distributed.Client(self.cluster)
+        self.filename = find_testfile("trajectory.pdb")
 
-        dask_freq = DaskContactFrequency(client, filename, cutoff=0.075,
-                                         n_neighbors_ignored=0)
-        client.close()
-        assert dask_freq.n_frames == 5
+    def teardown(self):
+        self.client.shutdown()
+
+    @pytest.mark.parametrize("dask_cls", [DaskContactFrequency,
+                                          DaskContactTrajectory])
+    def test_dask_integration(self, dask_cls):
+        dask_freq = dask_cls(self.client, self.filename, cutoff=0.075,
+                             n_neighbors_ignored=0)
+        if isinstance(dask_freq, ContactFrequency):
+            assert dask_freq.n_frames == 5
+        elif isinstance(dask_freq, ContactTrajectory):
+            assert len(dask_freq) == 5
 
     def test_dask_atom_slice(self):
-        # This is an integration test to check that dask works with atom_slice
-        dask = pytest.importorskip('dask')  # pylint: disable=W0612
-        distributed = pytest.importorskip('dask.distributed')
-        # Explicitly set only 4 workers on Travis instead of 31
-        # Fix copied from https://github.com/spencerahill/aospy/pull/220/files
-        cluster = dask_setup_test_cluster(distributed, n_workers=4)
-        client = distributed.Client(cluster)
-        filename = find_testfile("trajectory.pdb")
-
-        dask_freq0 = DaskContactFrequency(client, filename, query=[3, 4],
+        dask_freq0 = DaskContactFrequency(self.client, self.filename,
+                                          query=[3, 4],
                                           haystack=[6, 7], cutoff=0.075,
                                           n_neighbors_ignored=0)
-        client.close()
+        self.client.close()
         assert dask_freq0.n_frames == 5
-        client = distributed.Client(cluster)
+        self.client = self.distributed.Client(self.cluster)
         # Set the slicing of contact frequency (used in the frqeuency task)
         # to False
         ContactFrequency._class_use_atom_slice = False
-        dask_freq1 = DaskContactFrequency(client, filename, query=[3, 4],
+        dask_freq1 = DaskContactFrequency(self.client,
+                                          self.filename, query=[3, 4],
                                           haystack=[6, 7], cutoff=0.075,
                                           n_neighbors_ignored=0)
-        client.close()
         assert dask_freq0._use_atom_slice is True
         assert dask_freq1._use_atom_slice is False
         assert dask_freq0 == dask_freq1
+
+    @pytest.mark.parametrize("dask_cls, norm_cls",[
+        (DaskContactFrequency, ContactFrequency),
+        (DaskContactTrajectory, ContactTrajectory)])
+    def test_answer_equal(self, dask_cls, norm_cls):
+        trj = mdtraj.load(self.filename)
+        dask_result = dask_cls(self.client, self.filename)
+        norm_result = norm_cls(trj)
+        if isinstance(dask_result, Iterable):
+            for i, j in zip(dask_result, norm_result):
+                assert i.atom_contacts._counter == j.atom_contacts._counter
+                assert (i.residue_contacts._counter ==
+                        j.residue_contacts._counter)
+        else:
+            assert (dask_result.atom_contacts._counter ==
+                    norm_result.atom_contacts._counter)
+            assert (dask_result.residue_contacts._counter ==
+                    norm_result.residue_contacts._counter)
