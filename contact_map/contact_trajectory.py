@@ -27,7 +27,7 @@ def _build_contacts(contact_object, trajectory):
         # atom_contacts, residue_contact = self._update_contacts(...)
         atom_contacts.append(frame_atom_contacts)
         residue_contacts.append(frame_residue_contacts)
-    return atom_contacts, residue_contacts
+    return zip(atom_contacts, residue_contacts)
 
 class ContactTrajectory(ContactObject, abc.Sequence):
     """Track all the contacts over a trajectory, frame-by-frame.
@@ -73,7 +73,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
                 n_frames=1,
                 indexer=self.indexer
             )
-            for atom_contacts, residue_contacts in zip(*contacts)
+            for atom_contacts, residue_contacts in contacts
         ]
         return contact_maps
 

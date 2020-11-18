@@ -134,28 +134,17 @@ class DaskContactTrajectory(ContactTrajectory):
             self.trajectory, query, haystack, cutoff, n_neighbors_ignored,
         )
 
-    def _make_contact_maps(self, trajectory):
+    def _build_contacts(self, trajectory):
         subtrajs = dask_load_and_slice(self.trajectory, self.client,
                                        self.run_info)
         contact_lists = self.client.map(frequency_task.contacts_per_frame_task,
                                         subtrajs,
                                         contact_object=self.contact_object)
-        contact_maps = [
-            ContactFrequency.from_contacts(
-                topology=self.topology,
-                query=self.query,
-                haystack=self.haystack,
-                cutoff=self.cutoff,
-                n_neighbors_ignored=self.n_neighbors_ignored,
-                atom_contacts=atom_contacts,
-                residue_contacts=residue_contacts,
-                n_frames=1,
-                indexer=self.indexer
-            )
-            for contacts in contact_lists
-            for atom_contacts, residue_contacts in zip(*contacts.result())
-        ]
-        return contact_maps
+        # Return a generator for this to work out
+        gen = ((atom_contacts, residue_contacts)
+               for contacts in contact_lists
+               for atom_contacts, residue_contacts in contacts.result())
+        return gen
 
     @property
     def parameters(self):
