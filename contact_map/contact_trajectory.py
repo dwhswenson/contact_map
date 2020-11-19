@@ -1,17 +1,31 @@
 from collections import abc, Counter
 
 from .contact_map import ContactFrequency, ContactObject
-import json
+
 
 # Split this out of the to prevent code duplication for DaskContactTrajectory
 def _build_contacts(contact_object, trajectory):
+    """Make a contact map for every frame in trajectory.
+
+    Parameters
+    ----------
+    contact_object : `ContactObject`
+        The contact object that will be used to make the contact maps.
+    trajectory: `mdtraj.Trajectory`
+        The trajectory for which we will return a contactObject for each frame.
+
+    Returns
+    -------
+    out : list of tuples
+        list of (atom_contacts, residue_contacts) for each frame in trajectory.
+    """
+
     # atom_contacts, residue_contacts = self._empty_contacts()
     atom_contacts = []
     residue_contacts = []
     residue_ignore_atom_idxs = contact_object._residue_ignore_atom_idxs
     residue_query_atom_idxs = contact_object.indexer.residue_query_atom_idxs
     used_trajectory = contact_object.indexer.slice_trajectory(trajectory)
-
 
     # range(len(trajectory)) avoids recopying topology, as would occur
     # in `for frame in trajectory`
@@ -28,6 +42,7 @@ def _build_contacts(contact_object, trajectory):
         atom_contacts.append(frame_atom_contacts)
         residue_contacts.append(frame_residue_contacts)
     return zip(atom_contacts, residue_contacts)
+
 
 class ContactTrajectory(ContactObject, abc.Sequence):
     """Track all the contacts over a trajectory, frame-by-frame.
@@ -57,11 +72,8 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         super(ContactTrajectory, self).__init__(trajectory.topology, query,
                                                 haystack, cutoff,
                                                 n_neighbors_ignored)
-        self._contact_maps = self._make_contact_maps(trajectory)
-
-    def _make_contact_maps(self, trajectory):
         contacts = self._build_contacts(trajectory)
-        contact_maps = [
+        self._contact_maps = [
             ContactFrequency.from_contacts(
                 topology=self.topology,
                 query=self.query,
@@ -75,7 +87,6 @@ class ContactTrajectory(ContactObject, abc.Sequence):
             )
             for atom_contacts, residue_contacts in contacts
         ]
-        return contact_maps
 
     def __getitem__(self, num):
         return self._contact_maps[num]
@@ -306,7 +317,7 @@ class WindowedIterator(abc.Iterator):
 
     def __next__(self):
         # if self.max + self.step < self.width:
-            # to_add, to_sub = self._startup()
+        #   to_add, to_sub = self._startup()
         if self.max + self.step < self.length:
             to_add, to_sub = self._normal()
         else:
