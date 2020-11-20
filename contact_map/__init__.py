@@ -22,6 +22,6 @@ from .concurrence import (
     ConcurrencePlotter, plot_concurrence
 )
 
-from .dask_runner import DaskContactFrequency
+from .dask_runner import DaskContactFrequency, DaskContactTrajectory
 
 from . import plot_utils
