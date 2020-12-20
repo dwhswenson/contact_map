@@ -58,7 +58,7 @@ jobs:
       - name: "Tests"
         run: |
           python -c "import contact_map"
-        py.test -vv --cov=contact_map --cov-report xml:cov.xml
+          py.test -vv --cov=contact_map --cov-report xml:cov.xml
       - name: "Report coverage"
         run: |
           COVERALLS_PARALLEL=true coveralls
