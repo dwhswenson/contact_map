@@ -63,7 +63,5 @@ jobs:
       - name: "Report coverage"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
           COVERALLS_PARALLEL=true coveralls
-          python-codacy-coverage -r cov.xml
