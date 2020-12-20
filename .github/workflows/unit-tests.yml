@@ -42,7 +42,6 @@ jobs:
       - name: "Install"
         env:
           MDTRAJ: ${{ matrix.MDTRAJ }}
-          PY_COLORS: "1"
         run: |
           source ci/pip-install/install_requirements.sh
           pip install -e .
@@ -56,12 +55,14 @@ jobs:
       - name: "Autorelease check"
         run: python autorelease_check.py
       - name: "Tests"
+        env:
+          PY_COLORS: "1"
         run: |
           python -c "import contact_map"
           py.test -vv --cov=contact_map --cov-report xml:cov.xml
       - name: "Report coverage"
         env:
-          GITHUB_TOKEN = ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COVERALLS_PARALLEL=true coveralls
           python-codacy-coverage -r cov.xml
