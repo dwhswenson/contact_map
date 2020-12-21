@@ -61,6 +61,4 @@ jobs:
           python -c "import contact_map"
           py.test -vv --cov=contact_map --cov-report xml:cov.xml
       - name: "Report coverage"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: COVERALLS_PARALLEL=true coveralls
+        uses: codecov/codecov-action@v1
