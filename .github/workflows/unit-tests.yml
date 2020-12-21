@@ -27,7 +27,7 @@ jobs:
           - 3.8
           - 3.7
           - 3.6
-        MDTRAJ: ["mdtraj-rel"]
+        MDTRAJ: ["mdtraj-release"]
         include:
           - CONDA_PY: 3.9
             MDTRAJ: "mdtraj-dev"

@@ -1,7 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/contact-map/badge/?version=latest)](http://contact-map.readthedocs.io/en/latest/?badge=latest)
 ![Unit tests](https://github.com/dwhswenson/contact_map/workflows/Unit%20tests/badge.svg)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/em3fo96sjrg2vmcc/branch/master?svg=true)](https://ci.appveyor.com/project/dwhswenson/contact-map/branch/master)
-[![Coverage Status](https://coveralls.io/repos/github/dwhswenson/contact_map/badge.svg?branch=master)](https://coveralls.io/github/dwhswenson/contact_map?branch=master)
+[![codecov](https://codecov.io/gh/dwhswenson/contact_map/branch/master/graph/badge.svg?token=4so8QmiC5W)](https://codecov.io/gh/dwhswenson/contact_map)
 [![PyPI](https://img.shields.io/pypi/v/contact-map.svg)](https://pypi.python.org/pypi/contact-map/)
 [![conda-forge](https://img.shields.io/conda/v/conda-forge/contact_map.svg)](https://github.com/conda-forge/contact_map-feedstock)
 
