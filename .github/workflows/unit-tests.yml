@@ -27,10 +27,10 @@ jobs:
           - 3.8
           - 3.7
           - 3.6
-        MDTRAJ: ["release"]
+        MDTRAJ: ["mdtraj-rel"]
         include:
           - CONDA_PY: 3.9
-            MDTRAJ: "dev"
+            MDTRAJ: "mdtraj-dev"
 
     steps:
       - uses: actions/checkout@v2
@@ -46,7 +46,7 @@ jobs:
           source ci/pip-install/install_requirements.sh
           pip install -e .
           pip install -U -r ci/pip-install/testing_requirements.txt
-          if [ "$MDTRAJ" = "dev" ]; then
+          if [ "$MDTRAJ" = "mdtraj-dev" ]; then
             pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
             pip install -r optional_installs.txt
           fi
@@ -59,6 +59,7 @@ jobs:
           PY_COLORS: "1"
         run: |
           python -c "import contact_map"
-          py.test -vv --cov=contact_map --cov-report xml:cov.xml
+          py.test -vv --cov=contact_map --cov-report xml
       - name: "Report coverage"
+        if: ${{ github.event }} != "schedule"
         uses: codecov/codecov-action@v1
