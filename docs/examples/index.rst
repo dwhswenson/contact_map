@@ -21,7 +21,7 @@ You can also try them out online directly from your browser: |binder|_
     :maxdepth: 1
     :glob:
 
-    nb/overview.ipynb
+    nb/contact_map.ipynb
     nb/changing_defaults.ipynb
     nb/custom_plotting.ipynb
     nb/comparing_different_structures.ipynb
