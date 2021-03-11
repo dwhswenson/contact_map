@@ -5,8 +5,8 @@
 {% set version = "v"+version %}                                      
 {% endif %}  
 
-Examples
-========
+User Guide/Examples
+===================
 
 We have several examples to illustrate various features of the code. These
 notebooks have been rendered here for the web, but the originals are
@@ -21,7 +21,13 @@ You can also try them out online directly from your browser: |binder|_
     :maxdepth: 1
     :glob:
 
-    nb/*
+    nb/contact_map.ipynb
+    nb/changing_defaults.ipynb
+    nb/custom_plotting.ipynb
+    nb/comparing_different_structures.ipynb
+    nb/contact_trajectory.ipynb
+    nb/concurrences.ipynb
+    nb/integrations.ipynb
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
 .. _binder: https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath=%2Fexamples
