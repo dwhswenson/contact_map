@@ -6,7 +6,9 @@ except ImportError:  # pragma: no cover
 __version__ = version.version
 
 from .contact_map import (
-    ContactMap, ContactFrequency, ContactDifference
+    ContactMap, ContactFrequency, ContactDifference,
+    AtomMismatchedContactDifference, ResidueMismatchedContactDifference,
+    OverrideTopologyContactDifference
 )
 
 from .contact_count import ContactCount
@@ -20,6 +22,6 @@ from .concurrence import (
     ConcurrencePlotter, plot_concurrence
 )
 
-from .dask_runner import DaskContactFrequency
+from .dask_runner import DaskContactFrequency, DaskContactTrajectory
 
 from . import plot_utils

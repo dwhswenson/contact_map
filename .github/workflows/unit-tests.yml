@@ -1,0 +1,67 @@
+name: "Unit tests"
+on:
+  pull_request:
+    branches:
+      - master
+      - stable
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  schedule:
+    - cron: "20 5 * * *"
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+jobs:
+  test_suite:
+    runs-on: ubuntu-latest
+    name: "Unit Tests"
+    strategy:
+      matrix:
+        CONDA_PY:
+          - 3.9
+          - 3.8
+          - 3.7
+          - 3.6
+        MDTRAJ: ["mdtraj-release"]
+        include:
+          - CONDA_PY: 3.9
+            MDTRAJ: "mdtraj-dev"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.CONDA_PY }}
+      - name: "Install"
+        env:
+          MDTRAJ: ${{ matrix.MDTRAJ }}
+        run: |
+          source ci/pip-install/install_requirements.sh
+          pip install -e .
+          pip install -U -r ci/pip-install/testing_requirements.txt
+          if [ "$MDTRAJ" = "mdtraj-dev" ]; then
+            pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
+            pip install -r optional_installs.txt
+          fi
+      - name: "Versions"
+        run: pip list
+      - name: "Autorelease check"
+        run: python autorelease_check.py
+      - name: "Tests"
+        env:
+          PY_COLORS: "1"
+        run: |
+          python -c "import contact_map"
+          py.test -vv --cov=contact_map --cov-report xml
+      - name: "Report coverage"
+        if: ${{ github.event }} != "schedule"
+        run: bash <(curl -s https://codecov.io/bash)

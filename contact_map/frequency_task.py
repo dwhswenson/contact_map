@@ -22,6 +22,7 @@ the calculation of the contacts must be combined into a single task.
 
 import mdtraj as md
 from contact_map import ContactFrequency
+from contact_map.contact_trajectory import _build_contacts
 
 def block_slices(n_total, n_per_block):
     """Determine slices for splitting the input array.
@@ -86,6 +87,7 @@ def load_trajectory_task(subslice, file_name, **kwargs):
     """
     return md.load(file_name, **kwargs)[subslice]
 
+
 def map_task(subtrajectory, parameters):
     """Task to be mapped to all subtrajectories. Run ContactFrequency
 
@@ -102,6 +104,23 @@ def map_task(subtrajectory, parameters):
         contact frequency for the subtrajectory
     """
     return ContactFrequency(subtrajectory, **parameters)
+
+
+def contacts_per_frame_task(trajectory, contact_object):
+    """Task that will mimic ContactTrajectory._build_contacts, but with
+    a pre-initialized ContactObject instead of `self`  to produce the contacts
+
+
+    Parameters
+    ----------
+    trajectory : mdtraj.Trajectory
+       single trajectory segment to calculate contacts for every frame
+    contactobject : ContactObject
+       The instance that will replace self in _build_contacts
+
+    """
+    return _build_contacts(contact_object, trajectory)
+
 
 def reduce_all_results(contacts):
     """Combine multiple :class:`.ContactFrequency` objects into one
