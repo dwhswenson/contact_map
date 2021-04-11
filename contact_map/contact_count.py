@@ -204,7 +204,8 @@ class ContactCount(object):
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
-        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
+        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax,
+                       with_colorbar=with_colorbar)
 
         return (fig, ax)
 
