@@ -3,7 +3,7 @@ import scipy
 import numpy as np
 import pandas as pd
 import warnings
-from .plot_utils import ranged_colorbar
+from .plot_utils import ranged_colorbar, is_cmap_diverging
 
 # matplotlib is technically optional, but required for plotting
 try:
@@ -175,7 +175,7 @@ class ContactCount(object):
                    + str((self.n_x, self.n_y))+" (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
+    def plot(self, cmap='seismic', diverging_cmap=None, with_colorbar=True,
              **kwargs):
         """
         Plot contact matrix (requires matplotlib)
@@ -204,11 +204,12 @@ class ContactCount(object):
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
-        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
+        self.plot_axes(ax=ax, cmap=cmap, diverging_cmap=diverging_cmap,
+                       with_colorbar=with_colorbar)
 
         return (fig, ax)
 
-    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0,
+    def plot_axes(self, ax, cmap='seismic', diverging_cmap=None,
                   with_colorbar=True):
         """
         Plot contact matrix on a matplotlib.axes
@@ -219,14 +220,19 @@ class ContactCount(object):
            axes to plot the contact matrix on
         cmap : str
             color map name, default 'seismic'
-        vmin : float
-            minimum value for color map interpolation; default -1.0
-        vmax : float
-            maximum value for color map interpolation; default 1.0
+        diverging_cmap : bool
+            If True, color map interpolation is from -1.0 to 1.0; allowing
+            diverging color maps to be used for contact maps and contact
+            differences. If false, the range is from 0 to 1.0. Default value
+            of None selects a value based on the value of cmap, treating as
+            False for unknown color maps.
         with_colorbar : bool
             If a colorbar is added to the axes
         """
+        if diverging_cmap is None:
+            diverging_cmap = is_cmap_diverging(cmap)
 
+        vmin, vmax = (-1, 1) if diverging_cmap else (0, 1)
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
         ax.axis([0, self.n_x, 0, self.n_y])
