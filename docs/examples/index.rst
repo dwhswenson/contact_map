@@ -27,7 +27,8 @@ You can also try them out online directly from your browser: |binder|_
     nb/comparing_different_structures.ipynb
     nb/contact_trajectory.ipynb
     nb/concurrences.ipynb
-    nb/integrations.ipynb
+    nb/exporting_data.ipynb
+    nb/performance.ipynb
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
 .. _binder: https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath=%2Fexamples
