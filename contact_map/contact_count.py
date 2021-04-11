@@ -172,8 +172,7 @@ class ContactCount(object):
         if not HAS_NETWORKX:
             raise RuntimeError("Error importing networkx")
 
-        if graph is None:
-            graph = nx.Graph()
+        graph = nx.Graph() if graph is None else graph
 
         for pair, value in self.counter.items():
             if not as_index:
