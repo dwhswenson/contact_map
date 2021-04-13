@@ -170,7 +170,7 @@ class ContactCount(object):
         networkx.Graph :
             graph representation of the contact matrix
         """
-        if not HAS_NETWORKX:
+        if not HAS_NETWORKX:  # -no-cov-
             raise RuntimeError("Error importing networkx")
 
         graph = nx.Graph() if graph is None else graph
