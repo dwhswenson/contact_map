@@ -1,7 +1,48 @@
 from collections import abc, Counter
 
 from .contact_map import ContactFrequency, ContactObject
-import json
+
+
+# Split this out of the to prevent code duplication for DaskContactTrajectory
+def _build_contacts(contact_object, trajectory):
+    """Make a contact map for every frame in trajectory.
+
+    Parameters
+    ----------
+    contact_object : `ContactObject`
+        The contact object that will be used to make the contact maps.
+    trajectory: `mdtraj.Trajectory`
+        The trajectory for which we will return a contactObject for each frame.
+
+    Returns
+    -------
+    out : list of tuples
+        list of (atom_contacts, residue_contacts) for each frame in trajectory.
+    """
+
+    # atom_contacts, residue_contacts = self._empty_contacts()
+    atom_contacts = []
+    residue_contacts = []
+    residue_ignore_atom_idxs = contact_object._residue_ignore_atom_idxs
+    residue_query_atom_idxs = contact_object.indexer.residue_query_atom_idxs
+    used_trajectory = contact_object.indexer.slice_trajectory(trajectory)
+
+    # range(len(trajectory)) avoids recopying topology, as would occur
+    # in `for frame in trajectory`
+    for frame_num in range(len(trajectory)):
+        frame_contacts = contact_object._contact_map(used_trajectory,
+                                                     frame_num,
+                                                     residue_query_atom_idxs,
+                                                     residue_ignore_atom_idxs)
+        frame_atom_contacts, frame_residue_contacts = frame_contacts
+        frame_atom_contacts = \
+            contact_object.indexer.convert_atom_contacts(frame_atom_contacts)
+        # TODO unify contact building with something like this?
+        # atom_contacts, residue_contact = self._update_contacts(...)
+        atom_contacts.append(frame_atom_contacts)
+        residue_contacts.append(frame_residue_contacts)
+    return zip(atom_contacts, residue_contacts)
+
 
 class ContactTrajectory(ContactObject, abc.Sequence):
     """Track all the contacts over a trajectory, frame-by-frame.
@@ -44,7 +85,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
                 n_frames=1,
                 indexer=self.indexer
             )
-            for atom_contacts, residue_contacts in zip(*contacts)
+            for atom_contacts, residue_contacts in contacts
         ]
 
     def __getitem__(self, num):
@@ -83,28 +124,7 @@ class ContactTrajectory(ContactObject, abc.Sequence):
         return cls.from_contact_maps(contact_maps)
 
     def _build_contacts(self, trajectory):
-        # atom_contacts, residue_contacts = self._empty_contacts()
-        atom_contacts = []
-        residue_contacts = []
-
-        residue_ignore_atom_idxs = self._residue_ignore_atom_idxs
-        residue_query_atom_idxs = self.indexer.residue_query_atom_idxs
-        used_trajectory = self.indexer.slice_trajectory(trajectory)
-
-        # range(len(trajectory)) avoids recopying topology, as would occur
-        # in `for frame in trajectory`
-        for frame_num in range(len(trajectory)):
-            frame_contacts = self._contact_map(used_trajectory, frame_num,
-                                               residue_query_atom_idxs,
-                                               residue_ignore_atom_idxs)
-            frame_atom_contacts, frame_residue_contacts = frame_contacts
-            frame_atom_contacts = \
-                    self.indexer.convert_atom_contacts(frame_atom_contacts)
-            # TODO unify contact building with something like this?
-            # atom_contacts, residue_contact = self._update_contacts(...)
-            atom_contacts.append(frame_atom_contacts)
-            residue_contacts.append(frame_residue_contacts)
-        return atom_contacts, residue_contacts
+        return _build_contacts(self, trajectory)
 
     def contact_frequency(self):
         """Create a :class:`.ContactFrequency` from this contact trajectory
@@ -297,7 +317,7 @@ class WindowedIterator(abc.Iterator):
 
     def __next__(self):
         # if self.max + self.step < self.width:
-            # to_add, to_sub = self._startup()
+        #   to_add, to_sub = self._startup()
         if self.max + self.step < self.length:
             to_add, to_sub = self._normal()
         else:

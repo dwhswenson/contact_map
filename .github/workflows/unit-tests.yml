@@ -34,10 +34,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
       - uses: actions/setup-python@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-python: true
+          auto-update-conda: true
           python-version: ${{ matrix.CONDA_PY }}
       - name: "Install"
         env:

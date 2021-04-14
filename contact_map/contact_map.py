@@ -615,15 +615,11 @@ class ContactObject(object):
 
     @property
     def atom_contacts(self):
-        n_atoms = self.topology.n_atoms
-        return ContactCount(self._atom_contacts, self.topology.atom,
-                            n_atoms, n_atoms)
+        raise NotImplementedError()
 
     @property
     def residue_contacts(self):
-        n_res = self.topology.n_residues
-        return ContactCount(self._residue_contacts, self.topology.residue,
-                            n_res, n_res)
+        raise NotImplementedError()
 
 
 CONTACT_MAP_ERROR = (
