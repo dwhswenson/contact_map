@@ -28,7 +28,13 @@ def test_ranged_colorbar_cmap(map_type, val):
                     atol=atol)
 
 
-
-
-
-
+@pytest.mark.parametrize("cmap", ['seismic', 'Blues'])
+def test_is_cmap_diverging(cmap):
+    cmap, expected = {
+        'seismic': ('seismic', True),
+        'Blues': ('Blues', False),
+    }[cmap]
+    assert is_cmap_diverging(cmap) == expected
+    if cmap == 'custom':
+        # TODO
+        pass
