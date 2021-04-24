@@ -10,6 +10,8 @@ try:
     from matplotlib.colors import LinearSegmentedColormap
 except ImportError:
     HAS_MATPLOTLIB = False
+else:
+    HAS_MATPLOTLIB = True
 
 @pytest.mark.parametrize("val", [0.5, 0.55, 0.6, 0.65, 0.7])
 @pytest.mark.parametrize("map_type", ["name", "cmap"])
