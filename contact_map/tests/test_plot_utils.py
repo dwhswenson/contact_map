@@ -32,21 +32,24 @@ def test_ranged_colorbar_cmap(map_type, val):
 
 @pytest.mark.parametrize("cmap", ['seismic', 'Blues'])
 def test_is_cmap_diverging(cmap):
-    custom = LinearSegmentedColormap(
-        'testCmap',
-        segmentdata={
-            'red':   [[0.0,  0.0, 0.0],
-                      [0.5,  1.0, 1.0],
-                      [1.0,  1.0, 1.0]],
-             'green': [[0.0,  0.0, 0.0],
-                       [0.25, 0.0, 0.0],
-                       [0.75, 1.0, 1.0],
-                       [1.0,  1.0, 1.0]],
-             'blue':  [[0.0,  0.0, 0.0],
-                       [0.5,  0.0, 0.0],
-                       [1.0,  1.0, 1.0]]},
-        N=256
-    )
+    if HAS_MATPLOTLIB:
+        custom = LinearSegmentedColormap(
+            'testCmap',
+            segmentdata={
+                'red':   [[0.0,  0.0, 0.0],
+                          [0.5,  1.0, 1.0],
+                          [1.0,  1.0, 1.0]],
+                 'green': [[0.0,  0.0, 0.0],
+                           [0.25, 0.0, 0.0],
+                           [0.75, 1.0, 1.0],
+                           [1.0,  1.0, 1.0]],
+                 'blue':  [[0.0,  0.0, 0.0],
+                           [0.5,  0.0, 0.0],
+                           [1.0,  1.0, 1.0]]},
+            N=256
+        )
+    else:
+        custom = None
     cmap, expected = {
         'seismic': ('seismic', True),
         'Blues': ('Blues', False),
