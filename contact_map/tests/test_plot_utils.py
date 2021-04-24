@@ -6,7 +6,10 @@
 from .utils import *
 
 from contact_map.plot_utils import *
-from matplotlib.colors import LinearSegmentedColormap
+try:
+    from matplotlib.colors import LinearSegmentedColormap
+except ImportError:
+    HAS_MATPLOTLIB = False
 
 @pytest.mark.parametrize("val", [0.5, 0.55, 0.6, 0.65, 0.7])
 @pytest.mark.parametrize("map_type", ["name", "cmap"])
@@ -51,6 +54,9 @@ def test_is_cmap_diverging(cmap):
     }[cmap]
     if cmap == 'custom':
         with pytest.warns(UserWarning):
-            assert is_cmap_diverging(cmap) == expected
+            if HAS_MATPLOTLIB:
+                assert is_cmap_diverging(cmap) == expected
+            else:
+                pytest.skip()
     else:
         assert is_cmap_diverging(cmap) == expected
