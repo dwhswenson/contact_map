@@ -6,7 +6,7 @@
 from .utils import *
 
 from contact_map.plot_utils import *
-
+from matplotlib.colors import LinearSegmentedColormap
 
 @pytest.mark.parametrize("val", [0.5, 0.55, 0.6, 0.65, 0.7])
 @pytest.mark.parametrize("map_type", ["name", "cmap"])
@@ -27,14 +27,30 @@ def test_ranged_colorbar_cmap(map_type, val):
     assert_allclose(cb.cmap(cb.norm(val)), default_cmap(norm(val)),
                     atol=atol)
 
-
 @pytest.mark.parametrize("cmap", ['seismic', 'Blues'])
 def test_is_cmap_diverging(cmap):
+    custom = LinearSegmentedColormap(
+        'testCmap',
+        segmentdata={
+            'red':   [[0.0,  0.0, 0.0],
+                      [0.5,  1.0, 1.0],
+                      [1.0,  1.0, 1.0]],
+             'green': [[0.0,  0.0, 0.0],
+                       [0.25, 0.0, 0.0],
+                       [0.75, 1.0, 1.0],
+                       [1.0,  1.0, 1.0]],
+             'blue':  [[0.0,  0.0, 0.0],
+                       [0.5,  0.0, 0.0],
+                       [1.0,  1.0, 1.0]]},
+        N=256
+    )
     cmap, expected = {
         'seismic': ('seismic', True),
         'Blues': ('Blues', False),
+        'custom': (custom, False),
     }[cmap]
-    assert is_cmap_diverging(cmap) == expected
     if cmap == 'custom':
-        # TODO
-        pass
+        with pytest.warns(UserWarning):
+            assert is_cmap_diverging(cmap) == expected
+    else:
+        assert is_cmap_diverging(cmap) == expected
