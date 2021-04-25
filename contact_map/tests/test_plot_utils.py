@@ -32,9 +32,12 @@ def test_ranged_colorbar_cmap(map_type, val):
     assert_allclose(cb.cmap(cb.norm(val)), default_cmap(norm(val)),
                     atol=atol)
 
-@pytest.mark.parametrize("cmap", ['seismic', 'Blues'])
+@pytest.mark.parametrize("cmap", ['seismic', 'Blues', 'custom'])
 def test_is_cmap_diverging(cmap):
-    if HAS_MATPLOTLIB:
+    if cmap == 'custom' and not HAS_MATPLOTLIB:
+        custom = None
+        pytest.skip()
+    else:
         custom = LinearSegmentedColormap(
             'testCmap',
             segmentdata={
@@ -50,8 +53,7 @@ def test_is_cmap_diverging(cmap):
                            [1.0,  1.0, 1.0]]},
             N=256
         )
-    else:
-        custom = None
+
     cmap, expected = {
         'seismic': ('seismic', True),
         'Blues': ('Blues', False),
@@ -59,9 +61,6 @@ def test_is_cmap_diverging(cmap):
     }[cmap]
     if cmap == 'custom':
         with pytest.warns(UserWarning):
-            if HAS_MATPLOTLIB:
-                assert is_cmap_diverging(cmap) == expected
-            else:
-                pytest.skip()
+            assert is_cmap_diverging(cmap) == expected
     else:
         assert is_cmap_diverging(cmap) == expected

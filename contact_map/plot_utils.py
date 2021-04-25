@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 try:  # try loop for testing
     import matplotlib
