@@ -34,10 +34,8 @@ def test_ranged_colorbar_cmap(map_type, val):
 
 @pytest.mark.parametrize("cmap", ['seismic', 'Blues', 'custom'])
 def test_is_cmap_diverging(cmap):
-    if cmap == 'custom' and not HAS_MATPLOTLIB:
-        custom = None
-        pytest.skip()
-    else:
+    custom = None
+    if HAS_MATPLOTLIB:
         custom = LinearSegmentedColormap(
             'testCmap',
             segmentdata={
@@ -53,6 +51,9 @@ def test_is_cmap_diverging(cmap):
                            [1.0,  1.0, 1.0]]},
             N=256
         )
+    elif cmap == 'custom':
+        # no matplotlib; can't do custom
+        pytest.skip()
 
     cmap, expected = {
         'seismic': ('seismic', True),
