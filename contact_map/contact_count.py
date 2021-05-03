@@ -77,10 +77,8 @@ def _get_low_high_counter_range(counter):
     keys = [tuple(sorted(list(i))) for i in counter.keys()]
     if len(keys) == 0:
         return (0, 0), (0, 0)
-
-    lows = sorted([i for i, j in keys])
-    highs = sorted([j for i, j in keys])
-    return (lows[0], lows[-1]+1), (highs[0], highs[-1]+1)
+    lows, highs = zip(*keys)
+    return (min(lows), max(lows)+1), (min(highs), max(highs)+1)
 
 
 def _get_sorted_counter_range(counter):
@@ -88,7 +86,8 @@ def _get_sorted_counter_range(counter):
     low, high = _get_low_high_counter_range(counter)
     if low[1]-low[0] > high[-1]-high[0]:
         return high, low
-    return low, high
+    else:
+        return low, high
 
 
 def _sanitize_n_x_n_y(n_x, n_y, counter):
