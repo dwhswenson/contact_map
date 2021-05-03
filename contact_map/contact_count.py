@@ -3,7 +3,7 @@ import scipy
 import numpy as np
 import pandas as pd
 import warnings
-from .plot_utils import ranged_colorbar
+from .plot_utils import ranged_colorbar, make_x_y_ranges
 
 # matplotlib is technically optional, but required for plotting
 try:
@@ -58,45 +58,11 @@ if _PD_VERSION >= (0, 25):
 # TODO: this is the end of what to remove when pandas is fixed
 
 
-def _int_or_range_to_tuple(posible_int):
-    if isinstance(posible_int, collections.abc.Iterable):
-        return (posible_int[0], posible_int[1])
-    else:
-        return (0, posible_int)
-
-
 def _get_total_counter_range(counter):
-    numbers = sorted([i for key in counter.keys() for i in key])
+    numbers = [i for key in counter.keys() for i in key]
     if len(numbers) == 0:
         return (0, 0)
-    return (numbers[0], numbers[-1]+1)
-
-
-def _get_low_high_counter_range(counter):
-    """Give the (min, max + 1) for both the low and high keys in counter"""
-    keys = [tuple(sorted(list(i))) for i in counter.keys()]
-    if len(keys) == 0:
-        return (0, 0), (0, 0)
-    lows, highs = zip(*keys)
-    return (min(lows), max(lows)+1), (min(highs), max(highs)+1)
-
-
-def _get_sorted_counter_range(counter):
-    """Return smallest range, longest range for the low and high counter"""
-    low, high = _get_low_high_counter_range(counter)
-    if low[1]-low[0] > high[-1]-high[0]:
-        return high, low
-    else:
-        return low, high
-
-
-def _sanitize_n_x_n_y(n_x, n_y, counter):
-    if n_x is None and n_y is None:
-        n_x, n_y = _get_sorted_counter_range(counter)
-    elif n_x is None or n_y is None:
-        raise ValueError("Either both n_x and n_y need to be defined or "
-                         "neither.")
-    return n_x, n_y
+    return (min(numbers), max(numbers)+1)
 
 
 class ContactCount(object):
@@ -139,15 +105,11 @@ class ContactCount(object):
         self._counter = counter
         self._object_f = object_f
         self.total_range = _get_total_counter_range(counter)
-        n_x, n_y = _sanitize_n_x_n_y(n_x, n_y, counter)
-        self.n_x = n_x
-        self.n_y = n_y
-        self.n_x_min, self.n_x_max = _int_or_range_to_tuple(n_x)
-        self.n_y_min, self.n_y_max = _int_or_range_to_tuple(n_y)
+        self.n_x, self.n_y = make_x_y_ranges(n_x, n_y, counter)
         if max_size is None:
             self.max_size = max([self.total_range[-1],
-                                 self.n_x_max,
-                                 self.n_y_max])
+                                 self.n_x.max,
+                                 self.n_y.max])
         else:
             self.max_size = max_size
 
@@ -222,8 +184,8 @@ class ContactCount(object):
         ypixels = dpi*figheight
 
         # Check if every value has a pixel
-        if (xpixels/(self.n_x_max - self.n_x_min) < 1 or
-                ypixels/(self.n_y_max - self.n_y_min) < 1):
+        if (xpixels/self.n_x.range_length < 1 or
+                ypixels/self.n_y.range_length < 1):
             msg = ("The number of pixels in the figure is insufficient to show"
                    " all the contacts.\n Please save this as a vector image "
                    "(such as a PDF) to view the correct result.\n Another "
@@ -231,9 +193,9 @@ class ContactCount(object):
                    " or the 'figsize' (currently: " + str((figwidth,
                                                            figheight)) +
                    ").\n Recommended minimum amount of pixels = "
-                   + str((self.n_x_max-self.n_x_min,
-                          self.n_y_max-self.n_y_min))
-                   +" (width, height).")
+                   + str((self.n_x.range_length,
+                          self.n_y.range_length))
+                   + " (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
     def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
@@ -291,7 +253,7 @@ class ContactCount(object):
 
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
-        ax.axis([self.n_x_min, self.n_x_max, self.n_y_min, self.n_y_max])
+        ax.axis([self.n_x.min, self.n_x.max, self.n_y.min, self.n_y.max])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
         min_val = 0.0

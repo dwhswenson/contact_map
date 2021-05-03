@@ -28,7 +28,17 @@ def test_ranged_colorbar_cmap(map_type, val):
                     atol=atol)
 
 
+class TestContactRange(object):
+    def setup(self):
+        self.cr = ContactPlotRange(5)
 
-
-
-
+    @pytest.mark.parametrize("case", [(ContactPlotRange(5), True),
+                                      (ContactPlotRange(3), False),
+                                      (5, True),
+                                      ((0, 5), False),  # Maybe support this?
+                                      ({5}, False)  # Fail for non-int/tuple
+                                      ])
+    def test_eq(self, case):
+        o, result = case
+        assert (self.cr == o) is result
+        assert (self.cr != o) is not result
