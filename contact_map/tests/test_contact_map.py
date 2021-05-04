@@ -1063,6 +1063,7 @@ class TestOverrideTopologyContactDifference(object):
 
         # Make sure this now works
         diff = OverrideTopologyContactDifference(ttraj, frame, ttraj.topology)
+
         assert diff.residue_contacts is not None
         assert diff.atom_contacts is not None
         assert diff.topology == ttraj.topology

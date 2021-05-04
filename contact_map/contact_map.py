@@ -67,12 +67,9 @@ def _residue_idx_for_atom(topology, atom_list):
     return set([topology.atom(a).residue.index for a in atom_list])
 
 
-def _range_from_object_list(object_list):
-    """
-    Objects must have .index attribute (e.g., MDTraj Residue/Atom)
-    """
-    idxs = [obj.index for obj in object_list]
-    return (min(idxs), max(idxs) + 1)
+def _range_from_iterable(iterable):
+    sort = sorted(iterable)
+    return (sort[0], sort[-1]+1)
 
 
 class ContactsDict(object):
@@ -134,6 +131,8 @@ class ContactObject(object):
         self._query = set(query)
         self._haystack = set(haystack)
 
+        self._query_res_idx = set(_residue_idx_for_atom(topology, query))
+        self._haystack_res_idx = set(_residue_idx_for_atom(topology, haystack))
         # Make tuple for efficient lookupt
         all_atoms_set = set(query).union(set(haystack))
         self._all_atoms = tuple(sorted(list(all_atoms_set)))
@@ -214,6 +213,10 @@ class ContactObject(object):
             'cutoff': self._cutoff,
             'query': list([int(val) for val in self._query]),
             'haystack': list([int(val) for val in self._haystack]),
+            'query_res_idx': list([int(val) for val
+                                   in self._query_res_idx]),
+            'haystack_res_idx': list([int(val) for val in
+                              self._haystack_res_idx]),
             'all_atoms': tuple(
                 [int(val) for val in self._all_atoms]),
             'all_residues': tuple(
@@ -247,6 +250,8 @@ class ContactObject(object):
             'residue_contacts': cls._deserialize_contact_counter,
             'query': deserialize_set,
             'haystack': deserialize_set,
+            'query_res_idx': deserialize_set,
+            'haystack_res_idx': deserialize_set,
             'all_atoms': deserialize_set,
             'all_residues': deserialize_set,
             'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
@@ -465,14 +470,24 @@ class ContactObject(object):
         return _residue_for_atom(self.topology, self.query)
 
     @property
+    def query_range(self):
+        """return an tuple with the (min, max+1) of query"""
+        return _range_from_iterable(self.query)
+
+    @property
+    def haystack_range(self):
+        """return an tuple with the (min, max+1) of haystack"""
+        return _range_from_iterable(self.haystack)
+
+    @property
     def haystack_residue_range(self):
         """(int, int): min and (max + 1) of haystack residue indices"""
-        return _range_from_object_list(self.haystack_residues)
+        return _range_from_iterable(self._haystack_res_idx)
 
     @property
     def query_residue_range(self):
         """(int, int): min and (max + 1) of query residue indices"""
-        return _range_from_object_list(self.query_residues)
+        return _range_from_iterable(self._query_res_idx)
 
     def most_common_atoms_for_residue(self, residue):
         """
@@ -768,22 +783,20 @@ class ContactFrequency(ContactObject):
     @property
     def atom_contacts(self):
         """Atoms pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.topology.n_atoms
-        n_y = self.topology.n_atoms
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._atom_contacts.items()
-        }), self.topology.atom, n_x, n_y)
+        }), self.topology.atom, self.query_range, self.haystack_range,
+            self.topology.n_atoms)
 
     @property
     def residue_contacts(self):
         """Residue pairs mapped to fraction of trajectory with that contact"""
-        n_x = self.topology.n_residues
-        n_y = self.topology.n_residues
         return ContactCount(collections.Counter({
             item[0]: float(item[1])/self.n_frames
             for item in self._residue_contacts.items()
-        }), self.topology.residue, n_x, n_y)
+        }), self.topology.residue, self.query_residue_range,
+            self.haystack_residue_range, self.topology.n_residues)
 
 
 class ContactDifference(ContactObject):
@@ -880,8 +893,7 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.atom_contacts,
                                       selection=self._all_atoms_intersect,
                                       object_f=self.topology.atom,
-                                      n_x=self.topology.n_atoms,
-                                      n_y=self.topology.n_atoms)
+                                      max_size=self.topology.n_atoms)
 
     @property
     def residue_contacts(self):
@@ -889,8 +901,7 @@ class ContactDifference(ContactObject):
                                       neg_count=self.negative.residue_contacts,
                                       selection=self._all_residues_intersect,
                                       object_f=self.topology.residue,
-                                      n_x=self.topology.n_residues,
-                                      n_y=self.topology.n_residues)
+                                      max_size=self.topology.n_residues)
 
     def _get_filtered_sub(self, pos_count, neg_count, selection, *args,
                           **kwargs):
