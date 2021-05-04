@@ -85,9 +85,9 @@ def _sanitize_n_x_n_y(n_x, n_y, counter):
     elif n_x is None or n_y is None:
         raise ValueError("Either both n_x and n_y need to be defined or "
                          "neither.")
-    if isinstance(n_x, ContactPlotRange):
+    if isinstance(n_x, _ContactPlotRange):
         n_x = n_x.n
-    if isinstance(n_y, ContactPlotRange):
+    if isinstance(n_y, _ContactPlotRange):
         n_y = n_y.n
     return n_x, n_y
 
@@ -95,12 +95,12 @@ def _sanitize_n_x_n_y(n_x, n_y, counter):
 def make_x_y_ranges(n_x, n_y, counter):
     """Return ContactPlotRange for both x and y"""
     n_x, n_y = _sanitize_n_x_n_y(n_x, n_y, counter)
-    n_x = ContactPlotRange(n_x)
-    n_y = ContactPlotRange(n_y)
+    n_x = _ContactPlotRange(n_x)
+    n_y = _ContactPlotRange(n_y)
     return n_x, n_y
 
 
-class ContactPlotRange(object):
+class _ContactPlotRange(object):
     """Object that deals with functions that are needed for plot ranges
 
     Parameters
