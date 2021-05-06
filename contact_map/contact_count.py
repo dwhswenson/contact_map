@@ -14,6 +14,13 @@ except ImportError:
 else:
     HAS_MATPLOTLIB = True
 
+try:
+    import networkx as nx
+except ImportError:
+    HAS_NETWORKX = False
+else:
+    HAS_NETWORKX = True
+
 # pandas 0.25 not available on py27; can drop this when we drop py27
 _PD_VERSION = tuple(int(x) for x in pd.__version__.split('.')[:2])
 
@@ -163,6 +170,41 @@ class ContactCount(object):
         # column.
         df = df.astype(pd.SparseDtype("float", np.nan))
         return df
+
+    def to_networkx(self, weighted=True, as_index=False, graph=None):
+        """Graph representation of contacts (requires networkx)
+
+        Parameters
+        ----------
+        weighted : bool
+            whether to use the frequencies as edge weights in the graph,
+            default True
+        as_index : bool
+            if True, the nodes in the graph are integer indices; if False
+            (default), the nodes are mdtraj.topology objects (Atom/Residue)
+        graph :  networkx.Graph or None
+            if provided, edges are added to an existing graph
+
+        Returns
+        -------
+        networkx.Graph :
+            graph representation of the contact matrix
+        """
+        if not HAS_NETWORKX:  # -no-cov-
+            raise RuntimeError("Error importing networkx")
+
+        graph = nx.Graph() if graph is None else graph
+
+        for pair, value in self.counter.items():
+            if not as_index:
+                pair = map(self._object_f, pair)
+
+            attr_dict = {'weight': value} if weighted else {}
+
+            graph.add_edge(*pair, **attr_dict)
+
+        return graph
+
 
     def _check_number_of_pixels(self, figure):
         """
