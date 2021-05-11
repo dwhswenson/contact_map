@@ -19,6 +19,71 @@ from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
 from .py_2_3 import inspect_method_arguments
 from .fix_parameters import ParameterFixer
 
+try:
+    from cython import compiled
+except ImportError:
+    compiled = False
+
+if compiled:
+    from cython import (
+        Py_hash_t,
+        Py_ssize_t,
+        bint,
+        cast,
+        ccall,
+        cclass,
+        cfunc,
+        declare,
+        double,
+        exceptval,
+        final,
+        inline,
+        nogil,
+    )
+else:
+    from ctypes import c_double as double
+    from ctypes import c_ssize_t as Py_hash_t
+    from ctypes import c_ssize_t as Py_ssize_t
+
+    bint = bool
+
+    def cast(T, v, *a, **k):
+        return v
+
+    def ccall(func):
+        return func
+
+    def cclass(cls):
+        return cls
+
+    def cfunc(func):
+        return func
+
+    def declare(*a, **k):
+        if len(a) == 2:
+            return a[1]
+        else:
+            pass
+
+    def exceptval(*a, **k):
+        def wrapper(func):
+            return func
+
+        return wrapper
+
+    def final(cls):
+        return cls
+
+    def inline(func):
+        return func
+
+    def nogil(func):
+        return func
+
+COMPILED = declare(bint, compiled)
+globals()["COMPILED"] = COMPILED
+
+
 # TODO:
 # * switch to something where you can define the haystack -- the trick is to
 #   replace the current mdtraj._compute_neighbors with something that
@@ -105,6 +170,7 @@ class ContactsDict(object):
         return contacts
 
 
+@cclass
 class ContactObject(object):
     """
     Generic object for contact map related analysis. Effectively abstract.
@@ -112,7 +178,6 @@ class ContactObject(object):
     Much of what we need to do the contact map analysis is the same for all
     analyses. It's in here.
     """
-
     # Class default for use atom slice, None tries to be smart
     _class_use_atom_slice = None
 
