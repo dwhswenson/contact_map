@@ -752,7 +752,7 @@ class TestContactDifference(object):
         if attr[0] in {'query','haystack'}:
             assert getattr(diff, attr[0]) == attr[1]
         else:
-            assert getattr(diff, attr[0]) is None
+            assert getattr(diff, attr[0]) == -1
         # Make sure we can still do the maps
         assert diff.atom_contacts is not None
         assert diff.residue_contacts is not None

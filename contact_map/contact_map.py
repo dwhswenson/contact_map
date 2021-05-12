@@ -124,18 +124,19 @@ def residue_neighborhood(residue, n=1):
     return [idx for idx in neighborhood if idx in chain]
 
 
-def _residue_for_atom(topology, atom_list):
+def _residue_for_atom(topology, atom_list) -> set:
     return set([topology.atom(a).residue for a in atom_list])
 
 
-def _residue_idx_for_atom(topology, atom_list):
+def _residue_idx_for_atom(topology, atom_list) -> set:
     return set([topology.atom(a).residue.index for a in atom_list])
 
 
-def _range_from_iterable(iterable):
+def _range_from_iterable(iterable) -> tuple:
     sort = sorted(iterable)
     return (sort[0], sort[-1]+1)
 
+deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
 
 class ContactsDict(object):
     """Dict-like object giving access to atom or residue contacts.
@@ -169,7 +170,6 @@ class ContactsDict(object):
                                str(atom_or_res))
         return contacts
 
-
 @cclass
 class ContactObject(object):
     """
@@ -180,6 +180,20 @@ class ContactObject(object):
     """
     # Class default for use atom slice, None tries to be smart
     _class_use_atom_slice = None
+
+    # cython typing stuff needed for dask integration
+    # (visibility=public is needed for from_dict())
+    _topology = declare(object, visibility='public')
+    _cutoff = declare(double, visibility='public')
+    _query = declare(set, visibility='public')
+    _haystack = declare(set, visibility='public')
+    _query_res_idx = declare(set, visibility='public')
+    _haystack_res_idx = declare(set, visibility='public')
+    _all_atoms = declare(tuple, visibility='public')
+    _all_residues = declare(set, visibility='public')
+    _use_atom_slice = declare(bint, visibility='public')
+    indexer = declare(object, visibility="public")
+    _n_neighbors_ignored = declare(Py_ssize_t, visibility='public')
 
     def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored):
         # all inits required: no defaults for abstract class!
@@ -205,12 +219,12 @@ class ContactObject(object):
                                                    all_atoms_set)
         self._use_atom_slice = self._set_atom_slice(self._all_atoms)
         has_indexer = getattr(self, 'indexer', None) is not None
+
         if not has_indexer:
             Indexer = {True: AtomSlicedIndexer,
                        False: IdentityIndexer}[self.use_atom_slice]
             self.indexer = Indexer(topology, self._query, self._haystack,
                                    self._all_atoms)
-
         self._n_neighbors_ignored = n_neighbors_ignored
 
     @classmethod
@@ -308,7 +322,7 @@ class ContactObject(object):
         to_dict
         """
         deserialize_set = set
-        deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
+        #deserialize_atom_to_residue_dct = lambda d: {int(k): d[k] for k in d}
         deserialization_helpers = {
             'topology': cls._deserialize_topology,
             'atom_contacts': cls._deserialize_contact_counter,
@@ -317,7 +331,7 @@ class ContactObject(object):
             'haystack': deserialize_set,
             'query_res_idx': deserialize_set,
             'haystack_res_idx': deserialize_set,
-            'all_atoms': deserialize_set,
+            'all_atoms': tuple,
             'all_residues': deserialize_set,
             'atom_idx_to_residue_idx': deserialize_atom_to_residue_dct
         }
@@ -504,7 +518,7 @@ class ContactObject(object):
         return self._use_atom_slice
 
     @property
-    def _residue_ignore_atom_idxs(self):
+    def _residue_ignore_atom_idxs(self) -> dict:
         """dict : maps query residue index to atom indices to ignore"""
         all_atoms_set = set(self._all_atoms)
         result = {}
@@ -525,12 +539,12 @@ class ContactObject(object):
         return result
 
     @property
-    def haystack_residues(self):
+    def haystack_residues(self) -> list:
         """list : residues for atoms in the haystack"""
         return _residue_for_atom(self.topology, self.haystack)
 
     @property
-    def query_residues(self):
+    def query_residues(self) -> list:
         """list : residues for atoms in the query"""
         return _residue_for_atom(self.topology, self.query)
 
@@ -727,6 +741,7 @@ class ContactFrequency(ContactObject):
         "Invoking it as ContactFrequency will be deprecated in 0.8. For "
         "more, see https://github.com/dwhswenson/contact_map/issues/82"
     )
+
 
     def __init__(self, trajectory, query=None, haystack=None, cutoff=0.45,
                  n_neighbors_ignored=2):

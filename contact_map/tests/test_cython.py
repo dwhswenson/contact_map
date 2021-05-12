@@ -1,8 +1,9 @@
 import pytest
 
 cython = pytest.importorskip("cython")
-COMPILED = pytest.importskip("contact_map.contact_map.COMPILED")
+from contact_map.contact_map import COMPILED
 
 
+@pytest.mark.skipif(not COMPILED, reason="no compiled code")
 def test_cythonization():
     assert COMPILED
