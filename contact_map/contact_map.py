@@ -13,6 +13,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import mdtraj as md
+from mdtraj.core.topology import Residue
 
 from .contact_count import ContactCount
 from .atom_indexer import AtomSlicedIndexer, IdentityIndexer
@@ -195,7 +196,12 @@ class ContactObject(object):
     indexer = declare(object, visibility="public")
     _n_neighbors_ignored = declare(Py_ssize_t, visibility='public')
 
-    def __init__(self, topology, query, haystack, cutoff, n_neighbors_ignored):
+    def __init__(self,
+                 topology: md.Topology,
+                 query: object,
+                 haystack: object,
+                 cutoff: double,
+                 n_neighbors_ignored: Py_ssize_t):
         # all inits required: no defaults for abstract class!
 
         self._topology = topology
@@ -228,9 +234,15 @@ class ContactObject(object):
         self._n_neighbors_ignored = n_neighbors_ignored
 
     @classmethod
-    def from_contacts(cls, atom_contacts, residue_contacts, topology,
-                      query=None, haystack=None, cutoff=0.45,
-                      n_neighbors_ignored=2, indexer=None):
+    def from_contacts(cls,
+                      atom_contacts: collections.Counter,
+                      residue_contacts: collections.Container,
+                      topology: md.Topology,
+                      query: object = None,
+                      haystack: object = None,
+                      cutoff: double = 0.45,
+                      n_neighbors_ignored: Py_ssize_t = 2,
+                      indexer: object = None) -> object:
         obj = cls.__new__(cls)
         obj.indexer = indexer
         super(cls, obj).__init__(topology, query, haystack, cutoff,
@@ -246,7 +258,7 @@ class ContactObject(object):
         obj._residue_contacts = get_contact_counter(residue_contacts)
         return obj
 
-    def _set_atom_slice(self, all_atoms):
+    def _set_atom_slice(self, all_atoms: tuple) -> bint:
         """ Set atom slice logic """
         if (self._class_use_atom_slice is None and
             not len(all_atoms) < self._topology.n_atoms):
@@ -260,16 +272,16 @@ class ContactObject(object):
             return self._class_use_atom_slice
 
     @property
-    def contacts(self):
+    def contacts(self) -> ContactsDict:
         """:class:`.ContactsDict` : contact dict for these contacts"""
         return ContactsDict(self)
 
-    def __hash__(self):
+    def __hash__(self) -> Py_hash_t:
         return hash((self.cutoff, self.n_neighbors_ignored,
                      frozenset(self._query), frozenset(self._haystack),
                      self.topology))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bint:
         is_equal = (self.cutoff == other.cutoff
                     and self.n_neighbors_ignored == other.n_neighbors_ignored
                     and self.query == other.query
@@ -277,7 +289,7 @@ class ContactObject(object):
                     and self.topology == other.topology)
         return is_equal
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """Convert object to a dict.
 
         Keys should be strings; values should be (JSON-) serializable.
@@ -309,7 +321,7 @@ class ContactObject(object):
         return dct
 
     @classmethod
-    def from_dict(cls, dct):
+    def from_dict(cls, dct: dict) -> object:
         """Create object from dict.
 
         Parameters
@@ -349,7 +361,7 @@ class ContactObject(object):
         return instance
 
     @staticmethod
-    def _deserialize_topology(topology_json):
+    def _deserialize_topology(topology_json: str) -> md.Topology:
         """Create MDTraj topology from JSON-serialized version"""
         table, bonds = json.loads(topology_json)
         topology_df = pd.read_json(table)
@@ -358,7 +370,7 @@ class ContactObject(object):
         return topology
 
     @staticmethod
-    def _serialize_topology(topology):
+    def _serialize_topology(topology: md.Topology) -> str:
         """Serialize MDTraj topology (to JSON)"""
         table, bonds = topology.to_dataframe()
         json_tuples = (table.to_json(), bonds.tolist())
@@ -367,7 +379,7 @@ class ContactObject(object):
     # TODO: adding a separate object for these frozenset counters will be
     # useful for many things, and this serialization should be moved there
     @staticmethod
-    def _serialize_contact_counter(counter):
+    def _serialize_contact_counter(counter: collections.Container) -> str:
         """JSON string from contact counter"""
         # have to explicitly convert to int because json doesn't know how to
         # serialize np.int64 objects, which we get in Python 3
@@ -376,7 +388,7 @@ class ContactObject(object):
         return json.dumps(serializable)
 
     @staticmethod
-    def _deserialize_contact_counter(json_string):
+    def _deserialize_contact_counter(json_string: str) -> collections.Counter:
         """Contact counted from JSON string"""
         dct = json.loads(json_string)
         counter = collections.Counter({
@@ -384,7 +396,7 @@ class ContactObject(object):
         })
         return counter
 
-    def to_json(self):
+    def to_json(self) -> str:
         """JSON-serialized version of this object.
 
         See also
@@ -395,7 +407,7 @@ class ContactObject(object):
         return json.dumps(dct)
 
     @classmethod
-    def from_json(cls, json_string):
+    def from_json(cls, json_string: str) -> object:
         """Create object from JSON string
 
         Parameters
@@ -431,7 +443,7 @@ class ContactObject(object):
         else:
             return failed_attr
 
-    def save_to_file(self, filename, mode="w"):
+    def save_to_file(self, filename: str, mode: str = "w"):
         """Save this object to the given file.
 
         Parameters
@@ -450,7 +462,7 @@ class ContactObject(object):
             pickle.dump(self, f)
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename: str) -> object:
         """Load this object from a given file
 
         Parameters
@@ -471,36 +483,36 @@ class ContactObject(object):
             reloaded = pickle.load(f)
         return reloaded
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> "ContactDifference":
         return ContactDifference(positive=self, negative=other)
 
     @property
-    def cutoff(self):
+    def cutoff(self) -> double:
         """float : cutoff distance for contacts, in nanometers"""
         return self._cutoff
 
     @property
-    def n_neighbors_ignored(self):
+    def n_neighbors_ignored(self) -> Py_ssize_t:
         """int : number of neighbor residues (in same chain) to ignore"""
         return self._n_neighbors_ignored
 
     @property
-    def query(self):
+    def query(self) -> list:
         """list of int : indices of atoms to include as query"""
         return list(self._query)
 
     @property
-    def haystack(self):
+    def haystack(self) -> list:
         """list of int : indices of atoms to include as haystack"""
         return list(self._haystack)
 
     @property
-    def all_atoms(self):
+    def all_atoms(self) -> list:
         """list of int: all atom indices used in the contact map"""
         return list(self._all_atoms)
 
     @property
-    def topology(self):
+    def topology(self) -> md.Topology:
         """
         :class:`mdtraj.Topology` :
             topology object for this system
@@ -512,7 +524,7 @@ class ContactObject(object):
         return self._topology
 
     @property
-    def use_atom_slice(self):
+    def use_atom_slice(self) -> bint:
         """bool : Indicates if `mdtraj.atom_slice()` is used before calculating
         the contact map"""
         return self._use_atom_slice
@@ -549,26 +561,27 @@ class ContactObject(object):
         return _residue_for_atom(self.topology, self.query)
 
     @property
-    def query_range(self):
+    def query_range(self) -> tuple:
         """return an tuple with the (min, max+1) of query"""
         return _range_from_iterable(self.query)
 
     @property
-    def haystack_range(self):
+    def haystack_range(self) -> tuple:
         """return an tuple with the (min, max+1) of haystack"""
         return _range_from_iterable(self.haystack)
 
     @property
-    def haystack_residue_range(self):
+    def haystack_residue_range(self) -> tuple:
         """(int, int): min and (max + 1) of haystack residue indices"""
         return _range_from_iterable(self._haystack_res_idx)
 
     @property
-    def query_residue_range(self):
+    def query_residue_range(self) -> tuple:
         """(int, int): min and (max + 1) of query residue indices"""
         return _range_from_iterable(self._query_res_idx)
 
-    def most_common_atoms_for_residue(self, residue):
+    def most_common_atoms_for_residue(self,
+                                      residue: Residue) -> list:
         """
         Most common atom contact pairs for contacts with the given residue
 
@@ -598,7 +611,9 @@ class ContactObject(object):
 
         return results
 
-    def most_common_atoms_for_contact(self, contact_pair):
+    def most_common_atoms_for_contact(self,
+                                      contact_pair: "list[Residue, Residue]"
+                                      ) -> list:
         """
         Most common atom contacts for a given residue contact pair
 
@@ -631,8 +646,12 @@ class ContactObject(object):
                   if frozenset(contact[0]) in all_atom_pairs]
         return result
 
-    def _contact_map(self, trajectory, frame_number, residue_query_atom_idxs,
-                     residue_ignore_atom_idxs):
+    def _contact_map(self,
+                     trajectory: md.Trajectory,
+                     frame_number: Py_ssize_t,
+                     residue_query_atom_idxs: collections.defaultdict,
+                     residue_ignore_atom_idxs: dict
+                     ) -> "tuple[collections.Counter, collections.Counter]":
         """
         Returns atom and residue contact maps for the given frame.
 
@@ -650,46 +669,50 @@ class ContactObject(object):
         """
         used_trajectory = self.indexer.slice_trajectory(trajectory)
 
-        neighborlist = md.compute_neighborlist(used_trajectory, self.cutoff,
-                                               frame_number)
+        neighborlist: list = md.compute_neighborlist(used_trajectory,
+                                                     self.cutoff,
+                                                     frame_number)
 
-        contact_pairs = set([])
-        residue_pairs = set([])
-        haystack = self.indexer.haystack
-        atom_idx_to_residue_idx = self.indexer.atom_idx_to_residue_idx
+        contact_pairs: set = set()
+        residue_pairs: set = set()
+        haystack: set = self.indexer.haystack
+        atom_idx_to_residue_idx: dict = self.indexer.atom_idx_to_residue_idx
+        residue_idx: Py_ssize_t
         for residue_idx in residue_query_atom_idxs:
-            ignore_atom_idxs = set(residue_ignore_atom_idxs[residue_idx])
-            query_idxs = residue_query_atom_idxs[residue_idx]
+            ignore_atom_idxs: set = set(residue_ignore_atom_idxs[residue_idx])
+            query_idxs: list = residue_query_atom_idxs[residue_idx]
+            atom_idx: Py_ssize_t
             for atom_idx in query_idxs:
                 # sets should make this fast, esp since neighbor_idxs
                 # should be small and s-t is avg cost len(s)
-                neighbor_idxs = set(neighborlist[atom_idx])
-                contact_neighbors = neighbor_idxs - ignore_atom_idxs
-                contact_neighbors = contact_neighbors & haystack
+                neighbor_idxs: set = set(neighborlist[atom_idx])
+                contact_neighbors: set = neighbor_idxs - ignore_atom_idxs
+                contact_neighbors: set = contact_neighbors & haystack
                 # frozenset is unique key independent of order
                 # local_pairs = set(frozenset((atom_idx, neighb))
                 #                   for neighb in contact_neighbors)
-                local_pairs = set(map(
+                local_pairs: set = set(map(
                     frozenset,
                     itertools.product([atom_idx], contact_neighbors)
                 ))
                 contact_pairs |= local_pairs
                 # contact_pairs |= set(frozenset((atom_idx, neighb))
                 #                      for neighb in contact_neighbors)
-                local_residue_partners = set(atom_idx_to_residue_idx[a]
-                                             for a in contact_neighbors)
+                local_residue_partners: set = set(atom_idx_to_residue_idx[a]
+                                                  for a in contact_neighbors)
                 local_res_pairs = set(map(
                     frozenset,
                     itertools.product([residue_idx], local_residue_partners)
                 ))
                 residue_pairs |= local_res_pairs
 
-        atom_contacts = collections.Counter(contact_pairs)
+        atom_contacts: collections.Counter = collections.Counter(contact_pairs)
         # residue_pairs = set(
         #     frozenset(self._atom_idx_to_residue_idx[aa] for aa in pair)
         #     for pair in contact_pairs
         # )
-        residue_contacts = collections.Counter(residue_pairs)
+        residue_contacts: collections.Counter = collections.Counter(
+            residue_pairs)
         return (atom_contacts, residue_contacts)
 
     @property
