@@ -71,15 +71,14 @@ def test_is_cmap_diverging(cmap):
 class TestContactRange(object):
     def setup(self):
         self.cr = _ContactPlotRange(5)
-    
+
     @pytest.mark.parametrize("case", [(_ContactPlotRange(5), True),
                                       (_ContactPlotRange(3), False),
                                       (5, True),
                                       ((0, 5), False),  # Maybe support this?
                                       ({5}, False)  # Fail for non-int/tuple
                                       ])
-                                      def test_eq(self, case):
-                                          o, result = case
-                                              assert (self.cr == o) is result
-                                                  assert (self.cr != o) is not result
-s
+    def test_eq(self, case):
+        o, result = case
+        assert (self.cr == o) is result
+        assert (self.cr != o) is not result
