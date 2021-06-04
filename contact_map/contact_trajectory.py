@@ -104,6 +104,9 @@ class ContactTrajectory(ContactObject, abc.Sequence):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @classmethod
     def from_contacts(cls, atom_contacts, residue_contacts, topology,
                       query=None, haystack=None, cutoff=0.45,
