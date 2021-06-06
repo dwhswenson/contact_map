@@ -6,7 +6,7 @@
 from .utils import *
 
 from contact_map.plot_utils import *
-
+from contact_map.plot_utils import _ContactPlotRange
 
 @pytest.mark.parametrize("val", [0.5, 0.55, 0.6, 0.65, 0.7])
 @pytest.mark.parametrize("map_type", ["name", "cmap"])
@@ -28,7 +28,17 @@ def test_ranged_colorbar_cmap(map_type, val):
                     atol=atol)
 
 
+class TestContactRange(object):
+    def setup(self):
+        self.cr = _ContactPlotRange(5)
 
-
-
-
+    @pytest.mark.parametrize("case", [(_ContactPlotRange(5), True),
+                                      (_ContactPlotRange(3), False),
+                                      (5, True),
+                                      ((0, 5), False),  # Maybe support this?
+                                      ({5}, False)  # Fail for non-int/tuple
+                                      ])
+    def test_eq(self, case):
+        o, result = case
+        assert (self.cr == o) is result
+        assert (self.cr != o) is not result

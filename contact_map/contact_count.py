@@ -3,7 +3,7 @@ import scipy
 import numpy as np
 import pandas as pd
 import warnings
-from .plot_utils import ranged_colorbar
+from .plot_utils import ranged_colorbar, make_x_y_ranges
 
 # matplotlib is technically optional, but required for plotting
 try:
@@ -64,6 +64,14 @@ if _PD_VERSION >= (0, 25):
     pd.core.arrays.SparseArray.from_spmatrix = classmethod(_patch_from_spmatrix)
 # TODO: this is the end of what to remove when pandas is fixed
 
+
+def _get_total_counter_range(counter):
+    numbers = [i for key in counter.keys() for i in key]
+    if len(numbers) == 0:
+        return (0, 0)
+    return (min(numbers), max(numbers)+1)
+
+
 class ContactCount(object):
     """Return object when dealing with contacts (residue or atom).
 
@@ -90,16 +98,27 @@ class ContactCount(object):
         method to obtain the object associated with the number used in
         ``counter``; typically :meth:`mdtraj.Topology.residue` or
         :meth:`mdtraj.Topology.atom`.
-    n_x : int
-        number of objects in the x direction (used in plotting)
-    n_y : int
-        number of objects in the y direction (used in plotting)
+    n_x : int, tuple(start, end), optional
+        range of objects in the x direction (used in plotting)
+        Default tries to plot the least amount of symetric points.
+    n_y : int, tuple(start, end), optional
+        range of objects in the y direction (used in plotting)
+        Default tries to show the least amount of symetric points.
+    max_size : int, optional
+        maximum size of the count
+        (used to determine the shape of output matrices and dataframes)
     """
-    def __init__(self, counter, object_f, n_x, n_y):
+    def __init__(self, counter, object_f, n_x=None, n_y=None, max_size=None):
         self._counter = counter
         self._object_f = object_f
-        self.n_x = n_x
-        self.n_y = n_y
+        self.total_range = _get_total_counter_range(counter)
+        self.n_x, self.n_y = make_x_y_ranges(n_x, n_y, counter)
+        if max_size is None:
+            self.max_size = max([self.total_range[-1],
+                                 self.n_x.max,
+                                 self.n_y.max])
+        else:
+            self.max_size = max_size
 
     @property
     def counter(self):
@@ -118,7 +137,8 @@ class ContactCount(object):
             Rows/columns correspond to indices and the values correspond to
             the count
         """
-        mtx = scipy.sparse.dok_matrix((self.n_x, self.n_y))
+        max_size = self.max_size
+        mtx = scipy.sparse.dok_matrix((max_size, max_size))
         for (k, v) in self._counter.items():
             key = list(k)
             mtx[key[0], key[1]] = v
@@ -135,8 +155,8 @@ class ContactCount(object):
             the count
         """
         mtx = self.sparse_matrix
-        index = list(range(self.n_x))
-        columns = list(range(self.n_y))
+        index = list(range(self.max_size))
+        columns = list(range(self.max_size))
 
         if _PD_VERSION < (0, 25):  # py27 only  -no-cov-
             mtx = mtx.tocoo()
@@ -206,7 +226,8 @@ class ContactCount(object):
         ypixels = dpi*figheight
 
         # Check if every value has a pixel
-        if xpixels/self.n_x < 1 or ypixels/self.n_y < 1:
+        if (xpixels/self.n_x.range_length < 1 or
+                ypixels/self.n_y.range_length < 1):
             msg = ("The number of pixels in the figure is insufficient to show"
                    " all the contacts.\n Please save this as a vector image "
                    "(such as a PDF) to view the correct result.\n Another "
@@ -214,7 +235,9 @@ class ContactCount(object):
                    " or the 'figsize' (currently: " + str((figwidth,
                                                            figheight)) +
                    ").\n Recommended minimum amount of pixels = "
-                   + str((self.n_x, self.n_y))+" (width, height).")
+                   + str((self.n_x.range_length,
+                          self.n_y.range_length))
+                   + " (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
     def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
@@ -246,7 +269,8 @@ class ContactCount(object):
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
-        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax)
+        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax,
+                       with_colorbar=with_colorbar)
 
         return (fig, ax)
 
@@ -271,7 +295,7 @@ class ContactCount(object):
 
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
-        ax.axis([0, self.n_x, 0, self.n_y])
+        ax.axis([self.n_x.min, self.n_x.max, self.n_y.min, self.n_y.max])
         ax.set_facecolor(cmap_f(norm(0.0)))
 
         min_val = 0.0
