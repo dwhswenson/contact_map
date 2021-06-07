@@ -3,7 +3,7 @@ import scipy
 import numpy as np
 import pandas as pd
 import warnings
-from .plot_utils import ranged_colorbar, make_x_y_ranges
+from .plot_utils import ranged_colorbar, make_x_y_ranges, is_cmap_diverging
 
 # matplotlib is technically optional, but required for plotting
 try:
@@ -198,7 +198,7 @@ class ContactCount(object):
                    + " (width, height).")
             warnings.warn(msg, RuntimeWarning)
 
-    def plot(self, cmap='seismic', vmin=-1.0, vmax=1.0, with_colorbar=True,
+    def plot(self, cmap='seismic', diverging_cmap=None, with_colorbar=True,
              **kwargs):
         """
         Plot contact matrix (requires matplotlib)
@@ -207,13 +207,19 @@ class ContactCount(object):
         ----------
         cmap : str
             color map name, default 'seismic'
-        vmin : float
-            minimum value for color map interpolation; default -1.0
-        vmax : float
-            maximum value for color map interpolation; default 1.0
+        diverging_cmap : bool
+            Whether the given color map is treated as diverging (if
+            ``True``) or sequential (if False). If a color map is diverging
+            and all data is positive, only the upper half of the color map
+            is used. Default (None) will give correct results if ``cmap`` is
+            the string name of a known sequential or diverging matplotlib
+            color map and will treat as sequential if unknown.
+        with_colorbar: bool
+            Whether to include a color bar legend.
         **kwargs
             All additional keyword arguments to be passed to the
             :func:`matplotlib.pyplot.subplots` call
+
         Returns
         -------
         fig : :class:`matplotlib.Figure`
@@ -227,12 +233,12 @@ class ContactCount(object):
 
         # Check the number of pixels of the figure
         self._check_number_of_pixels(fig)
-        self.plot_axes(ax=ax, cmap=cmap, vmin=vmin, vmax=vmax,
+        self.plot_axes(ax=ax, cmap=cmap, diverging_cmap=diverging_cmap,
                        with_colorbar=with_colorbar)
 
         return (fig, ax)
 
-    def plot_axes(self, ax, cmap='seismic', vmin=-1.0, vmax=1.0,
+    def plot_axes(self, ax, cmap='seismic', diverging_cmap=None,
                   with_colorbar=True):
         """
         Plot contact matrix on a matplotlib.axes
@@ -243,14 +249,19 @@ class ContactCount(object):
            axes to plot the contact matrix on
         cmap : str
             color map name, default 'seismic'
-        vmin : float
-            minimum value for color map interpolation; default -1.0
-        vmax : float
-            maximum value for color map interpolation; default 1.0
+        diverging_cmap : bool
+            If True, color map interpolation is from -1.0 to 1.0; allowing
+            diverging color maps to be used for contact maps and contact
+            differences. If false, the range is from 0 to 1.0. Default value
+            of None selects a value based on the value of cmap, treating as
+            False for unknown color maps.
         with_colorbar : bool
             If a colorbar is added to the axes
         """
+        if diverging_cmap is None:
+            diverging_cmap = is_cmap_diverging(cmap)
 
+        vmin, vmax = (-1, 1) if diverging_cmap else (0, 1)
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cmap_f = plt.get_cmap(cmap)
         ax.axis([self.n_x.min, self.n_x.max, self.n_y.min, self.n_y.max])

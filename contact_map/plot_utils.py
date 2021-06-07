@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 import collections
 
 try:  # try loop for testing
@@ -8,6 +9,27 @@ try:  # try loop for testing
 except ImportError:  # pragma: no cover
     pass
 
+_DIVERGING = [
+    'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu', 'RdYlGn',
+    'Spectral', 'coolwarm', 'bwr', 'seismic',
+]
+_SEQUENTIAL = [
+    'viridis', 'plasma', 'inferno', 'magma', 'cividis', 'Greys', 'Purples',
+    'Blues', 'Greens', 'Oranges', 'Reds', 'YlOrBr', 'YlOrRd', 'OrRd',
+    'PuRd', 'RdPu', 'BuPu', 'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn',
+    'YlGn' 'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
+    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia', 'hot',
+    'afmhot', 'gist_heat', 'copper'
+]
+
+def is_cmap_diverging(cmap):
+    if cmap in _DIVERGING:
+        return True
+    elif cmap in _SEQUENTIAL:
+        return False
+    else:
+        warnings.warn("Unknown colormap: Treating as sequential.")
+        return False
 
 def ranged_colorbar(cmap, norm, cbmin, cbmax, ax=None):
     """Create a colorbar with given endpoints.

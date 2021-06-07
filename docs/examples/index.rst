@@ -29,6 +29,7 @@ You can also try them out online directly from your browser: |binder|_
     nb/concurrences.ipynb
     nb/exporting_data.ipynb
     nb/performance.ipynb
+    nb/advanced_matplotlib.ipynb
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
 .. _binder: https://mybinder.org/v2/gh/dwhswenson/contact_map/{{ version }}?filepath=%2Fexamples
