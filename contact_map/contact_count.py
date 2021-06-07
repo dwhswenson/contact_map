@@ -207,13 +207,19 @@ class ContactCount(object):
         ----------
         cmap : str
             color map name, default 'seismic'
-        vmin : float
-            minimum value for color map interpolation; default -1.0
-        vmax : float
-            maximum value for color map interpolation; default 1.0
+        diverging_cmap : bool
+            Whether the given color map is treated as diverging (if
+            ``True``) or sequential (if False). If a color map is diverging
+            and all data is positive, only the upper half of the color map
+            is used. Default (None) will give correct results if ``cmap`` is
+            the string name of a known sequential or diverging matplotlib
+            color map and will treat as sequential if unknown.
+        with_colorbar: bool
+            Whether to include a color bar legend.
         **kwargs
             All additional keyword arguments to be passed to the
             :func:`matplotlib.pyplot.subplots` call
+
         Returns
         -------
         fig : :class:`matplotlib.Figure`
