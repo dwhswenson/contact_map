@@ -43,8 +43,6 @@ representing the fraction of trajectory time that the contact was present.
 
 .. Add understanding_docs at some point
 
-* :ref:`genindex`
-
 Contact Map Explorer is an open source project, released under the GNU LGPL,
 version 2.1 or (at your option) any later version. Development takes place
 in public at https://github.com/dwhswenson/contact_map; your contributions

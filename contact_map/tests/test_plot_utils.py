@@ -7,6 +7,12 @@ from .utils import *
 
 from contact_map.plot_utils import *
 from contact_map.plot_utils import _ContactPlotRange
+try:
+    from matplotlib.colors import LinearSegmentedColormap
+except ImportError:
+    HAS_MATPLOTLIB = False
+else:
+    HAS_MATPLOTLIB = True
 
 @pytest.mark.parametrize("val", [0.5, 0.55, 0.6, 0.65, 0.7])
 @pytest.mark.parametrize("map_type", ["name", "cmap"])
@@ -26,6 +32,40 @@ def test_ranged_colorbar_cmap(map_type, val):
     assert np.allclose([atol], [0.0390625])  # to remind that this is small
     assert_allclose(cb.cmap(cb.norm(val)), default_cmap(norm(val)),
                     atol=atol)
+
+@pytest.mark.parametrize("cmap", ['seismic', 'Blues', 'custom'])
+def test_is_cmap_diverging(cmap):
+    custom = None
+    if HAS_MATPLOTLIB:
+        custom = LinearSegmentedColormap(
+            'testCmap',
+            segmentdata={
+                'red':   [[0.0,  0.0, 0.0],
+                          [0.5,  1.0, 1.0],
+                          [1.0,  1.0, 1.0]],
+                 'green': [[0.0,  0.0, 0.0],
+                           [0.25, 0.0, 0.0],
+                           [0.75, 1.0, 1.0],
+                           [1.0,  1.0, 1.0]],
+                 'blue':  [[0.0,  0.0, 0.0],
+                           [0.5,  0.0, 0.0],
+                           [1.0,  1.0, 1.0]]},
+            N=256
+        )
+    elif cmap == 'custom':
+        # no matplotlib; can't do custom
+        pytest.skip()
+
+    cmap, expected = {
+        'seismic': ('seismic', True),
+        'Blues': ('Blues', False),
+        'custom': (custom, False),
+    }[cmap]
+    if cmap == 'custom':
+        with pytest.warns(UserWarning):
+            assert is_cmap_diverging(cmap) == expected
+    else:
+        assert is_cmap_diverging(cmap) == expected
 
 
 class TestContactRange(object):
