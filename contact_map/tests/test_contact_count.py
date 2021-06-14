@@ -73,20 +73,43 @@ class TestContactCount(object):
         assert len(record) == 1
 
     @pytest.mark.skipif(not HAS_NETWORKX, reason="Missing networkx")
-    def test_to_networkx(self):
-        as_index = self.residue_contacts.to_networkx(as_index=True)
-        as_res = self.residue_contacts.to_networkx()
+    @pytest.mark.parametrize('weighted', [True, False])
+    def test_to_networkx(self, weighted):
+        as_index = self.residue_contacts.to_networkx(
+            as_index=True, weighted=weighted
+        )
+        as_res = self.residue_contacts.to_networkx(weighted=weighted)
 
         mappings = [lambda x: x, self.map.topology.residue]
 
         for graph, mapping in zip([as_index, as_res], mappings):
             assert len(graph.edges) == 4
             assert len(graph.nodes) == 4
-            assert graph[mapping(0)][mapping(4)]['weight'] == 0.2
-            assert graph[mapping(4)][mapping(0)]['weight'] == 0.2
+            if weighted:
+                assert graph[mapping(0)][mapping(4)]['weight'] == 0.2
+                assert graph[mapping(4)][mapping(0)]['weight'] == 0.2
+            else:
+                edge = graph[mapping(0)][mapping(4)]
+                with pytest.raises(KeyError):
+                    edge['weight']
             with pytest.raises(KeyError):
                 graph[mapping(1)][mapping(0)]
 
+    @pytest.mark.skipif(not HAS_NETWORKX, reason="Missing networkx")
+    def test_to_networkx_existing(self):
+        import networkx as nx
+        graph = nx.Graph()
+        graph.add_edge(5, 6, weight=1.0)
+        assert len(graph.nodes) == 2
+        assert len(graph.edges) == 1
+        assert graph[5][6]['weight'] == 1.0
+        graph = self.residue_contacts.to_networkx(as_index=True,
+                                                  graph=graph)
+        assert len(graph.nodes) == 6
+        assert len(graph.edges) == 5
+        assert graph[5][6]['weight'] == 1.0
+        assert graph[0][4]['weight'] == 0.2
+        assert graph[4][0]['weight'] == 0.2
 
     def test_initialization(self):
         assert self.atom_contacts._object_f == self.topology.atom
