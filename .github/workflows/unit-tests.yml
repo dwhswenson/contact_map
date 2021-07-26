@@ -18,10 +18,12 @@ defaults:
 
 jobs:
   test_suite:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.OS }}-latest
     name: "Unit Tests"
     strategy:
       matrix:
+        OS: ["ubuntu"]
+        DEPS_FROM: ["pip"]
         CONDA_PY:
           - 3.9
           - 3.8
@@ -41,7 +43,8 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.CONDA_PY }}
-      - name: "Install"
+      - name: "Install (pip)"
+        if: ${{ matrix.DEPS_FROM }} == "pip"
         env:
           MDTRAJ: ${{ matrix.MDTRAJ }}
         run: |
