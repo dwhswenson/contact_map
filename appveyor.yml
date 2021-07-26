@@ -14,14 +14,11 @@ environment:
     PYTHONUNBUFFERED: 1
 
   matrix:
-    #- PYTHON: "C:\\Miniconda38-x64"
-      #CONDA_PY: "38" 
-      #ARCH: '64'
+    - PYTHON: "C:\\Miniconda38-x64"
+      CONDA_PY: "38" 
+      ARCH: '64'
     - PYTHON: "C:\\Miniconda37-x64"
       CONDA_PY: "37"
-      ARCH: '64'
-    - PYTHON: "C:\\Miniconda36-x64"
-      CONDA_PY: "36" 
       ARCH: '64'
 
 build: false
