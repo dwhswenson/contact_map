@@ -66,7 +66,8 @@ jobs:
       - name: "Install contact_map"
         run: pip install -e .
       - name: "Versions"
-        INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
+        env:
+          INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
         run: |
           $INSTALL_WITH list
       - name: "Autorelease check"
