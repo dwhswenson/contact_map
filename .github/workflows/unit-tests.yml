@@ -66,7 +66,8 @@ jobs:
             exit 1
           fi
           $INSTALL_WITH install $INSTALLER_FLAGS requirements.txt
-          $INSTALL_WITH install $INSTALLER_FLAGS extras_test.txt
+          # have to pip-install testing until autorelease on conda
+          pip install -U -r extras_test.txt
       - name: "Install MDTraj development version (pip)"
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
         run: pip install --upgrade --force-reinstall -r ci/mdtraj_dev.txt
