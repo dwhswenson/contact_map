@@ -44,6 +44,8 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.CONDA_PY }}
+      - name: "Create requirements files"
+        run: python ci/extract_requirements.py
       - name: "Install dependencies"
         env:
           INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
@@ -62,7 +64,7 @@ jobs:
         run: pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
       - name: "Install optional extras (pip)"
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
-        run: pip install -r optional_installs.txt
+        run: pip install -r extras_all.txt
       - name: "Install contact_map"
         run: pip install -e .
       - name: "Versions"
