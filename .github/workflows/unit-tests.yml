@@ -50,7 +50,7 @@ jobs:
         run: |
           if [ "$INSTALL_WITH" = "pip" ]; then
             source ci/pip-install/install_requirements.sh
-            pip install -U -e ci/pip-install/testing_requirements.txt
+            pip install -U -r ci/pip-install/testing_requirements.txt
           elif [ "$INSTALL_WITH" = "conda" ]; then
             echo "TODO -- fill this in"
           else
