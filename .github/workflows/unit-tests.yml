@@ -60,7 +60,7 @@ jobs:
             source ci/pip-pre-install.sh
             INSTALLER_FLAGS="-U -r"
           elif [ "$INSTALL_WITH" = "conda" ]; then
-            INSTALLER_FLAGS="-c conda-forge -f"
+            INSTALLER_FLAGS="-c conda-forge --file"
           else
             echo "Bad value for INSTALL_WITH: $INSTALL_WITH"
             exit 1
