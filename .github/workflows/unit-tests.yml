@@ -22,19 +22,18 @@ jobs:
     name: "Unit Tests"
     strategy:
       matrix:
-        OS: ["ubuntu"]
-        DEPS_FROM: ["pip"]
         CONDA_PY:
           - 3.9
           - 3.8
           - 3.7
-          - 3.6
+        OS: ["ubuntu"]
         MDTRAJ: ["mdtraj-release"]
+        INSTALL_WITH: ["pip"]
         include:
           - CONDA_PY: 3.9
-            MDTRAJ: "mdtraj-dev"
-            DEPS_FROM: "pip"
             OS: "ubuntu"
+            MDTRAJ: "mdtraj-dev"
+            INSTALL_WITH: "pip"
 
     steps:
       - uses: actions/checkout@v2
@@ -45,20 +44,31 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.CONDA_PY }}
-      - name: "Install (pip)"
-        if: ${{ matrix.DEPS_FROM }} == "pip"
+      - name: "Install dependencies"
         env:
-          MDTRAJ: ${{ matrix.MDTRAJ }}
+          INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
         run: |
-          source ci/pip-install/install_requirements.sh
-          pip install -e .
-          pip install -U -r ci/pip-install/testing_requirements.txt
-          if [ "$MDTRAJ" = "mdtraj-dev" ]; then
-            pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
-            pip install -r optional_installs.txt
+          if [ "$INSTALL_WITH" = "pip" ]; then
+            source ci/pip-install/install_requirements.sh
+            pip install -U -e ci/pip-install/testing_requirements.txt
+          elif [ "$INSTALL_WITH" = "conda" ]; then
+            echo "TODO -- fill this in"
+          else
+            echo "Bad value for INSTALL_WITH: $INSTALL_WITH"
+            exit 1
           fi
+      - name: "Install MDTraj development version (pip)"
+        if: ${{ matrix.MDTRAJ }} == "mdtraj-dev"
+        run: pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
+      - name: "Install optional extras (pip)"
+        if: ${{ matrix.MDTRAJ }} == "mdtraj-dev"
+        run: pip install -r optional_installs.txt
+      - name: "Install contact_map"
+        run: pip install -e .
       - name: "Versions"
-        run: pip list
+        INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
+        run: |
+          $INSTALL_WITH list
       - name: "Autorelease check"
         run: python autorelease_check.py
       - name: "Tests"
