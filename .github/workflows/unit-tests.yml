@@ -51,17 +51,19 @@ jobs:
           INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
         run: |
           if [ "$INSTALL_WITH" = "pip" ]; then
-            source ci/pip-install/install_requirements.sh
-            pip install -U -r extras_test.txt
+            source ci/pip-pre-install.sh
+            INSTALLER_FLAGS="-U -r"
           elif [ "$INSTALL_WITH" = "conda" ]; then
-            echo "TODO -- fill this in"
+            INSTALLER_FLAGS="-c conda-forge -f"
           else
             echo "Bad value for INSTALL_WITH: $INSTALL_WITH"
             exit 1
           fi
+          $INSTALL_WITH install $INSTALLER_FLAGS requirements.txt
+          $INSTALL_WITH install $INSTALLER_FLAGS extras_test.txt
       - name: "Install MDTraj development version (pip)"
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
-        run: pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
+        run: pip install --upgrade --force-reinstall -r ci/mdtraj_dev.txt
       - name: "Install optional extras (pip)"
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
         run: pip install -r extras_all.txt
