@@ -35,7 +35,11 @@ jobs:
             MDTRAJ: "mdtraj-dev"
             INSTALL_WITH: "pip"
           - CONDA_PY: 3.9
-            OS: "ubuntu"
+            OS: "windows"
+            MDTRAJ: "mdtraj-release"
+            INSTALL_WITH: "conda"
+          - CONDA_PY: 3.7
+            OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
 
