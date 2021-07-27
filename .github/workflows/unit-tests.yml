@@ -33,6 +33,8 @@ jobs:
         include:
           - CONDA_PY: 3.9
             MDTRAJ: "mdtraj-dev"
+            DEPS_FROM: "pip"
+            OS: "ubuntu"
 
     steps:
       - uses: actions/checkout@v2
