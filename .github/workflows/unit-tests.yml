@@ -58,10 +58,10 @@ jobs:
             exit 1
           fi
       - name: "Install MDTraj development version (pip)"
-        if: ${{ matrix.MDTRAJ }} == "mdtraj-dev"
+        if: ${{ matrix.MDTRAJ == "mdtraj-dev" }}
         run: pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
       - name: "Install optional extras (pip)"
-        if: ${{ matrix.MDTRAJ }} == "mdtraj-dev"
+        if: ${{ matrix.MDTRAJ == "mdtraj-dev" }}
         run: pip install -r optional_installs.txt
       - name: "Install contact_map"
         run: pip install -e .
@@ -79,5 +79,5 @@ jobs:
           python -c "import contact_map"
           py.test -vv --cov=contact_map --cov-report xml
       - name: "Report coverage"
-        if: ${{ github.event }} != "schedule"
+        if: ${{ github.event != "schedule" }}
         run: bash <(curl -s https://codecov.io/bash)
