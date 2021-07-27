@@ -34,6 +34,10 @@ jobs:
             OS: "ubuntu"
             MDTRAJ: "mdtraj-dev"
             INSTALL_WITH: "pip"
+          - CONDA_PY: 3.9
+            OS: "ubuntu"
+            MDTRAJ: "mdtraj-release"
+            INSTALL_WITH: "conda"
 
     steps:
       - uses: actions/checkout@v2
@@ -50,6 +54,8 @@ jobs:
         env:
           INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
         run: |
+          # this trick only works as long as PyPI & conda-forge use same
+          # package names
           if [ "$INSTALL_WITH" = "pip" ]; then
             source ci/pip-pre-install.sh
             INSTALLER_FLAGS="-U -r"
@@ -65,6 +71,8 @@ jobs:
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
         run: pip install --upgrade --force-reinstall -r ci/mdtraj_dev.txt
       - name: "Install optional extras (pip)"
+        # we only use this with pip, but in principle it could be converted
+        # to something that also uses conda
         if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
         run: pip install -r extras_all.txt
       - name: "Install contact_map"
