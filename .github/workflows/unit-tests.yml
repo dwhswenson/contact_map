@@ -18,7 +18,7 @@ defaults:
 
 jobs:
   test_suite:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.OS }}-latest
     name: "Unit Tests"
     strategy:
       matrix:
@@ -26,11 +26,22 @@ jobs:
           - 3.9
           - 3.8
           - 3.7
-          - 3.6
+        OS: ["ubuntu"]
         MDTRAJ: ["mdtraj-release"]
+        INSTALL_WITH: ["pip"]
         include:
           - CONDA_PY: 3.9
+            OS: "ubuntu"
             MDTRAJ: "mdtraj-dev"
+            INSTALL_WITH: "pip"
+          - CONDA_PY: 3.9
+            OS: "windows"
+            MDTRAJ: "mdtraj-release"
+            INSTALL_WITH: "conda"
+          - CONDA_PY: 3.7
+            OS: "windows"
+            MDTRAJ: "mdtraj-release"
+            INSTALL_WITH: "conda"
 
     steps:
       - uses: actions/checkout@v2
@@ -41,19 +52,41 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.CONDA_PY }}
-      - name: "Install"
+      - name: "Create requirements files"
+        run: python ci/extract_requirements.py
+      - name: "Install dependencies"
         env:
-          MDTRAJ: ${{ matrix.MDTRAJ }}
+          INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
         run: |
-          source ci/pip-install/install_requirements.sh
-          pip install -e .
-          pip install -U -r ci/pip-install/testing_requirements.txt
-          if [ "$MDTRAJ" = "mdtraj-dev" ]; then
-            pip install --upgrade --force-reinstall -r ci/pip-install/mdtraj_dev.txt
-            pip install -r optional_installs.txt
+          # this trick only works as long as PyPI & conda-forge use same
+          # package names
+          if [ "$INSTALL_WITH" = "pip" ]; then
+            source ci/pip-pre-install.sh
+            INSTALLER_FLAGS="-U -r"
+          elif [ "$INSTALL_WITH" = "conda" ]; then
+            INSTALLER_FLAGS="-c conda-forge --file"
+          else
+            echo "Bad value for INSTALL_WITH: $INSTALL_WITH"
+            exit 1
           fi
+          $INSTALL_WITH install $INSTALLER_FLAGS requirements.txt
+          # have to pip-install testing until autorelease on conda
+          pip install -U -r extras_test.txt
+      - name: "Install MDTraj development version (pip)"
+        if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
+        run: pip install --upgrade --force-reinstall -r ci/mdtraj_dev.txt
+      - name: "Install optional extras (pip)"
+        # we only use this with pip, but in principle it could be converted
+        # to something that also uses conda
+        if: ${{ matrix.MDTRAJ == 'mdtraj-dev' }}
+        run: pip install -r extras_all.txt
+      - name: "Install contact_map"
+        run: pip install -e .
       - name: "Versions"
-        run: pip list
+        env:
+          INSTALL_WITH: ${{ matrix.INSTALL_WITH }}
+        run: |
+          $INSTALL_WITH list
       - name: "Autorelease check"
         run: python autorelease_check.py
       - name: "Tests"
@@ -63,5 +96,5 @@ jobs:
           python -c "import contact_map"
           py.test -vv --cov=contact_map --cov-report xml
       - name: "Report coverage"
-        if: ${{ github.event }} != "schedule"
+        if: ${{ github.event != 'schedule' }}
         run: bash <(curl -s https://codecov.io/bash)
