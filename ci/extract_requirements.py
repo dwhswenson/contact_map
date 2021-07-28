@@ -17,7 +17,6 @@ def make_parser():
                                  "setup.cfg")
     parser = argparse.ArgumentParser()
     parser.add_argument('setup_cfg', nargs='?', default=default_setup)
-    # parser.add_argument('--extra', default=None)
     return parser
 
 def main(setup_cfg):
