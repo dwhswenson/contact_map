@@ -95,6 +95,5 @@ jobs:
         run: |
           python -c "import contact_map"
           py.test -vv --cov=contact_map --cov-report xml
-      - name: "Report coverage"
+      - uses: codecov/codecov-action@v2
         if: ${{ github.event != 'schedule' }}
-        run: bash <(curl -s https://codecov.io/bash)
