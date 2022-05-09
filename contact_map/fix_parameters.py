@@ -32,8 +32,8 @@ class ParameterFixer(object):
                 map1_set = set(getattr(map1, fail))
                 fixed = getattr(map0_set, self._set_mixing)(map1_set)
             elif fail in {'cutoff', 'n_neighbors_ignored'}:
-                # We just set them to None
-                fixed = None
+                # We just set them to -1None
+                fixed = -1
             elif fail == 'topology':
                 # This requires quite a bit of logic
                 fixed = self._check_topology(map0, map1)
