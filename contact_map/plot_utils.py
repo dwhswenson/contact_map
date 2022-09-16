@@ -22,6 +22,7 @@ _SEQUENTIAL = [
     'afmhot', 'gist_heat', 'copper'
 ]
 
+
 def is_cmap_diverging(cmap):
     if cmap in _DIVERGING:
         return True
@@ -30,6 +31,7 @@ def is_cmap_diverging(cmap):
     else:
         warnings.warn("Unknown colormap: Treating as sequential.")
         return False
+
 
 def ranged_colorbar(cmap, norm, cbmin, cbmax, ax=None):
     """Create a colorbar with given endpoints.
@@ -60,6 +62,7 @@ def ranged_colorbar(cmap, norm, cbmin, cbmax, ax=None):
 
     if ax is None:
         fig = plt
+        ax = plt.gca()
     else:
         fig = ax.figure
 
