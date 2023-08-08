@@ -1,16 +1,14 @@
 version: 2
 
-#conda:
-    #environment: docs/environment.yml
+build:
+  os: ubuntu-22.04
+  tools:
+    python: 3.11
 
 python:
     install:
       - requirements: docs/rtd_requirements.txt
-      #- requirements: requirements.txt
       - requirements: docs/requirements.txt
       - method: setuptools
         path: .
-      #- method: pip
-        #path: .
-    #system_packages: false
-
+    system_packages: false
