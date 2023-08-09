@@ -9,6 +9,9 @@ python:
     install:
       - requirements: docs/rtd_requirements.txt
       - requirements: docs/requirements.txt
-      - method: setuptools
+      - method: pip
         path: .
     system_packages: false
+
+sphinx:
+  builder: html
