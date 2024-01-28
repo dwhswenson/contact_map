@@ -62,7 +62,8 @@ class TestContactCount(object):
     @pytest.mark.skipif(not HAS_MATPLOTLIB, reason="Missing matplotlib")
     def test_pixel_warning(self):
         # This should not raise a warning (5*2>=10)
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             self.atom_contacts.plot(figsize=(5, 5), dpi=2)
         # See if no warning was raised
         assert len(record) == 0
