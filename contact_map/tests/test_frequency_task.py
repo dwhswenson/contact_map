@@ -33,7 +33,7 @@ class TestSlicing(object):
         assert default_slices(n_total, n_workers) == results
 
 class TestTasks(object):
-    def setup(self):
+    def setup_method(self):
         self.contact_freq_0_4 = ContactFrequency(traj[:4], cutoff=0.075,
                                                  n_neighbors_ignored=0)
         self.contact_freq_4 = ContactFrequency(traj[4], cutoff=0.075,

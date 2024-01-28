@@ -31,7 +31,7 @@ TRAJ_RES_CONTACTS = [
 ]
 
 class TestContactTrajectory(object):
-    def setup(self):
+    def setup_method(self):
         self.traj = md.load(find_testfile("trajectory.pdb"))
         self.map = ContactTrajectory(self.traj, cutoff=0.075,
                                      n_neighbors_ignored=0)
@@ -175,7 +175,7 @@ class TestContactTrajectory(object):
 
 
 class TestMutableContactTrajectory(object):
-    def setup(self):
+    def setup_method(self):
         self.traj = md.load(find_testfile("trajectory.pdb"))
         self.map = MutableContactTrajectory(self.traj, cutoff=0.075,
                                             n_neighbors_ignored=0)
@@ -223,7 +223,7 @@ class TestMutableContactTrajectory(object):
 
 
 class TestWindowedIterator(object):
-    def setup(self):
+    def setup_method(self):
         self.iter = WindowedIterator(length=10, width=3, step=2,
                                      slow_build=False)
 
@@ -286,7 +286,7 @@ class TestWindowedIterator(object):
 
 
 class TestRollingContactFrequency(object):
-    def setup(self):
+    def setup_method(self):
         self.traj = md.load(find_testfile("trajectory.pdb"))
         self.map = ContactTrajectory(self.traj, cutoff=0.075,
                                      n_neighbors_ignored=0)

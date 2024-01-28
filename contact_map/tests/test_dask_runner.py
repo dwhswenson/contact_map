@@ -29,7 +29,7 @@ def dask_setup_test_cluster(distributed, n_workers=4, n_attempts=3):
 
 
 class TestDaskRunners(object):
-    def setup(self):
+    def setup_method(self):
         dask = pytest.importorskip('dask')  # pylint: disable=W0612
         distributed = pytest.importorskip('dask.distributed')
         self.distributed = distributed
@@ -39,7 +39,7 @@ class TestDaskRunners(object):
         self.client = distributed.Client(self.cluster)
         self.filename = find_testfile("trajectory.pdb")
 
-    def teardown(self):
+    def teardown_method(self):
         self.client.shutdown()
 
     @pytest.mark.parametrize("dask_cls", [DaskContactFrequency,

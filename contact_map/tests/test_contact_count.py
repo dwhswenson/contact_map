@@ -14,7 +14,7 @@ from .test_contact_map import (traj, traj_atom_contact_count,
 from contact_map.contact_count import *
 
 class TestContactCount(object):
-    def setup(self):
+    def setup_method(self):
         self.map = ContactFrequency(traj, cutoff=0.075,
                                     n_neighbors_ignored=0)
         self.topology = self.map.topology
