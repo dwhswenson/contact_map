@@ -65,8 +65,7 @@ class TestContactCount(object):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             self.atom_contacts.plot(figsize=(5, 5), dpi=2)
-        # See if no warning was raised
-        assert len(record) == 0
+            # should convert to error if warning issued
 
         # Now raise the warning as 4*2 < 10
         with pytest.warns(RuntimeWarning) as record:
