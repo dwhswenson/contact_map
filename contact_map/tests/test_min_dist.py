@@ -14,7 +14,7 @@ traj = md.load(find_testfile("trajectory.pdb"))
 
 @pytest.mark.parametrize("idx", [0, 4])
 class TestNearestAtoms(object):
-    def setup(self):
+    def setup_method(self):
         self.nearest_atoms = {
             idx: NearestAtoms(traj, cutoff=0.075, frame_number=idx)
             for idx in [0, 4]
@@ -107,7 +107,7 @@ class TestNearestAtoms(object):
 
 
 class TestMinimumDistanceCounter(object):
-    def setup(self):
+    def setup_method(self):
         self.topology = traj.topology
         query = [4, 5]
         haystack = list(set(range(10)) - set(query))

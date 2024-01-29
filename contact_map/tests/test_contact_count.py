@@ -14,7 +14,7 @@ from .test_contact_map import (traj, traj_atom_contact_count,
 from contact_map.contact_count import *
 
 class TestContactCount(object):
-    def setup(self):
+    def setup_method(self):
         self.map = ContactFrequency(traj, cutoff=0.075,
                                     n_neighbors_ignored=0)
         self.topology = self.map.topology
@@ -65,6 +65,7 @@ class TestContactCount(object):
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             self.atom_contacts.plot(figsize=(5, 5), dpi=2)
+            # should convert to error if warning issued
 
         # Now raise the warning as 4*2 < 10
         with pytest.warns(RuntimeWarning) as record:

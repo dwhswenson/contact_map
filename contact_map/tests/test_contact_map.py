@@ -117,7 +117,7 @@ class TestContactObject(object):
     # note: these used to be the tests for the separate single-frame
     # ContactMap class; however, it includes a lot of good unit tests for
     # ContactObject
-    def setup(self):
+    def setup_method(self):
         self.topology = traj.topology
         self.map0 = ContactFrequency(traj[0], cutoff=0.075,
                                      n_neighbors_ignored=0)
@@ -336,7 +336,7 @@ class TestContactObject(object):
 
 
 class TestContactFrequency(object):
-    def setup(self):
+    def setup_method(self):
         self.atoms = [0, 1, 4, 5, 6, 7, 8, 9]
         self.map = ContactFrequency(trajectory=traj,
                                     cutoff=0.075,

@@ -65,7 +65,7 @@ class ContactConcurrenceTester(object):
 
 
 class TestAtomContactConcurrence(ContactConcurrenceTester):
-    def setup(self):
+    def setup_method(self):
         self.concurrence = AtomContactConcurrence(
             trajectory=traj,
             atom_contacts=contacts.atom_contacts.most_common(),
@@ -105,7 +105,7 @@ class TestAtomContactConcurrence(ContactConcurrenceTester):
 
 
 class TestResidueContactConcurrence(ContactConcurrenceTester):
-    def setup(self):
+    def setup_method(self):
         self.heavy_contact_concurrence = ResidueContactConcurrence(
             trajectory=traj,
             residue_contacts=contacts.residue_contacts.most_common(),
@@ -157,7 +157,7 @@ class TestResidueContactConcurrence(ContactConcurrenceTester):
 
 
 class TestConcurrencePlotter(object):
-    def setup(self):
+    def setup_method(self):
         self.concurrence = ResidueContactConcurrence(
             trajectory=traj,
             residue_contacts=contacts.residue_contacts.most_common(),

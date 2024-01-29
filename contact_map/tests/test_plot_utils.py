@@ -72,7 +72,7 @@ def test_is_cmap_diverging(cmap):
 
 
 class TestContactRange(object):
-    def setup(self):
+    def setup_method(self):
         self.cr = _ContactPlotRange(5)
 
     @pytest.mark.parametrize("case", [(_ContactPlotRange(5), True),
