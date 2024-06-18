@@ -6,6 +6,7 @@ import sys
 import fnmatch  # Py 2
 
 from setuptools import setup
+from setuptools.extension import Extension
 
 def _glob_glob_recursive(directory, pattern):
     # python 2 glob.glob doesn't have a recursive keyword
@@ -117,9 +118,44 @@ def write_installed_version_py(filename="_installed_version.py",
     with open (os.path.join(src_dir, filename), 'w') as f:
         f.write(content.format(vers=version, git=git_rev, depth=depth))
 
+def cythonize():
+    # Copied from dask/distributed
+    cython_arg = None
+    for i in range(len(sys.argv)):
+        if sys.argv[i].startswith("--with-cython"):
+            cython_arg = sys.argv[i]
+            del sys.argv[i]
+            break
+    if not cython_arg:
+        return []
+    try:
+        import cython
+    except ImportError:
+        return []
+
+    ext_modules = []
+    profile = False
+    cyext_modules = [
+        Extension(
+            "contact_map.contact_map",
+            sources=["contact_map/contact_map.py"],
+        ),
+    ]
+    for e in cyext_modules:
+        e.cython_directives = {
+            "annotation_typing": True,
+            "binding": False,
+            "embedsignature": True,
+            "language_level": 3,
+            "profile": profile,
+        }
+    ext_modules.extend(cyext_modules)
+    return ext_modules
+
 if __name__ == "__main__":
     # TODO: only write version.py under special circumstances
     write_installed_version_py()
     # write_version_py(os.path.join('autorelease', 'version.py'))
-    setup()
+    ext_modules=cythonize()
+    setup(ext_modules=ext_modules)
 
