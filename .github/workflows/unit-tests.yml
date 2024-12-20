@@ -30,15 +30,15 @@ jobs:
         MDTRAJ: ["mdtraj-release"]
         INSTALL_WITH: ["pip"]
         include:
-          - CONDA_PY: "3.12"
+          - CONDA_PY: "3.13"
             OS: "ubuntu"
             MDTRAJ: "mdtraj-dev"
             INSTALL_WITH: "pip"
-          - CONDA_PY: "3.12"
+          - CONDA_PY: "3.13"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
-          - CONDA_PY: "3.10"
+          - CONDA_PY: "3.11"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
