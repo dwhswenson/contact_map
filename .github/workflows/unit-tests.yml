@@ -23,9 +23,9 @@ jobs:
     strategy:
       matrix:
         CONDA_PY:
+          - "3.13"
           - "3.12"
           - "3.11"
-          - "3.10"
         OS: ["ubuntu"]
         MDTRAJ: ["mdtraj-release"]
         INSTALL_WITH: ["pip"]
