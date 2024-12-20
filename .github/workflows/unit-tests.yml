@@ -23,22 +23,22 @@ jobs:
     strategy:
       matrix:
         CONDA_PY:
-          - 3.9
-          - 3.8
-          - 3.7
+          - "3.13"
+          - "3.12"
+          - "3.11"
         OS: ["ubuntu"]
         MDTRAJ: ["mdtraj-release"]
         INSTALL_WITH: ["pip"]
         include:
-          - CONDA_PY: 3.9
+          - CONDA_PY: "3.13"
             OS: "ubuntu"
             MDTRAJ: "mdtraj-dev"
             INSTALL_WITH: "pip"
-          - CONDA_PY: 3.9
+          - CONDA_PY: "3.13"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
-          - CONDA_PY: 3.7
+          - CONDA_PY: "3.11"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
