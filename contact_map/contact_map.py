@@ -6,6 +6,7 @@ Contact map analysis.
 import collections
 import itertools
 import pickle
+import io
 import json
 
 import warnings
@@ -273,7 +274,7 @@ class ContactObject(object):
     def _deserialize_topology(topology_json):
         """Create MDTraj topology from JSON-serialized version"""
         table, bonds = json.loads(topology_json)
-        topology_df = pd.read_json(table)
+        topology_df = pd.read_json(io.StringIO(table))
         topology = md.Topology.from_dataframe(topology_df,
                                               np.array(bonds))
         return topology
