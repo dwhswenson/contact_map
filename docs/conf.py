@@ -19,8 +19,10 @@
 import os
 import sys
 import shutil
+from configparser import ConfigParser
+from importlib.metadata import PackageNotFoundError, version as package_version
+
 import sphinx_rtd_theme
-import pkg_resources
 import packaging.version
 # sys.path.insert(0, os.path.abspath('.'))
 #sys.path.insert(0, os.path.abspath('../contact_map/'))
@@ -41,7 +43,16 @@ except OSError:
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-release = pkg_resources.get_distribution('contact_map').version
+def get_release():
+    try:
+        return package_version('contact_map')
+    except PackageNotFoundError:
+        conf = ConfigParser()
+        conf.read(os.path.abspath('../setup.cfg'))
+        return conf.get('metadata', 'version')
+
+
+release = get_release()
 version = packaging.version.Version(release).base_version
 
 # The short X.Y version.
