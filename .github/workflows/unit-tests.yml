@@ -23,31 +23,30 @@ jobs:
     strategy:
       matrix:
         CONDA_PY:
-          - "3.13"
           - "3.12"
-          - "3.11"
+          - "3.13"
+          - "3.14"
         OS: ["ubuntu"]
         MDTRAJ: ["mdtraj-release"]
         INSTALL_WITH: ["pip"]
         include:
-          - CONDA_PY: "3.13"
+          - CONDA_PY: "3.14"
             OS: "ubuntu"
             MDTRAJ: "mdtraj-dev"
             INSTALL_WITH: "pip"
-          - CONDA_PY: "3.13"
+          - CONDA_PY: "3.14"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
-          - CONDA_PY: "3.11"
+          - CONDA_PY: "3.12"
             OS: "windows"
             MDTRAJ: "mdtraj-release"
             INSTALL_WITH: "conda"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - uses: actions/setup-python@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
