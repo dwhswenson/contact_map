@@ -76,8 +76,8 @@ class TestDaskRunners(object):
         (DaskContactTrajectory, ContactTrajectory)])
     def test_answer_equal(self, dask_cls, norm_cls):
         trj = mdtraj.load(self.filename)
-        dask_result = dask_cls(self.client, self.filename)
         norm_result = norm_cls(trj)
+        dask_result = dask_cls(self.client, self.filename)
         if isinstance(dask_result, Iterable):
             for i, j in zip(dask_result, norm_result):
                 assert i.atom_contacts._counter == j.atom_contacts._counter
