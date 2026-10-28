@@ -152,7 +152,7 @@ class ContactCount(object):
             DataFrame representation of the contact matrix
 
             Rows/columns correspond to indices and the values correspond to
-            the count
+            the count. Entries without contacts are NaN.
         """
         mtx = self.sparse_matrix
         index = list(range(self.max_size))
@@ -164,11 +164,11 @@ class ContactCount(object):
 
         df = pd.DataFrame.sparse.from_spmatrix(mtx, index=index,
                                                columns=columns)
-        # note: I think we can always use float here for dtype; but in
-        # principle maybe we need to inspect and get the internal type?
-        # Problem is, pandas technically stores a different dtype for each
-        # column.
-        df = df.astype(pd.SparseDtype("float", np.nan))
+        # Set the value of unstored entries explicitly. Since pandas 3.1,
+        # astype preserves zeros when changing the sparse fill value to NaN.
+        # Updating the fill value directly also keeps the columns sparse.
+        for column in df.columns:
+            df[column].array.fill_value = np.nan
         return df
 
     def to_networkx(self, weighted=True, as_index=False, graph=None):
