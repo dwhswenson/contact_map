@@ -149,6 +149,37 @@ class TestContactCount(object):
         assert_array_equal(residue_df.sparse.to_dense().values,
                            zero_to_nan(self.residue_matrix))
 
+        for df, expected in [(atom_df, self.atom_matrix),
+                             (residue_df, self.residue_matrix)]:
+            n_stored = sum(df[col].array.npoints for col in df.columns)
+            assert n_stored == np.count_nonzero(expected)
+            assert all(np.isnan(dtype.fill_value) for dtype in df.dtypes)
+
+    @pytest.mark.skipif(not hasattr(pd.DataFrame, 'sparse'),
+                        reason="Requires pandas sparse accessor")
+    @pytest.mark.parametrize("size", [0, 1, 5])
+    def test_df_empty(self, size):
+        contacts = ContactCount({}, None, max_size=size)
+        df = contacts.df
+
+        assert_array_equal(df.sparse.to_dense().values,
+                           np.full((size, size), np.nan))
+        assert sum(df[col].array.npoints for col in df.columns) == 0
+
+    @pytest.mark.skipif(not hasattr(pd.DataFrame, 'sparse'),
+                        reason="Requires pandas sparse accessor")
+    def test_df_signed_values(self):
+        contacts = ContactCount({frozenset([0, 1]): -0.25,
+                                 frozenset([1, 2]): 0.75},
+                                None, max_size=3)
+        df = contacts.df
+        expected = np.array([[np.nan, -0.25, np.nan],
+                             [-0.25, np.nan, 0.75],
+                             [np.nan, 0.75, np.nan]])
+
+        assert_array_equal(df.sparse.to_dense().values, expected)
+        assert sum(df[col].array.npoints for col in df.columns) == 4
+
     @pytest.mark.parametrize("obj_type", ['atom', 'res'])
     def test_most_common(self, obj_type):
         if obj_type == 'atom':
